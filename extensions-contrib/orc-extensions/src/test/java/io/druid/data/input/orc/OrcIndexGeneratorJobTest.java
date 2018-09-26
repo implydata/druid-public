@@ -36,7 +36,6 @@ import io.druid.indexer.HadoopTuningConfig;
 import io.druid.indexer.HadoopyShardSpec;
 import io.druid.indexer.IndexGeneratorJob;
 import io.druid.indexer.JobHelper;
-import io.druid.indexer.Jobby;
 import io.druid.java.util.common.Intervals;
 import io.druid.java.util.common.StringUtils;
 import io.druid.java.util.common.granularity.Granularities;
@@ -85,7 +84,7 @@ import java.util.zip.ZipInputStream;
 
 public class OrcIndexGeneratorJobTest
 {
-  static private final AggregatorFactory[] aggs = {
+  private static final AggregatorFactory[] aggs = {
       new LongSumAggregatorFactory("visited_num", "visited_num"),
       new HyperUniquesAggregatorFactory("unique_hosts", "host")
   };
@@ -97,27 +96,27 @@ public class OrcIndexGeneratorJobTest
   private HadoopDruidIndexerConfig config;
   private final String dataSourceName = "website";
   private final List<String> data = ImmutableList.of(
-          "2014102200,a.example.com,100",
-          "2014102200,b.exmaple.com,50",
-          "2014102200,c.example.com,200",
-          "2014102200,d.example.com,250",
-          "2014102200,e.example.com,123",
-          "2014102200,f.example.com,567",
-          "2014102200,g.example.com,11",
-          "2014102200,h.example.com,251",
-          "2014102200,i.example.com,963",
-          "2014102200,j.example.com,333",
-          "2014102212,a.example.com,100",
-          "2014102212,b.exmaple.com,50",
-          "2014102212,c.example.com,200",
-          "2014102212,d.example.com,250",
-          "2014102212,e.example.com,123",
-          "2014102212,f.example.com,567",
-          "2014102212,g.example.com,11",
-          "2014102212,h.example.com,251",
-          "2014102212,i.example.com,963",
-          "2014102212,j.example.com,333"
-      );
+      "2014102200,a.example.com,100",
+      "2014102200,b.exmaple.com,50",
+      "2014102200,c.example.com,200",
+      "2014102200,d.example.com,250",
+      "2014102200,e.example.com,123",
+      "2014102200,f.example.com,567",
+      "2014102200,g.example.com,11",
+      "2014102200,h.example.com,251",
+      "2014102200,i.example.com,963",
+      "2014102200,j.example.com,333",
+      "2014102212,a.example.com,100",
+      "2014102212,b.exmaple.com,50",
+      "2014102212,c.example.com,200",
+      "2014102212,d.example.com,250",
+      "2014102212,e.example.com,123",
+      "2014102212,f.example.com,567",
+      "2014102212,g.example.com,11",
+      "2014102212,h.example.com,251",
+      "2014102212,i.example.com,963",
+      "2014102212,j.example.com,333"
+  );
   private final Interval interval = Intervals.of("2014-10-22T00:00:00Z/P1D");
   private File dataRoot;
   private File outputRoot;
@@ -134,25 +133,26 @@ public class OrcIndexGeneratorJobTest
           new TimestampSpec("timestamp", "yyyyMMddHH", null),
           new DimensionsSpec(DimensionsSpec.getDefaultSchemas(ImmutableList.of("host")), null, null)
       ),
-      "struct<timestamp:string,host:string,visited_num:int>"
+      "struct<timestamp:string,host:string,visited_num:int>",
+      null
   );
 
   private File writeDataToLocalOrcFile(File outputDir, List<String> data) throws IOException
   {
     File outputFile = new File(outputDir, "test.orc");
     TypeDescription schema = TypeDescription.createStruct()
-        .addField("timestamp", TypeDescription.createString())
-        .addField("host", TypeDescription.createString())
-        .addField("visited_num", TypeDescription.createInt());
+                                            .addField("timestamp", TypeDescription.createString())
+                                            .addField("host", TypeDescription.createString())
+                                            .addField("visited_num", TypeDescription.createInt());
     Configuration conf = new Configuration();
     Writer writer = OrcFile.createWriter(
         new Path(outputFile.getPath()),
         OrcFile.writerOptions(conf)
-            .setSchema(schema)
-            .stripeSize(100000)
-            .bufferSize(10000)
-            .compress(CompressionKind.ZLIB)
-            .version(OrcFile.Version.CURRENT)
+               .setSchema(schema)
+               .stripeSize(100000)
+               .bufferSize(10000)
+               .compress(CompressionKind.ZLIB)
+               .version(OrcFile.Version.CURRENT)
     );
     VectorizedRowBatch batch = schema.createRowBatch();
     batch.size = data.size();
@@ -251,7 +251,7 @@ public class OrcIndexGeneratorJobTest
 
   private void verifyJob(IndexGeneratorJob job) throws IOException
   {
-    JobHelper.runJobs(ImmutableList.<Jobby>of(job), config);
+    Assert.assertTrue(JobHelper.runJobs(ImmutableList.of(job), config));
 
     int segmentNum = 0;
     for (DateTime currTime = interval.getStart(); currTime.isBefore(interval.getEnd()); currTime = currTime.plusDays(1)) {
@@ -287,8 +287,8 @@ public class OrcIndexGeneratorJobTest
         Assert.assertEquals(Integer.valueOf(9), dataSegment.getBinaryVersion());
 
         Assert.assertEquals(dataSourceName, dataSegment.getDataSource());
-        Assert.assertTrue(dataSegment.getDimensions().size() == 1);
-        String[] dimensions = dataSegment.getDimensions().toArray(new String[dataSegment.getDimensions().size()]);
+        Assert.assertEquals(1, dataSegment.getDimensions().size());
+        String[] dimensions = dataSegment.getDimensions().toArray(new String[0]);
         Arrays.sort(dimensions);
         Assert.assertEquals("host", dimensions[0]);
         Assert.assertEquals("visited_num", dataSegment.getMetrics().get(0));
@@ -308,7 +308,6 @@ public class OrcIndexGeneratorJobTest
 
         for (Rowboat row: adapter.getRows()) {
           Object[] metrics = row.getMetrics();
-
           rowCount++;
           Assert.assertTrue(metrics.length == 2);
         }
@@ -351,8 +350,8 @@ public class OrcIndexGeneratorJobTest
           try (final OutputStream out = new BufferedOutputStream(
               new FileOutputStream(
                   outDir.getAbsolutePath()
-                      + File.separator
-                      + fileName
+                  + File.separator
+                  + fileName
               ), 1 << 13
           )) {
             for (int len = in.read(buffer); len >= 0; len = in.read(buffer)) {
