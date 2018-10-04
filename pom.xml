@@ -78,8 +78,8 @@
         <netty4.version>4.0.52.Final</netty4.version>
         <slf4j.version>1.7.12</slf4j.version>
         <!-- If compiling with different hadoop version also modify default hadoop coordinates in TaskConfig.java -->
-        <hadoop.compile.version>2.7.3</hadoop.compile.version>
-        <hive.version>2.0.0</hive.version>
+        <hadoop.compile.version>2.7.3.2.5.3.0-37</hadoop.compile.version>
+        <hive.version>2.1.0.2.5.3.0-37</hive.version>
         <powermock.version>1.6.6</powermock.version>
         <!-- Cannot update to AWS SDK 1.11+ because of Jackson incompatibility.
         Need to update Druid to use Jackson 2.6+ -->
@@ -1308,4 +1308,32 @@
             </build>
         </profile>
     </profiles>
+
+    <repositories>
+        <repository>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <id>hortonworks.extrepo</id>
+            <name>Hortonworks HDP</name>
+            <url>http://repo.hortonworks.com/content/repositories/releases</url>
+        </repository>
+
+        <repository>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <id>hortonworks.other</id>
+            <name>Hortonworks Other Dependencies</name>
+            <url>http://repo.hortonworks.com/content/groups/public</url>
+        </repository>
+
+    </repositories>
+
 </project>
