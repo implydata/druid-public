@@ -151,5 +151,4 @@
             <artifactId>guice</artifactId>
         </dependency>
     </dependencies>
-
 </project>

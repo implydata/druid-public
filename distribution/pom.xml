@@ -73,6 +73,11 @@
                                 <argument>${project.parent.version}</argument>
                                 <argument>-l</argument>
                                 <argument>${settings.localRepository}</argument>
+                                <argument>--no-default-hadoop</argument>
+                                <argument>-r</argument>
+                                <argument>http://repo.hortonworks.com/content/repositories/releases</argument>
+                                <argument>-r</argument>
+                                <argument>http://repo.hortonworks.com/content/groups/public</argument>
                                 <argument>-h</argument>
                                 <argument>org.apache.hadoop:hadoop-client:${hadoop.compile.version}</argument>
                                 <argument>-c</argument>
@@ -204,6 +209,10 @@
                                         <argument>-l</argument>
                                         <argument>${settings.localRepository}</argument>
                                         <argument>--no-default-hadoop</argument>
+                                        <argument>-r</argument>
+                                        <argument>http://repo.hortonworks.com/content/repositories/releases</argument>
+                                        <argument>-r</argument>
+                                        <argument>http://repo.hortonworks.com/content/groups/public</argument>
                                         <argument>-c</argument>
                                         <argument>io.druid.extensions.contrib:ambari-metrics-emitter</argument>
                                         <argument>-c</argument>
