@@ -23,6 +23,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.collect.Sets;
+import io.druid.java.util.common.ISE;
 import io.druid.query.aggregation.AggregatorFactory;
 import io.druid.query.aggregation.PostAggregator;
 import io.druid.query.aggregation.post.PostAggregatorIds;
@@ -68,8 +69,15 @@ public class MaxPostAggregator extends ApproximateHistogramPostAggregator
   @Override
   public Object compute(Map<String, Object> values)
   {
-    final ApproximateHistogram ah = (ApproximateHistogram) values.get(fieldName);
-    return ah.getMax();
+    Object val = values.get(fieldName);
+    if (val instanceof ApproximateHistogram) {
+      final ApproximateHistogram ah = (ApproximateHistogram) val;
+      return ah.getMax();
+    } else if (val instanceof FixedBucketsHistogram) {
+      final FixedBucketsHistogram fbh = (FixedBucketsHistogram) val;
+      return fbh.getMax();
+    }
+    throw new ISE("Unknown value type: " + val.getClass());
   }
 
   @Override

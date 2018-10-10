@@ -24,6 +24,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.collect.Sets;
 import io.druid.java.util.common.IAE;
+import io.druid.java.util.common.ISE;
 import io.druid.query.aggregation.AggregatorFactory;
 import io.druid.query.aggregation.PostAggregator;
 import io.druid.query.aggregation.post.PostAggregatorIds;
@@ -71,9 +72,24 @@ public class QuantilesPostAggregator extends ApproximateHistogramPostAggregator
   @Override
   public Object compute(Map<String, Object> values)
   {
-    final ApproximateHistogram ah = (ApproximateHistogram) values.get(fieldName);
-
-    return new Quantiles(probabilities, ah.getQuantiles(probabilities), ah.getMin(), ah.getMax());
+    Object val = values.get(fieldName);
+    if (val instanceof ApproximateHistogram) {
+      final ApproximateHistogram ah = (ApproximateHistogram) val;
+      return new Quantiles(probabilities, ah.getQuantiles(probabilities), ah.getMin(), ah.getMax());
+    } else if (val instanceof FixedBucketsHistogram) {
+      final FixedBucketsHistogram fbh = (FixedBucketsHistogram) val;
+      double[] adjustedProbabilites = new double[probabilities.length];
+      for (int i = 0; i < probabilities.length; i++) {
+        adjustedProbabilites[i] = probabilities[i] * 100.0;
+      }
+      return new Quantiles(
+          probabilities,
+          fbh.percentilesFloat(adjustedProbabilites),
+          (float) fbh.getMin(),
+          (float) fbh.getMax()
+      );
+    }
+    throw new ISE("Unknown value type: " + val.getClass());
   }
 
   @Override
