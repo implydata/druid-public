@@ -27,7 +27,7 @@ import com.google.inject.TypeLiteral;
 import com.google.inject.name.Names;
 import io.airlift.airline.Command;
 import org.apache.druid.curator.discovery.DiscoveryModule;
-import org.apache.druid.discovery.DruidNodeDiscoveryProvider;
+import org.apache.druid.discovery.NodeType;
 import org.apache.druid.guice.Jerseys;
 import org.apache.druid.guice.JsonConfigProvider;
 import org.apache.druid.guice.LazySingleton;
@@ -114,12 +114,10 @@ public class CliRouter extends ServerRunnable
             LifecycleModule.register(binder, Server.class);
             DiscoveryModule.register(binder, Self.class);
 
-            binder.bind(DiscoverySideEffectsProvider.Child.class).toProvider(
-                new DiscoverySideEffectsProvider(
-                    DruidNodeDiscoveryProvider.NODE_TYPE_ROUTER,
-                    ImmutableList.of()
-                )
-            ).in(LazySingleton.class);
+            binder
+                .bind(DiscoverySideEffectsProvider.Child.class)
+                .toProvider(new DiscoverySideEffectsProvider(NodeType.ROUTER, ImmutableList.of()))
+                .in(LazySingleton.class);
             LifecycleModule.registerKey(binder, Key.get(DiscoverySideEffectsProvider.Child.class));
           }
         },
