@@ -468,6 +468,8 @@ public class KafkaIndexTaskTest
     Assert.assertEquals(ImmutableList.of("d", "e"), readSegmentColumn("dim1", desc2));
   }
 
+  // Commented out, Kafka 9 doesn't support "max.poll.records", which this test needs
+  /*
   @Test(timeout = 60_000L)
   public void testIncrementalHandOff() throws Exception
   {
@@ -559,6 +561,7 @@ public class KafkaIndexTaskTest
     Assert.assertEquals(ImmutableList.of("g"), readSegmentColumn("dim1", desc6));
     Assert.assertEquals(ImmutableList.of("f"), readSegmentColumn("dim1", desc7));
   }
+  */
 
   @Test(timeout = 60_000L)
   public void testRunWithMinimumMessageTime() throws Exception

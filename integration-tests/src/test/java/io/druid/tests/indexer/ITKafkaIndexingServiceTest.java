@@ -29,7 +29,6 @@ import io.druid.testing.guice.DruidTestModuleFactory;
 import io.druid.testing.utils.RetryUtil;
 import io.druid.testing.utils.TestQueryHelper;
 import kafka.admin.AdminUtils;
-import kafka.admin.RackAwareMode;
 import kafka.utils.ZKStringSerializer$;
 import kafka.utils.ZkUtils;
 import org.I0Itec.zkclient.ZkClient;
@@ -128,8 +127,7 @@ public class ITKafkaIndexingServiceTest extends AbstractIndexerTest
             TOPIC_NAME,
             numPartitions,
             replicationFactor,
-            topicConfig,
-            RackAwareMode.Disabled$.MODULE$
+            topicConfig
         );
       }
     }
