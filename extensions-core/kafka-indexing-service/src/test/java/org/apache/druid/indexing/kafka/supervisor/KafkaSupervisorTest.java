@@ -27,6 +27,9 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import kafka.admin.AdminUtils;
+import kafka.admin.RackAwareMode;
+import kafka.utils.ZkUtils;
 import org.apache.curator.test.TestingCluster;
 import org.apache.druid.data.input.impl.DimensionSchema;
 import org.apache.druid.data.input.impl.DimensionsSpec;
@@ -76,6 +79,7 @@ import org.apache.druid.server.metrics.ExceptionCapturingServiceEmitter;
 import org.apache.druid.server.metrics.NoopServiceEmitter;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.security.JaasUtils;
 import org.easymock.Capture;
 import org.easymock.CaptureType;
 import org.easymock.EasyMock;
@@ -102,6 +106,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -134,6 +139,7 @@ public class KafkaSupervisorTest extends EasyMockSupport
   private static String kafkaHost;
   private static DataSchema dataSchema;
   private static int topicPostfix;
+  private static ZkUtils zkUtils;
 
   private final int numThreads;
 
@@ -175,12 +181,19 @@ public class KafkaSupervisorTest extends EasyMockSupport
         zkServer.getConnectString(),
         null,
         1,
-        ImmutableMap.of("num.partitions", String.valueOf(NUM_PARTITIONS))
+        ImmutableMap.of(
+            "num.partitions",
+            String.valueOf(NUM_PARTITIONS),
+            "auto.create.topics.enable",
+            String.valueOf(false)
+        )
     );
     kafkaServer.start();
     kafkaHost = StringUtils.format("localhost:%d", kafkaServer.getPort());
 
     dataSchema = getDataSchema(DATASOURCE);
+
+    zkUtils = ZkUtils.apply(zkServer.getConnectString(), 30000, 30000, JaasUtils.isZkSecurityEnabled());
   }
 
   @Before
@@ -239,6 +252,9 @@ public class KafkaSupervisorTest extends EasyMockSupport
 
     zkServer.stop();
     zkServer = null;
+
+    zkUtils.close();
+    zkUtils = null;
   }
 
   @Test
@@ -2201,7 +2217,8 @@ public class KafkaSupervisorTest extends EasyMockSupport
       Thread.sleep(100);
     }
 
-    Assert.assertTrue(serviceEmitter.getStackTrace().startsWith("org.apache.druid.java.util.common.ISE: WTH?! cannot find"));
+    Assert.assertTrue(serviceEmitter.getStackTrace()
+                                    .startsWith("org.apache.druid.java.util.common.ISE: WTH?! cannot find"));
     Assert.assertEquals(
         "WTH?! cannot find taskGroup [0] among all taskGroups [{}]",
         serviceEmitter.getExceptionMessage()
@@ -2575,6 +2592,9 @@ public class KafkaSupervisorTest extends EasyMockSupport
 
   private void addSomeEvents(int numEventsPerPartition) throws Exception
   {
+    //create topic manually
+    AdminUtils.createTopic(zkUtils, topic, NUM_PARTITIONS, 1, new Properties(), RackAwareMode.Enforced$.MODULE$);
+
     try (final KafkaProducer<byte[], byte[]> kafkaProducer = kafkaServer.newProducer()) {
       for (int i = 0; i < NUM_PARTITIONS; i++) {
         for (int j = 0; j < numEventsPerPartition; j++) {
