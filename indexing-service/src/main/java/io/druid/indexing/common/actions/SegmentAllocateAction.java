@@ -23,9 +23,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import io.druid.indexing.common.TaskLockType;
 import io.druid.indexing.common.task.Task;
+import io.druid.indexing.overlord.CriticalAction;
 import io.druid.indexing.overlord.IndexerMetadataStorageCoordinator;
 import io.druid.indexing.overlord.LockResult;
 import io.druid.java.util.common.IAE;
@@ -269,14 +271,31 @@ public class SegmentAllocateAction implements TaskAction<SegmentIdentifier>
     }
 
     if (lockResult.isOk()) {
-      final SegmentIdentifier identifier = toolbox.getIndexerMetadataStorageCoordinator().allocatePendingSegment(
-          dataSource,
-          sequenceName,
-          previousSegmentId,
-          tryInterval,
-          lockResult.getTaskLock().getVersion(),
-          skipSegmentLineageCheck
-      );
+      final SegmentIdentifier identifier;
+      try {
+        identifier = toolbox.getTaskLockbox().doInCriticalSection(
+            task,
+            ImmutableList.of(tryInterval),
+            CriticalAction.<SegmentIdentifier>builder()
+                .onValidLocks(
+                    () -> toolbox.getIndexerMetadataStorageCoordinator().allocatePendingSegment(
+                        dataSource,
+                        sequenceName,
+                        previousSegmentId,
+                        tryInterval,
+                        lockResult.getTaskLock().getVersion(),
+                        skipSegmentLineageCheck
+                    )
+                ).onInvalidLocks(
+                    () -> null
+                    )
+                .build()
+        );
+      }
+      catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+
       if (identifier != null) {
         return identifier;
       } else {

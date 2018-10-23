@@ -32,6 +32,7 @@ import org.skife.jdbi.v2.Batch;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.Handle;
 import org.skife.jdbi.v2.TransactionCallback;
+import org.skife.jdbi.v2.TransactionIsolationLevel;
 import org.skife.jdbi.v2.TransactionStatus;
 import org.skife.jdbi.v2.exceptions.DBIException;
 import org.skife.jdbi.v2.exceptions.UnableToExecuteStatementException;
@@ -150,16 +151,13 @@ public abstract class SQLMetadataConnector implements MetadataStorageConnector
 
   public <T> T retryTransaction(final TransactionCallback<T> callback, final int quietTries, final int maxTries)
   {
-    final Callable<T> call = new Callable<T>()
-    {
-      @Override
-      public T call() throws Exception
-      {
-        return getDBI().inTransaction(callback);
-      }
-    };
     try {
-      return RetryUtils.retry(call, shouldRetry, quietTries, maxTries);
+      return RetryUtils.retry(
+          () -> getDBI().inTransaction(TransactionIsolationLevel.READ_COMMITTED, callback),
+          shouldRetry,
+          quietTries,
+          maxTries
+      );
     }
     catch (Exception e) {
       throw Throwables.propagate(e);
