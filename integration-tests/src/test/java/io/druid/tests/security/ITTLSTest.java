@@ -41,6 +41,8 @@ import io.druid.java.util.http.client.response.StatusResponseHolder;
 import io.druid.server.security.TLSUtils;
 import io.druid.testing.IntegrationTestingConfig;
 import io.druid.testing.guice.DruidTestModuleFactory;
+import io.druid.server.security.TLSCertificateChecker;
+import io.druid.testing.utils.ITTLSCertificateChecker;
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.joda.time.Duration;
@@ -81,6 +83,9 @@ public class ITTLSTest
   @Inject
   @Client
   DruidHttpClientConfig httpClientConfig;
+
+  @Inject
+  TLSCertificateChecker certificateChecker;
 
   StatusResponseHandler responseHandler = new StatusResponseHandler(StandardCharsets.UTF_8);
 
@@ -235,6 +240,29 @@ public class ITTLSTest
     makeRequest(notCAClient, HttpMethod.GET, config.getNoClientAuthRouterTLSUrl() + "/status", null);
   }
 
+  @Test
+  public void checkAccessWithCustomCertificateChecks()
+  {
+    LOG.info("---------Testing TLS resource access with custom certificate checks---------");
+    HttpClient wrongHostnameClient = makeCustomHttpClient(
+        "client_tls/invalid_hostname_client.jks",
+        "invalid_hostname_client",
+        new ITTLSCertificateChecker()
+    );
+    checkFailedAccessWrongHostname(httpClient, HttpMethod.GET, config.getCustomCertCheckRouterTLSUrl());
+    makeRequest(wrongHostnameClient, HttpMethod.GET, config.getCustomCertCheckRouterTLSUrl() + "/status", null);
+    checkFailedAccess(
+        wrongHostnameClient,
+        HttpMethod.POST,
+        config.getCustomCertCheckRouterTLSUrl() + "/druid/v2",
+        "Custom cert check",
+        ISE.class,
+        "Error while making request to url[https://127.0.0.1:9091/druid/v2] status[400 Bad Request] content[{\"error\":\"No content to map due to end-of-input",
+        true
+    );
+    makeRequest(wrongHostnameClient, HttpMethod.GET, config.getCustomCertCheckRouterTLSUrl() + "/druid/coordinator/v1/leader", null);
+  }
+
   private void checkFailedAccessNoCert(HttpClient httpClient, HttpMethod method, String url)
   {
     checkFailedAccess(
@@ -243,7 +271,8 @@ public class ITTLSTest
         url + "/status",
         "Certless",
         SSLException.class,
-        "Received fatal alert: bad_certificate"
+        "Received fatal alert: bad_certificate",
+        false
     );
   }
 
@@ -255,7 +284,8 @@ public class ITTLSTest
         url + "/status",
         "Wrong hostname",
         SSLException.class,
-        "Received fatal alert: certificate_unknown"
+        "Received fatal alert: certificate_unknown",
+        false
     );
   }
 
@@ -267,7 +297,8 @@ public class ITTLSTest
         url + "/status",
         "Wrong root cert",
         SSLException.class,
-        "Received fatal alert: certificate_unknown"
+        "Received fatal alert: certificate_unknown",
+        false
     );
   }
 
@@ -279,7 +310,8 @@ public class ITTLSTest
         url + "/status",
         "Revoked cert",
         SSLException.class,
-        "Received fatal alert: certificate_unknown"
+        "Received fatal alert: certificate_unknown",
+        false
     );
   }
 
@@ -291,7 +323,8 @@ public class ITTLSTest
         url + "/status",
         "Expired cert",
         SSLException.class,
-        "Received fatal alert: certificate_unknown"
+        "Received fatal alert: certificate_unknown",
+        false
     );
   }
 
@@ -303,7 +336,8 @@ public class ITTLSTest
         url + "/status",
         "Cert signed by non-CA",
         SSLException.class,
-        "Received fatal alert: certificate_unknown"
+        "Received fatal alert: certificate_unknown",
+        false
     );
   }
 
@@ -324,6 +358,15 @@ public class ITTLSTest
 
   private HttpClient makeCustomHttpClient(String keystorePath, String certAlias)
   {
+    return makeCustomHttpClient(keystorePath, certAlias, certificateChecker);
+  }
+
+  private HttpClient makeCustomHttpClient(
+      String keystorePath,
+      String certAlias,
+      TLSCertificateChecker certificateChecker
+  )
+  {
     SSLContext intermediateClientSSLContext = new TLSUtils.ClientSSLContextBuilder()
         .setProtocol(sslClientConfig.getProtocol())
         .setTrustStoreType(sslClientConfig.getTrustStoreType())
@@ -336,6 +379,7 @@ public class ITTLSTest
         .setCertAlias(certAlias)
         .setKeyStorePasswordProvider(sslClientConfig.getKeyStorePasswordProvider())
         .setKeyManagerFactoryPasswordProvider(sslClientConfig.getKeyManagerPasswordProvider())
+        .setCertificateChecker(certificateChecker)
         .build();
 
     final HttpClientConfig.Builder builder = getHttpClientConfigBuilder(intermediateClientSSLContext);
@@ -362,6 +406,7 @@ public class ITTLSTest
         .setTrustStorePath(sslClientConfig.getTrustStorePath())
         .setTrustStoreAlgorithm(sslClientConfig.getTrustStoreAlgorithm())
         .setTrustStorePasswordProvider(sslClientConfig.getTrustStorePasswordProvider())
+        .setCertificateChecker(certificateChecker)
         .build();
 
     final HttpClientConfig.Builder builder = getHttpClientConfigBuilder(certlessClientSSLContext);
@@ -386,7 +431,8 @@ public class ITTLSTest
       String url,
       String clientDesc,
       Class expectedException,
-      String expectedExceptionMsg
+      String expectedExceptionMsg,
+      boolean useContainsMsgCheck
   )
   {
     int retries = 0;
@@ -411,13 +457,17 @@ public class ITTLSTest
 
         Assert.assertTrue(
             expectedException.isInstance(rootCause),
-            StringUtils.format("Expected %s but found %s instead.", expectedException, rootCause)
+            StringUtils.format("Expected %s but found %s instead.", expectedException, Throwables.getStackTraceAsString(rootCause))
         );
 
-        Assert.assertEquals(
-            rootCause.getMessage(),
-            expectedExceptionMsg
-        );
+        if (useContainsMsgCheck) {
+          Assert.assertTrue(rootCause.getMessage().contains(expectedExceptionMsg));
+        } else {
+          Assert.assertEquals(
+              rootCause.getMessage(),
+              expectedExceptionMsg
+          );
+        }
 
         LOG.info("%s client [%s] request failed as expected when accessing [%s]", clientDesc, method, url);
         return;

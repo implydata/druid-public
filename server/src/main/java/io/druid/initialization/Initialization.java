@@ -71,6 +71,7 @@ import io.druid.server.initialization.AuthorizerMapperModule;
 import io.druid.server.initialization.jetty.JettyServerModule;
 import io.druid.server.metrics.MetricsModule;
 import org.apache.commons.io.FileUtils;
+import io.druid.server.security.TLSCertificateCheckerModule;
 import org.eclipse.aether.artifact.DefaultArtifact;
 
 import java.io.File;
@@ -370,6 +371,7 @@ public class Initialization
         new Log4jShutterDownerModule(),
         new DruidAuthModule(),
         new LifecycleModule(),
+        TLSCertificateCheckerModule.class,
         EmitterModule.class,
         HttpClientModule.global(),
         HttpClientModule.escalatedGlobal(),
