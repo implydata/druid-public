@@ -52,6 +52,7 @@ import org.joda.time.Duration;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class MetadataTaskStorage implements TaskStorage
 {
@@ -185,32 +186,13 @@ public class MetadataTaskStorage implements TaskStorage
   @Override
   public List<Task> getActiveTasks()
   {
-    return ImmutableList.copyOf(
-        Iterables.transform(
-            Iterables.filter(
-                handler.getActiveEntriesWithStatus(),
-                new Predicate<Pair<Task, TaskStatus>>()
-                {
-                  @Override
-                  public boolean apply(
-                      @Nullable Pair<Task, TaskStatus> input
-                  )
-                  {
-                    return input.rhs.isRunnable();
-                  }
-                }
-            ),
-            new Function<Pair<Task, TaskStatus>, Task>()
-            {
-              @Nullable
-              @Override
-              public Task apply(@Nullable Pair<Task, TaskStatus> input)
-              {
-                return input.lhs;
-              }
-            }
-        )
-    );
+    // filter out taskInfo with a null 'task' which should only happen in practice if we are missing a jackson module
+    // and don't know what to do with the payload, so we won't be able to make use of it anyway
+    return handler.getActiveTaskInfo(null)
+           .stream()
+           .filter(taskInfo -> taskInfo.getStatus().isRunnable() && taskInfo.getTask() != null)
+           .map(TaskInfo::getTask)
+           .collect(Collectors.toList());
   }
 
   @Override
