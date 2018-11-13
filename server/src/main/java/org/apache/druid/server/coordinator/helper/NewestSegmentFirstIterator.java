@@ -163,16 +163,15 @@ public class NewestSegmentFirstIterator implements CompactionSegmentIterator
       return;
     }
 
-    final SegmentsToCompact segmentsToCompact = findSegmentsToCompact(
+    SegmentsToCompact segmentsToCompact = findSegmentsToCompact(
         compactibleTimelineObjectHolderCursor,
         config
     );
 
-    if (segmentsToCompact.getSize() <= 1) {
-      throw new ISE("Cannot compact segments[%s]", segmentsToCompact);
+    if (segmentsToCompact.getSize() > 1) {
+      queue.add(new QueueEntry(segmentsToCompact.segments));
+      log.info("Current queue: " + queue);
     }
-    queue.add(new QueueEntry(segmentsToCompact.segments));
-    log.info("Current queue: " + queue);
   }
 
   /**
