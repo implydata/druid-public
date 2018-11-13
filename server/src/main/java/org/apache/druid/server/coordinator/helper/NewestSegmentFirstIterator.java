@@ -168,9 +168,11 @@ public class NewestSegmentFirstIterator implements CompactionSegmentIterator
         config
     );
 
-    if (segmentsToCompact.getSize() > 1) {
-      queue.add(new QueueEntry(segmentsToCompact.segments));
+    if (segmentsToCompact.getSize() <= 1) {
+      throw new ISE("Cannot compact segments[%s]", segmentsToCompact);
     }
+    queue.add(new QueueEntry(segmentsToCompact.segments));
+    log.info("Current queue: " + queue);
   }
 
   /**
@@ -272,12 +274,9 @@ public class NewestSegmentFirstIterator implements CompactionSegmentIterator
           // We found some segmens to compact and cannot add more. End here.
           return new SegmentsToCompact(segmentsToCompact);
         } else {
-          // (*) Discard segments found so far because we can't compact them anyway.
-          final int numSegmentsToCompact = segmentsToCompact.size();
-          segmentsToCompact.clear();
-
           if (!SegmentCompactorUtil.isCompactibleSize(inputSegmentSize, 0, timeChunkSizeBytes)) {
             final DataSegment segment = chunks.get(0).getObject();
+            segmentsToCompact.clear();
             log.warn(
                 "shardSize[%d] for dataSource[%s] and interval[%s] is larger than inputSegmentSize[%d]."
                 + " Continue to the next shard.",
@@ -288,6 +287,7 @@ public class NewestSegmentFirstIterator implements CompactionSegmentIterator
             );
           } else if (maxNumSegmentsToCompact < chunks.size()) {
             final DataSegment segment = chunks.get(0).getObject();
+            segmentsToCompact.clear();
             log.warn(
                 "The number of segments[%d] for dataSource[%s] and interval[%s] is larger than "
                 + "numTargetCompactSegments[%d]. If you see lots of shards are being skipped due to too many "
@@ -299,18 +299,21 @@ public class NewestSegmentFirstIterator implements CompactionSegmentIterator
                 maxNumSegmentsToCompact
             );
           } else {
-            if (numSegmentsToCompact == 1) {
+            if (segmentsToCompact.size() == 1) {
               // We found a segment which is smaller than targetCompactionSize but too large to compact with other
               // segments. Skip this one.
-              // Note that segmentsToCompact is already cleared at (*).
+              segmentsToCompact.clear();
               chunks.forEach(chunk -> segmentsToCompact.add(chunk.getObject()));
               totalSegmentsToCompactBytes = timeChunkSizeBytes;
             } else {
               throw new ISE(
-                  "Cannot compact segments[%s]. shardBytes[%s], numSegments[%s]",
+                  "Cannot compact segments[%s]. shardBytes[%s], numSegments[%s] "
+                  + "totalSegmentsToCompactBytes[%d] is for current segments[%s]",
                   chunks.stream().map(PartitionChunk::getObject).collect(Collectors.toList()),
                   timeChunkSizeBytes,
-                  chunks.size()
+                  chunks.size(),
+                  totalSegmentsToCompactBytes,
+                  segmentsToCompact
               );
             }
           }
