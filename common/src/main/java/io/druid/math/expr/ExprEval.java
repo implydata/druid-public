@@ -22,14 +22,19 @@ package io.druid.math.expr;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.primitives.Doubles;
-import com.google.common.primitives.Ints;
 import io.druid.common.guava.GuavaUtils;
 import io.druid.java.util.common.IAE;
+
+import javax.annotation.Nullable;
 
 /**
  */
 public abstract class ExprEval<T>
 {
+  // Cached String values. Protected so they can be used by subclasses.
+  private boolean stringValueValid = false;
+  private String stringValue;
+
   public static ExprEval ofLong(Number longValue)
   {
     return new LongExprEval(longValue);
@@ -85,7 +90,7 @@ public abstract class ExprEval<T>
 
   final T value;
 
-  private ExprEval(T value)
+  private ExprEval(@Nullable T value)
   {
     this.value = value;
   }
@@ -110,7 +115,17 @@ public abstract class ExprEval<T>
 
   public String asString()
   {
-    return value == null ? null : String.valueOf(value);
+    if (!stringValueValid) {
+      if (value == null) {
+        stringValue = null;
+      } else {
+        stringValue = String.valueOf(value);
+      }
+
+      stringValueValid = true;
+    }
+
+    return stringValue;
   }
 
   public abstract boolean asBoolean();
@@ -228,6 +243,18 @@ public abstract class ExprEval<T>
 
   private static class StringExprEval extends ExprEval<String>
   {
+    // Cached primitive values.
+    private boolean intValueValid = false;
+    private boolean longValueValid = false;
+    private boolean doubleValueValid = false;
+    private boolean booleanValueValid = false;
+    private int intValue;
+    private long longValue;
+    private double doubleValue;
+    private boolean booleanValue;
+
+    private Number numericVal;
+
     private StringExprEval(String value)
     {
       super(Strings.emptyToNull(value));
@@ -240,39 +267,96 @@ public abstract class ExprEval<T>
     }
 
     @Override
-    public final int asInt()
+    public int asInt()
     {
-      if (value == null) {
-        return 0;
+      if (!intValueValid) {
+        intValue = computeInt();
+        intValueValid = true;
       }
 
-      final Integer theInt = Ints.tryParse(value);
-      return theInt == null ? 0 : theInt;
+      return intValue;
     }
 
     @Override
-    public final long asLong()
+    public long asLong()
     {
-      // GuavaUtils.tryParseLong handles nulls, no need for special null handling here.
-      final Long theLong = GuavaUtils.tryParseLong(value);
-      return theLong == null ? 0L : theLong;
+      if (!longValueValid) {
+        longValue = computeLong();
+        longValueValid = true;
+      }
+
+      return longValue;
     }
 
     @Override
-    public final double asDouble()
+    public double asDouble()
     {
-      if (value == null) {
-        return 0.0;
+      if (!doubleValueValid) {
+        doubleValue = computeDouble();
+        doubleValueValid = true;
       }
 
-      final Double theDouble = Doubles.tryParse(value);
-      return theDouble == null ? 0.0 : theDouble;
+      return doubleValue;
+    }
+
+    @Nullable
+    @Override
+    public String asString()
+    {
+      return value;
+    }
+
+    private int computeInt()
+    {
+      return computeNumber().intValue();
+    }
+
+    private long computeLong()
+    {
+      return computeNumber().longValue();
+    }
+
+    private double computeDouble()
+    {
+      return computeNumber().doubleValue();
+    }
+
+    private Number computeNumber()
+    {
+      if (value == null) {
+        return 0.0d;
+      }
+      if (numericVal != null) {
+        // Optimization for non-null case.
+        return numericVal;
+      }
+      Number rv;
+      Long v = GuavaUtils.tryParseLong(value);
+      // Do NOT use ternary operator here, because it makes Java to convert Long to Double
+      if (v != null) {
+        rv = v;
+      } else {
+        rv = Doubles.tryParse(value);
+      }
+
+      if (rv == null) {
+        numericVal = 0.0d;
+      } else {
+        numericVal = rv;
+      }
+
+      return numericVal;
     }
 
     @Override
     public final boolean asBoolean()
     {
-      return Evals.asBoolean(value);
+      if (!booleanValueValid) {
+        booleanValue = Evals.asBoolean(value);
+        booleanValueValid = true;
+      }
+
+      return booleanValue;
     }
 
     @Override
@@ -280,9 +364,9 @@ public abstract class ExprEval<T>
     {
       switch (castTo) {
         case DOUBLE:
-          return ExprEval.of(asDouble());
+          return ExprEval.ofDouble(computeNumber());
         case LONG:
-          return ExprEval.of(asLong());
+          return ExprEval.ofLong(computeNumber());
         case STRING:
           return this;
       }

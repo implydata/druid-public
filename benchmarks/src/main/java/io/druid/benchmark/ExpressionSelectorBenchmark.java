@@ -82,7 +82,16 @@ public class ExpressionSelectorBenchmark
   {
     final BenchmarkSchemaInfo schemaInfo = new BenchmarkSchemaInfo(
         ImmutableList.of(
-            BenchmarkColumnSchema.makeNormal("n", ValueType.LONG, false, 1, 0d, 0d, 10000d, false),
+            BenchmarkColumnSchema.makeZipf(
+                "n",
+                ValueType.LONG,
+                false,
+                1,
+                0d,
+                1000,
+                10000,
+                3d
+            ),
             BenchmarkColumnSchema.makeZipf(
                 "s",
                 ValueType.STRING,
@@ -146,17 +155,12 @@ public class ExpressionSelectorBenchmark
     );
 
     final List<?> results = Sequences.toList(
-        Sequences.map(
-            cursors,
-            cursor -> {
+        cursors
+            .map(cursor -> {
               final ColumnValueSelector selector = cursor.getColumnSelectorFactory().makeColumnValueSelector("v");
-              while (!cursor.isDone()) {
-                blackhole.consume(selector.getLong());
-                cursor.advance();
-              }
+              consumeLong(cursor, selector, blackhole);
               return null;
-            }
-        ),
+            }),
         new ArrayList<>()
     );
 
@@ -235,7 +239,76 @@ public class ExpressionSelectorBenchmark
   }
 
   @Benchmark
-  public void strlenUsingExpressionAsLong(Blackhole blackhole) throws Exception
+  public void timeFormatUsingExpression(Blackhole blackhole)
+  {
+    final Sequence<Cursor> cursors = new QueryableIndexStorageAdapter(index).makeCursors(
+        null,
+        index.getDataInterval(),
+        VirtualColumns.create(
+            ImmutableList.of(
+                new ExpressionVirtualColumn(
+                    "v",
+                    "timestamp_format(__time, 'yyyy-MM-dd')",
+                    ValueType.STRING,
+                    TestExprMacroTable.INSTANCE
+                )
+            )
+        ),
+        Granularities.ALL,
+        false,
+        null
+    );
+
+    final List<?> results = Sequences.toList(
+        cursors
+            .map(cursor -> {
+              final DimensionSelector selector = cursor.getColumnSelectorFactory().makeDimensionSelector(
+                  DefaultDimensionSpec.of("v")
+              );
+              consumeDimension(cursor, selector, blackhole);
+              return null;
+            }),
+        new ArrayList<>()
+    );
+
+    blackhole.consume(results);
+  }
+
+  @Benchmark
+  public void timeFormatUsingExtractionFn(Blackhole blackhole)
+  {
+    final Sequence<Cursor> cursors = new QueryableIndexStorageAdapter(index).makeCursors(
+        null,
+        index.getDataInterval(),
+        VirtualColumns.EMPTY,
+        Granularities.ALL,
+        false,
+        null
+    );
+
+    final List<?> results = Sequences.toList(
+        cursors
+            .map(cursor -> {
+              final DimensionSelector selector = cursor
+                  .getColumnSelectorFactory()
+                  .makeDimensionSelector(
+                      new ExtractionDimensionSpec(
+                          Column.TIME_COLUMN_NAME,
+                          "v",
+                          new TimeFormatExtractionFn("yyyy-MM-dd", null, null, null, false)
+                      )
+                  );
+              consumeDimension(cursor, selector, blackhole);
+              return null;
+            }),
+        new ArrayList<>()
+    );
+
+    blackhole.consume(results);
+  }
+
+  @Benchmark
+  public void strlenUsingExpressionAsLong(Blackhole blackhole)
   {
     final Sequence<Cursor> cursors = new QueryableIndexStorageAdapter(index).makeCursors(
         null,
@@ -333,6 +406,74 @@ public class ExpressionSelectorBenchmark
               return null;
             }
         ),
+        new ArrayList<>()
+    );
+
+    blackhole.consume(results);
+  }
+
+  @Benchmark
+  public void arithmeticOnLong(Blackhole blackhole)
+  {
+    final Sequence<Cursor> cursors = new QueryableIndexStorageAdapter(index).makeCursors(
+        null,
+        index.getDataInterval(),
+        VirtualColumns.create(
+            ImmutableList.of(
+                new ExpressionVirtualColumn(
+                    "v",
+                    "n + 1",
+                    ValueType.LONG,
+                    TestExprMacroTable.INSTANCE
+                )
+            )
+        ),
+        Granularities.ALL,
+        false,
+        null
+    );
+
+    final List<?> results = Sequences.toList(
+        cursors
+            .map(cursor -> {
+              final ColumnValueSelector selector = cursor.getColumnSelectorFactory().makeColumnValueSelector("v");
+              consumeLong(cursor, selector, blackhole);
+              return null;
+            }),
+        new ArrayList<>()
+    );
+
+    blackhole.consume(results);
+  }
+
+  @Benchmark
+  public void stringConcatAndCompareOnLong(Blackhole blackhole)
+  {
+    final Sequence<Cursor> cursors = new QueryableIndexStorageAdapter(index).makeCursors(
+        null,
+        index.getDataInterval(),
+        VirtualColumns.create(
+            ImmutableList.of(
+                new ExpressionVirtualColumn(
+                    "v",
+                    "concat(n, ' is my favorite number') == '3 is my favorite number'",
+                    ValueType.LONG,
+                    TestExprMacroTable.INSTANCE
+                )
+            )
+        ),
+        Granularities.ALL,
+        false,
+        null
+    );
+
+    final List<?> results = Sequences.toList(
+        cursors
+            .map(cursor -> {
+              final ColumnValueSelector selector = cursor.getColumnSelectorFactory().makeColumnValueSelector("v");
+              consumeLong(cursor, selector, blackhole);
+              return null;
+            }),
         new ArrayList<>()
     );
 

@@ -26,6 +26,7 @@ import com.google.common.io.Files;
 import io.druid.data.input.InputRow;
 import io.druid.data.input.impl.DimensionSchema;
 import io.druid.data.input.impl.DimensionsSpec;
+import io.druid.data.input.impl.DoubleDimensionSchema;
 import io.druid.data.input.impl.FloatDimensionSchema;
 import io.druid.data.input.impl.LongDimensionSchema;
 import io.druid.data.input.impl.StringDimensionSchema;
@@ -33,7 +34,6 @@ import io.druid.hll.HyperLogLogHash;
 import io.druid.java.util.common.ISE;
 import io.druid.java.util.common.granularity.Granularity;
 import io.druid.java.util.common.logger.Logger;
-import io.druid.segment.writeout.OffHeapMemorySegmentWriteOutMediumFactory;
 import io.druid.query.aggregation.AggregatorFactory;
 import io.druid.query.aggregation.hyperloglog.HyperUniquesSerde;
 import io.druid.segment.IndexBuilder;
@@ -43,6 +43,7 @@ import io.druid.segment.QueryableIndexIndexableAdapter;
 import io.druid.segment.TestHelper;
 import io.druid.segment.incremental.IncrementalIndexSchema;
 import io.druid.segment.serde.ComplexMetrics;
+import io.druid.segment.writeout.OffHeapMemorySegmentWriteOutMediumFactory;
 import io.druid.timeline.DataSegment;
 import org.apache.commons.io.FileUtils;
 
@@ -98,6 +99,9 @@ public class SegmentGenerator implements Closeable
             break;
           case LONG:
             dimensions.add(new LongDimensionSchema(columnSchema.getName()));
+            break;
+          case DOUBLE:
+            dimensions.add(new DoubleDimensionSchema(columnSchema.getName()));
             break;
           case FLOAT:
             dimensions.add(new FloatDimensionSchema(columnSchema.getName()));
