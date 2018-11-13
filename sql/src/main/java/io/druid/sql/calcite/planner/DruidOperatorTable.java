@@ -47,6 +47,7 @@ import io.druid.sql.calcite.expression.builtin.ExtractOperatorConversion;
 import io.druid.sql.calcite.expression.builtin.FloorOperatorConversion;
 import io.druid.sql.calcite.expression.builtin.LTrimOperatorConversion;
 import io.druid.sql.calcite.expression.builtin.MillisToTimestampOperatorConversion;
+import io.druid.sql.calcite.expression.builtin.PositionOperatorConversion;
 import io.druid.sql.calcite.expression.builtin.RTrimOperatorConversion;
 import io.druid.sql.calcite.expression.builtin.RegexpExtractOperatorConversion;
 import io.druid.sql.calcite.expression.builtin.ReinterpretOperatorConversion;
@@ -144,6 +145,7 @@ public class DruidOperatorTable implements SqlOperatorTable
           .add(new MillisToTimestampOperatorConversion())
           .add(new ReinterpretOperatorConversion())
           .add(new RegexpExtractOperatorConversion())
+          .add(new PositionOperatorConversion())
           .add(new StrposOperatorConversion())
           .add(new SubstringOperatorConversion())
           .add(new AliasedOperatorConversion(new SubstringOperatorConversion(), "SUBSTR"))

@@ -939,14 +939,22 @@ interface Function
     @Override
     public ExprEval apply(List<Expr> args, Expr.ObjectBinding bindings)
     {
-      if (args.size() != 2) {
-        throw new IAE("Function[%s] needs 2 arguments", name());
+      if (args.size() < 2 || args.size() > 3) {
+        throw new IAE("Function[%s] needs 2 or 3 arguments", name());
       }
 
       final String haystack = Strings.nullToEmpty(args.get(0).eval(bindings).asString());
       final String needle = Strings.nullToEmpty(args.get(1).eval(bindings).asString());
 
-      return ExprEval.of(haystack.indexOf(needle));
+      final int fromIndex;
+
+      if (args.size() >= 3) {
+        fromIndex = args.get(2).eval(bindings).asInt();
+      } else {
+        fromIndex = 0;
+      }
+
+      return ExprEval.of(haystack.indexOf(needle, fromIndex));
     }
   }
 
