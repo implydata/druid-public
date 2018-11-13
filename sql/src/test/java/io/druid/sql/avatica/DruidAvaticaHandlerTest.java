@@ -326,7 +326,7 @@ public class DruidAvaticaHandlerTest extends CalciteTestBase
     final DatabaseMetaData metaData = client.getMetaData();
     Assert.assertEquals(
         ImmutableList.of(
-            ROW(Pair.of("TABLE_CAT", ""))
+            ROW(Pair.of("TABLE_CAT", "druid"))
         ),
         getRows(metaData.getCatalogs())
     );
@@ -338,7 +338,7 @@ public class DruidAvaticaHandlerTest extends CalciteTestBase
     final DatabaseMetaData metaData = client.getMetaData();
     Assert.assertEquals(
         ImmutableList.of(
-            ROW(Pair.of("TABLE_CATALOG", ""), Pair.of("TABLE_SCHEM", "druid"))
+            ROW(Pair.of("TABLE_CATALOG", "druid"), Pair.of("TABLE_SCHEM", "druid"))
         ),
         getRows(metaData.getSchemas(null, "druid"))
     );
@@ -351,13 +351,13 @@ public class DruidAvaticaHandlerTest extends CalciteTestBase
     Assert.assertEquals(
         ImmutableList.of(
             ROW(
-                Pair.of("TABLE_CAT", ""),
+                Pair.of("TABLE_CAT", "druid"),
                 Pair.of("TABLE_NAME", "foo"),
                 Pair.of("TABLE_SCHEM", "druid"),
                 Pair.of("TABLE_TYPE", "TABLE")
             ),
             ROW(
-                Pair.of("TABLE_CAT", ""),
+                Pair.of("TABLE_CAT", "druid"),
                 Pair.of("TABLE_NAME", "foo2"),
                 Pair.of("TABLE_SCHEM", "druid"),
                 Pair.of("TABLE_TYPE", "TABLE")
@@ -377,19 +377,19 @@ public class DruidAvaticaHandlerTest extends CalciteTestBase
     Assert.assertEquals(
         ImmutableList.of(
             ROW(
-                Pair.of("TABLE_CAT", ""),
+                Pair.of("TABLE_CAT", "druid"),
                 Pair.of("TABLE_NAME", CalciteTests.DATASOURCE1),
                 Pair.of("TABLE_SCHEM", "druid"),
                 Pair.of("TABLE_TYPE", "TABLE")
             ),
             ROW(
-                Pair.of("TABLE_CAT", ""),
+                Pair.of("TABLE_CAT", "druid"),
                 Pair.of("TABLE_NAME", CalciteTests.DATASOURCE2),
                 Pair.of("TABLE_SCHEM", "druid"),
                 Pair.of("TABLE_TYPE", "TABLE")
             ),
             ROW(
-                Pair.of("TABLE_CAT", ""),
+                Pair.of("TABLE_CAT", "druid"),
                 Pair.of("TABLE_NAME", CalciteTests.FORBIDDEN_DATASOURCE),
                 Pair.of("TABLE_SCHEM", "druid"),
                 Pair.of("TABLE_TYPE", "TABLE")
