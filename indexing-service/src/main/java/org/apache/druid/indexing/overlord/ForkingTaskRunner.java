@@ -582,8 +582,9 @@ public class ForkingTaskRunner implements TaskRunner, TaskLogStreamer
   }
 
   @Override
-  public void shutdown(final String taskid)
+  public void shutdown(final String taskid, String reason)
   {
+    log.info("Shutdown [%s] because: [%s]", taskid, reason);
     final ForkingTaskRunnerWorkItem taskInfo;
 
     synchronized (tasks) {
