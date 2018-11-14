@@ -354,6 +354,11 @@ public class TaskQueue
     tasks.remove(task);
   }
 
+  public void shutdown(final String taskId)
+  {
+    this.shutdown(taskId, "");
+  }
+
   /**
    * Shuts down a task if it has not yet finished.
    *
