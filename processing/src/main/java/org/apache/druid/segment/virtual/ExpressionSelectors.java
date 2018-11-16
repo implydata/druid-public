@@ -23,7 +23,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Supplier;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Maps;
 import org.apache.druid.common.config.NullHandling;
 import org.apache.druid.math.expr.Expr;
 import org.apache.druid.math.expr.ExprEval;
@@ -48,6 +47,7 @@ import org.apache.druid.segment.data.IndexedInts;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -237,8 +237,9 @@ public class ExpressionSelectors
 
   private static Expr.ObjectBinding createBindings(Expr expression, ColumnSelectorFactory columnSelectorFactory)
   {
-    final Map<String, Supplier<Object>> suppliers = Maps.newHashMap();
-    for (String columnName : Parser.findRequiredBindings(expression)) {
+    final Map<String, Supplier<Object>> suppliers = new HashMap<>();
+    final List<String> columns = Parser.findRequiredBindings(expression);
+    for (String columnName : columns) {
       final ColumnCapabilities columnCapabilities = columnSelectorFactory
           .getColumnCapabilities(columnName);
       final ValueType nativeType = columnCapabilities != null ? columnCapabilities.getType() : null;
@@ -276,8 +277,9 @@ public class ExpressionSelectors
 
     if (suppliers.isEmpty()) {
       return ExprUtils.nilBindings();
-    } else if (suppliers.size() == 1) {
-      // If there's only one supplier, we can skip the Map and just use that supplier when asked for something.
+    } else if (suppliers.size() == 1 && columns.size() == 1) {
+      // If there's only one column (and it has a supplier), we can skip the Map and just use that supplier when
+      // asked for something.
       final String column = Iterables.getOnlyElement(suppliers.keySet());
       final Supplier<Object> supplier = Iterables.getOnlyElement(suppliers.values());
 
