@@ -2190,7 +2190,10 @@ public class KafkaSupervisorTest extends EasyMockSupport
 
     verifyAll();
 
-    Assert.assertNotNull(serviceEmitter.getStackTrace());
+    while (serviceEmitter.getStackTrace() == null) {
+      Thread.sleep(100);
+    }
+    Assert.assertTrue(serviceEmitter.getStackTrace().startsWith("io.druid.java.util.common.ISE: WTH?! cannot find"));
     Assert.assertEquals(
         "WTH?! cannot find taskGroup [0] among all taskGroups [{}]",
         serviceEmitter.getExceptionMessage()
