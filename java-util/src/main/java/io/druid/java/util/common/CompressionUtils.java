@@ -38,7 +38,10 @@ import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.StandardOpenOption;
 import java.util.Enumeration;
 import java.util.concurrent.Callable;
 import java.util.zip.GZIPInputStream;
@@ -74,16 +77,19 @@ public class CompressionUtils
       log.warn("No .zip suffix[%s], putting files from [%s] into it anyway.", outputZipFile, directory);
     }
 
-    try (final FileOutputStream out = new FileOutputStream(outputZipFile)) {
-      long bytes = zip(directory, out);
-
-      // For explanation of why fsyncing here is a good practice:
-      // https://github.com/druid-io/druid/pull/5187#pullrequestreview-85188984
-      if (fsync) {
-        out.getChannel().force(true);
+    if (fsync) {
+      return FileUtils.writeAtomically(outputZipFile, out -> zip(directory, out));
+    } else {
+      try (
+          final FileChannel fileChannel = FileChannel.open(
+              outputZipFile.toPath(),
+              StandardOpenOption.WRITE,
+              StandardOpenOption.CREATE
+          );
+          final OutputStream out = Channels.newOutputStream(fileChannel)
+      ) {
+        return zip(directory, out);
       }
-
-      return bytes;
     }
   }
 
