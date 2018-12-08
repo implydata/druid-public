@@ -78,7 +78,7 @@
         <netty4.version>4.0.52.Final</netty4.version>
         <slf4j.version>1.7.12</slf4j.version>
         <!-- If compiling with different hadoop version also modify default hadoop coordinates in TaskConfig.java -->
-        <hadoop.compile.version>2.7.3</hadoop.compile.version>
+        <hadoop.compile.version>2.7.3.2.6.3.0-235</hadoop.compile.version>
         <hive.version>2.0.0</hive.version>
         <powermock.version>1.6.6</powermock.version>
         <!-- Cannot update to AWS SDK 1.11+ because of Jackson incompatibility.
@@ -1308,4 +1308,23 @@
             </build>
         </profile>
     </profiles>
+
+    <repositories>
+        <repository>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <id>hortonworks.extrepo</id>
+            <name>Hortonworks HDP</name>
+            <url>http://repo.hortonworks.com/content/repositories/releases</url>
+        </repository>
+        <repository>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <id>hortonworks.other</id>
+            <name>Hortonworks Other Dependencies</name>
+            <url>http://repo.hortonworks.com/content/groups/public</url>
+        </repository>
+    </repositories>
 </project>
