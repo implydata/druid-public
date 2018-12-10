@@ -115,6 +115,9 @@
                                 <argument>io.druid.extensions:simple-client-sslcontext</argument>
                                 <argument>-c</argument>
                                 <argument>io.druid.extensions:druid-basic-security</argument>
+                                <!-- Add ORC extension, even though it's contrib, because HDP <3 ORC -->
+                                <argument>-c</argument>
+                                <argument>io.druid.extensions.contrib:druid-orc-extensions</argument>
                                 <argument>${druid.distribution.pulldeps.opts}</argument>
                             </arguments>
                         </configuration>
