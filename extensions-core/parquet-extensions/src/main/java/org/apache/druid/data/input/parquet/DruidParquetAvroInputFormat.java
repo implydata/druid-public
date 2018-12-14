@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.druid.data.input.parquet.avro;
+package org.apache.druid.data.input.parquet;
 
 import org.apache.avro.generic.GenericRecord;
 import org.apache.parquet.avro.DruidParquetAvroReadSupport;
