@@ -116,7 +116,7 @@ public class SegmentMetadataUpdateAction implements TaskAction<Void>
   public String toString()
   {
     return "SegmentMetadataUpdateAction{" +
-           "segments=" + segments +
+           "segments=" + segments.stream().map(DataSegment::getIdentifier).collect(Collectors.joining(",")) +
            '}';
   }
 }
