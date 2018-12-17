@@ -27,7 +27,6 @@ import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.PeekingIterator;
 import com.google.common.collect.Sets;
-import com.google.common.primitives.Ints;
 import com.google.inject.ImplementedBy;
 import io.druid.common.utils.SerializerUtils;
 import io.druid.java.util.common.ByteBufferUtils;
@@ -444,19 +443,23 @@ public interface IndexMerger
           }
       );
       conversions = new IntBuffer[dimValueLookups.length];
+
+      long mergeBufferTotalSize = 0;
       for (int i = 0; i < conversions.length; i++) {
         if (dimValueLookups[i] == null) {
           continue;
         }
         Indexed<String> indexed = dimValueLookups[i];
         if (useDirect) {
-          int allocationSize = indexed.size() * Ints.BYTES;
-          log.info("Allocating dictionary merging direct buffer with size[%,d]", allocationSize);
+          int allocationSize = indexed.size() * Integer.BYTES;
+          log.debug("Allocating dictionary merging direct buffer with size[%,d]", allocationSize);
+          mergeBufferTotalSize += allocationSize;
           final ByteBuffer conversionDirectBuffer = ByteBuffer.allocateDirect(allocationSize);
           conversions[i] = conversionDirectBuffer.asIntBuffer();
           directBufferAllocations.add(new Pair<>(conversionDirectBuffer, allocationSize));
         } else {
           conversions[i] = IntBuffer.allocate(indexed.size());
+          mergeBufferTotalSize += indexed.size();
         }
 
         final PeekingIterator<String> iter = Iterators.peekingIterator(
@@ -476,6 +479,7 @@ public interface IndexMerger
           pQueue.add(Pair.of(i, iter));
         }
       }
+      log.info("Allocated [%,d] bytes of dictionary merging direct buffers", mergeBufferTotalSize);
     }
 
     @Override
@@ -536,10 +540,13 @@ public interface IndexMerger
     @Override
     public void close()
     {
+      long mergeBufferTotalSize = 0;
       for (Pair<ByteBuffer, Integer> bufferAllocation : directBufferAllocations) {
-        log.info("Freeing dictionary merging direct buffer with size[%,d]", bufferAllocation.rhs);
+        log.debug("Freeing dictionary merging direct buffer with size[%,d]", bufferAllocation.rhs);
+        mergeBufferTotalSize += bufferAllocation.rhs;
         ByteBufferUtils.free(bufferAllocation.lhs);
       }
+      log.info("Freed [,%d] bytes of dictionary merging direct buffers", mergeBufferTotalSize);
     }
   }
 }
