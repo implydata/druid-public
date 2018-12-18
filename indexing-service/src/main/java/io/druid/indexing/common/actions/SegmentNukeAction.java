@@ -31,6 +31,7 @@ import io.druid.java.util.common.ISE;
 import io.druid.java.util.emitter.service.ServiceMetricEvent;
 import io.druid.query.DruidMetrics;
 import io.druid.timeline.DataSegment;
+import io.druid.timeline.DataSegmentUtils;
 import org.joda.time.Interval;
 
 import java.io.IOException;
@@ -117,7 +118,7 @@ public class SegmentNukeAction implements TaskAction<Void>
   public String toString()
   {
     return "SegmentNukeAction{" +
-           "segments=" + segments.stream().map(DataSegment::getIdentifier).collect(Collectors.joining(",")) +
+           "segments=" + DataSegmentUtils.getIdentifiersString(segments) +
            '}';
   }
 }

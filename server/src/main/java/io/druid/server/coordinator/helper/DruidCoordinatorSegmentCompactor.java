@@ -29,6 +29,7 @@ import io.druid.server.coordinator.CoordinatorStats;
 import io.druid.server.coordinator.DataSourceCompactionConfig;
 import io.druid.server.coordinator.DruidCoordinatorRuntimeParams;
 import io.druid.timeline.DataSegment;
+import io.druid.timeline.DataSegmentUtils;
 import io.druid.timeline.VersionedIntervalTimeline;
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
 
@@ -159,7 +160,7 @@ public class DruidCoordinatorSegmentCompactor implements DruidCoordinatorHelper
         LOG.info(
             "Submitted a compactTask[%s] for segments[%s]",
             taskId,
-            segmentsToCompact.stream().map(DataSegment::getIdentifier).collect(Collectors.joining(","))
+            DataSegmentUtils.getIdentifiersString(segmentsToCompact)
         );
       } else if (segmentsToCompact.size() == 1) {
         throw new ISE("Found one segments[%s] to compact", segmentsToCompact);

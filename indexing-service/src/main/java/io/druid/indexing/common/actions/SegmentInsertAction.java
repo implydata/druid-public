@@ -25,10 +25,10 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.collect.ImmutableSet;
 import io.druid.indexing.common.task.Task;
 import io.druid.timeline.DataSegment;
+import io.druid.timeline.DataSegmentUtils;
 
 import java.io.IOException;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Insert segments into metadata storage. The segment versions must all be less than or equal to a lock held by
@@ -85,7 +85,7 @@ public class SegmentInsertAction implements TaskAction<Set<DataSegment>>
   public String toString()
   {
     return "SegmentInsertAction{" +
-           "segments=" + segments.stream().map(DataSegment::getIdentifier).collect(Collectors.joining(",")) +
+           "segments=" + DataSegmentUtils.getIdentifiersString(segments) +
            '}';
   }
 }
