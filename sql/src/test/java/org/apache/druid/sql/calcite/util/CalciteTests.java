@@ -564,8 +564,8 @@ public class CalciteTests
         TEST_AUTHENTICATOR_ESCALATOR
     );
 
-    schema.start();
     try {
+      schema.start();
       schema.awaitInitialization();
     }
     catch (InterruptedException e) {

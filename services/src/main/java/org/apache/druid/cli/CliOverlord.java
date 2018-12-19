@@ -192,7 +192,7 @@ public class CliOverlord extends ServerRunnable
             binder.bind(SupervisorManager.class).in(LazySingleton.class);
 
             binder.bind(IndexingServiceClient.class).to(HttpIndexingServiceClient.class).in(LazySingleton.class);
-            binder.bind(new TypeLiteral<IndexTaskClientFactory<ParallelIndexTaskClient>>(){})
+            binder.bind(new TypeLiteral<IndexTaskClientFactory<ParallelIndexTaskClient>>() {})
                   .toProvider(Providers.of(null));
             binder.bind(ChatHandlerProvider.class).toProvider(Providers.of(null));
 
@@ -234,12 +234,11 @@ public class CliOverlord extends ServerRunnable
               LifecycleModule.register(binder, Server.class);
             }
 
-            binder
-                .bind(DiscoverySideEffectsProvider.Child.class)
-                .annotatedWith(IndexingService.class)
-                .toProvider(new DiscoverySideEffectsProvider(NodeType.OVERLORD, ImmutableList.of()))
-                .in(LazySingleton.class);
-            LifecycleModule.registerKey(binder, Key.get(DiscoverySideEffectsProvider.Child.class, IndexingService.class));
+            bindAnnouncer(
+                binder,
+                IndexingService.class,
+                DiscoverySideEffectsProvider.builder(NodeType.OVERLORD).build()
+            );
           }
 
           private void configureTaskStorage(Binder binder)
@@ -280,10 +279,14 @@ public class CliOverlord extends ServerRunnable
             biddy.addBinding("local").to(ForkingTaskRunnerFactory.class);
             binder.bind(ForkingTaskRunnerFactory.class).in(LazySingleton.class);
 
-            biddy.addBinding(RemoteTaskRunnerFactory.TYPE_NAME).to(RemoteTaskRunnerFactory.class).in(LazySingleton.class);
+            biddy.addBinding(RemoteTaskRunnerFactory.TYPE_NAME)
+                 .to(RemoteTaskRunnerFactory.class)
+                 .in(LazySingleton.class);
             binder.bind(RemoteTaskRunnerFactory.class).in(LazySingleton.class);
 
-            biddy.addBinding(HttpRemoteTaskRunnerFactory.TYPE_NAME).to(HttpRemoteTaskRunnerFactory.class).in(LazySingleton.class);
+            biddy.addBinding(HttpRemoteTaskRunnerFactory.TYPE_NAME)
+                 .to(HttpRemoteTaskRunnerFactory.class)
+                 .in(LazySingleton.class);
             binder.bind(HttpRemoteTaskRunnerFactory.class).in(LazySingleton.class);
 
             JacksonConfigProvider.bind(binder, WorkerBehaviorConfig.CONFIG_KEY, WorkerBehaviorConfig.class, null);
