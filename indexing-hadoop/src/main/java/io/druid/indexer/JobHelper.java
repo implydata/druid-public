@@ -504,7 +504,6 @@ public class JobHelper
                   progressable
               )) {
                 HadoopDruidIndexerConfig.JSON_MAPPER.writeValue(descriptorOut, segment);
-                descriptorOut.flush();
               }
             }
             catch (RuntimeException | IOException ex) {
