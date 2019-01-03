@@ -29,7 +29,7 @@
     <parent>
         <groupId>io.druid</groupId>
         <artifactId>druid</artifactId>
-        <version>0.12.3-iap11-hdp263-3-SNAPSHOT</version>
+        <version>0.12.3-iap11-hdp262-3</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
