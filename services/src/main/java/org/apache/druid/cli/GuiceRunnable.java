@@ -25,6 +25,7 @@ import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Module;
+import org.apache.druid.common.utils.VMUtils;
 import org.apache.druid.initialization.Initialization;
 import org.apache.druid.java.util.common.lifecycle.Lifecycle;
 import org.apache.druid.java.util.common.logger.Logger;
@@ -81,10 +82,11 @@ public abstract class GuiceRunnable implements Runnable
       final StartupLoggingConfig startupLoggingConfig = injector.getInstance(StartupLoggingConfig.class);
 
       log.info(
-          "Starting up with processors[%,d], memory[%,d], maxMemory[%,d].",
+          "Starting up with processors[%,d], memory[%,d], maxMemory[%,d], directMemory[%,d].",
           Runtime.getRuntime().availableProcessors(),
           Runtime.getRuntime().totalMemory(),
-          Runtime.getRuntime().maxMemory()
+          Runtime.getRuntime().maxMemory(),
+          VMUtils.getMaxDirectMemory()
       );
 
       if (startupLoggingConfig.isLogProperties()) {
