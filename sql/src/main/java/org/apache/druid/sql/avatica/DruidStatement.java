@@ -306,11 +306,11 @@ public class DruidStatement implements Closeable
   @Override
   public void close()
   {
-    synchronized (lock) {
-      final State oldState = state;
-      state = State.DONE;
-
-      try {
+    State oldState = null;
+    try {
+      synchronized (lock) {
+        oldState = state;
+        state = State.DONE;
         if (yielder != null) {
           Yielder<Object[]> theYielder = this.yielder;
           this.yielder = null;
@@ -327,28 +327,28 @@ public class DruidStatement implements Closeable
           yielderOpenCloseExecutor.shutdownNow();
         }
       }
-      catch (Throwable t) {
-        if (oldState != State.DONE) {
-          // First close. Run the onClose function.
-          try {
-            onClose.run();
-          }
-          catch (Throwable t1) {
-            t.addSuppressed(t1);
-          }
-        }
-
-        throw Throwables.propagate(t);
-      }
-
+    }
+    catch (Throwable t) {
       if (oldState != State.DONE) {
         // First close. Run the onClose function.
         try {
           onClose.run();
         }
-        catch (Throwable t) {
-          throw Throwables.propagate(t);
+        catch (Throwable t1) {
+          t.addSuppressed(t1);
         }
+      }
+
+      throw Throwables.propagate(t);
+    }
+
+    if (oldState != State.DONE) {
+      // First close. Run the onClose function.
+      try {
+        onClose.run();
+      }
+      catch (Throwable t) {
+        throw Throwables.propagate(t);
       }
     }
   }

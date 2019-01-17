@@ -31,9 +31,10 @@ import org.apache.druid.java.util.common.logger.Logger;
 
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -54,10 +55,14 @@ public class DruidConnection
   private final AtomicInteger statementCounter = new AtomicInteger();
   private final AtomicReference<Future<?>> timeoutFuture = new AtomicReference<>();
 
-  @GuardedBy("statements")
-  private final Map<Integer, DruidStatement> statements;
+  // Typically synchronized by connectionLock, except in one case: the onClose function passed
+  // into DruidStatements contained by the map.
+  private final ConcurrentMap<Integer, DruidStatement> statements;
 
-  @GuardedBy("statements")
+  @GuardedBy("connectionLock")
+  private final Object connectionLock = new Object();
+
+  @GuardedBy("connectionLock")
   private boolean open = true;
 
   public DruidConnection(final String connectionId, final int maxStatements, final Map<String, Object> context)
@@ -65,14 +70,14 @@ public class DruidConnection
     this.connectionId = Preconditions.checkNotNull(connectionId);
     this.maxStatements = maxStatements;
     this.context = ImmutableMap.copyOf(context);
-    this.statements = new HashMap<>();
+    this.statements = new ConcurrentHashMap<>();
   }
 
   public DruidStatement createStatement()
   {
     final int statementId = statementCounter.incrementAndGet();
 
-    synchronized (statements) {
+    synchronized (connectionLock) {
       if (statements.containsKey(statementId)) {
         // Will only happen if statementCounter rolls over before old statements are cleaned up. If this
         // ever happens then something fishy is going on, because we shouldn't have billions of statements.
@@ -104,10 +109,9 @@ public class DruidConnection
           ImmutableSortedMap.copyOf(sanitizedContext),
           () -> {
             // onClose function for the statement
-            synchronized (statements) {
-              log.debug("Connection[%s] closed statement[%s].", connectionId, statementId);
-              statements.remove(statementId);
-            }
+            log.debug("Connection[%s] closed statement[%s].", connectionId, statementId);
+            // statements will be accessed unsynchronized to avoid deadlock
+            statements.remove(statementId);
           }
       );
 
@@ -119,7 +123,7 @@ public class DruidConnection
 
   public DruidStatement getStatement(final int statementId)
   {
-    synchronized (statements) {
+    synchronized (connectionLock) {
       return statements.get(statementId);
     }
   }
@@ -131,7 +135,7 @@ public class DruidConnection
    */
   public boolean closeIfEmpty()
   {
-    synchronized (statements) {
+    synchronized (connectionLock) {
       if (statements.isEmpty()) {
         close();
         return true;
@@ -143,7 +147,7 @@ public class DruidConnection
 
   public void close()
   {
-    synchronized (statements) {
+    synchronized (connectionLock) {
       // Copy statements before iterating because statement.close() modifies it.
       for (DruidStatement statement : ImmutableList.copyOf(statements.values())) {
         try {
