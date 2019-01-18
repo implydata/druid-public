@@ -28,6 +28,7 @@ import io.druid.java.util.common.DateTimes;
 import io.druid.java.util.common.StringUtils;
 import io.druid.java.util.common.guava.Sequences;
 import io.druid.query.Druids;
+import io.druid.query.Druids.SearchQueryBuilder;
 import io.druid.query.QueryPlus;
 import io.druid.query.QueryRunner;
 import io.druid.query.Result;
@@ -47,6 +48,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 import static io.druid.query.QueryRunnerTestHelper.NOOP_QUERYWATCHER;
 import static io.druid.query.QueryRunnerTestHelper.NoopIntervalChunkingQueryRunnerDecorator;
@@ -232,6 +234,23 @@ public class SearchQueryRunnerWithCaseTest
     searchQuery = builder.fragments(Arrays.asList("auto", "ve"), true).build();
     expectedResults.put(qualityDimension, Sets.newHashSet("automotive"));
     checkSearchQuery(searchQuery, expectedResults);
+  }
+
+  @Test
+  public void testFallbackToCursorBasedPlan()
+  {
+    final SearchQueryBuilder builder = testBuilder();
+    final SearchQuery query = builder.filters("qualityLong", "1000").build();
+    final Map<String, Set<String>> expectedResults = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    expectedResults.put("qualityLong", Sets.newHashSet("1000"));
+    expectedResults.put("qualityDouble", Sets.newHashSet("10000.0"));
+    expectedResults.put("qualityFloat", Sets.newHashSet("10000.0"));
+    expectedResults.put("qualityNumericString", Sets.newHashSet("100000"));
+    expectedResults.put("quality", Sets.newHashSet("AutoMotive", "automotive"));
+    expectedResults.put("placement", Sets.newHashSet("PREFERRED", "preferred"));
+    expectedResults.put("placementish", Sets.newHashSet("a", "preferred"));
+    expectedResults.put("market", Sets.newHashSet("spot"));
+    checkSearchQuery(query, expectedResults);
   }
 
   private void checkSearchQuery(SearchQuery searchQuery, Map<String, Set<String>> expectedResults)
