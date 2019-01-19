@@ -1,5 +1,9 @@
 #!/bin/bash -eu
 
+set -e
+
+#pushd web-console
+
 rm -rf build
 
 echo "Transpiling TypeScript..."
@@ -12,3 +16,5 @@ echo "Webpacking everything..."
 ./node_modules/.bin/webpack -c webpack.config.js --silent
 
 echo "Done! Have a good day."
+
+#popd
