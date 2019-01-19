@@ -1,0 +1,14 @@
+#!/bin/bash -eu
+
+rm -rf build
+
+echo "Transpiling TypeScript..."
+./node_modules/.bin/tsc
+
+echo "Transpiling SCSS files..."
+./node_modules/.bin/node-sass-chokidar --quiet --output-style=compressed  src/ --output ./public/
+
+echo "Webpacking everything..."
+./node_modules/.bin/webpack -c webpack.config.js --silent
+
+echo "Done! Have a good day."
