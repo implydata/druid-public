@@ -252,7 +252,7 @@ GROUP BY 1`);
               } else {
                 text = `${rules.length} rules`;
               }
-              return <span>{text} (<a onClick={() => alert('ToDo')}>change</a>)</span>;
+              return <span>{text} <a onClick={() => alert('ToDo')}>&#9998;</a></span>;
             }
           },
           {
@@ -268,7 +268,7 @@ GROUP BY 1`);
               } else {
                 text = 'None';
               }
-              return <span>{text} (<a onClick={() => alert('ToDo')}>change</a>)</span>;
+              return <span>{text} <a onClick={() => alert('ToDo')}>&#9998;</a></span>;
             }
           },
           {
