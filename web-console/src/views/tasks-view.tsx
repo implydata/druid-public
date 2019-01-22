@@ -332,7 +332,8 @@ FROM sys.tasks`);
           {
             Header: "Task ID",
             accessor: "task_id",
-            width: 300
+            width: 300,
+            Aggregated: row => ''
           },
           {
             Header: "Type",
@@ -352,7 +353,8 @@ FROM sys.tasks`);
           },
           {
             Header: "Created time",
-            accessor: "created_time"
+            accessor: "created_time",
+            Aggregated: row => ''
           },
           {
             Header: "Status",
