@@ -28,7 +28,7 @@ import {
   Intent, Checkbox
 } from "@blueprintjs/core";
 import { AsyncActionDialog } from '../dialogs/async-action-dialog';
-import { addFilter, formatNumber, formatBytes, countBy, QueryManager } from "../utils";
+import { addFilter, formatNumber, formatBytes, countBy, lookupBy, QueryManager } from "../utils";
 import "./data-source-view.css";
 
 export interface DataSourcesViewProps extends React.Props<any> {
@@ -78,10 +78,15 @@ export class DataSourcesView extends React.Component<DataSourcesViewProps, DataS
         const rules = rulesResp.data;
         const defaultRules = rules['_default'];
 
+        const compactionResp = await axios.get('/druid/coordinator/v1/config/compaction');
+        const compaction = lookupBy(compactionResp.data.compactionConfigs, (c: any) => c.dataSource);
+        console.log('compaction', compaction);
+
         const allDatasources = dataSources.concat(disabled.map(d => ({ datasource: d, disabled: true })));
         allDatasources.forEach((ds: any) => {
           ds.rules = rules[ds.datasource] || [];
           ds.defaultRules = defaultRules;
+          ds.compaction = compaction[ds.datasource];
         });
 
         return allDatasources;
@@ -241,13 +246,29 @@ GROUP BY 1`);
               const { rules } = row.original;
               let text: string;
               if (rules.length === 0) {
-                text = 'default';
+                text = 'Cluster default';
               } else if (rules.length === 1) {
                 text = rules[0].type;
               } else {
                 text = `${rules.length} rules`;
               }
-              return <span>{text} <a onClick={() => alert('ToDo')}>(change)</a></span>;
+              return <span>{text} (<a onClick={() => alert('ToDo')}>change</a>)</span>;
+            }
+          },
+          {
+            Header: 'Compaction',
+            id: 'compaction',
+            accessor: (row) => Boolean(row.compaction),
+            filterable: false,
+            Cell: row => {
+              const { compaction } = row.original;
+              let text: string;
+              if (compaction) {
+                text = `Target: ${formatBytes(compaction.targetCompactionSizeBytes)}`;
+              } else {
+                text = 'None';
+              }
+              return <span>{text} (<a onClick={() => alert('ToDo')}>change</a>)</span>;
             }
           },
           {

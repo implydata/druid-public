@@ -75,6 +75,15 @@ export function countBy<T>(array: T[], fn: (x: T, index: number) => string = Str
   return counts;
 }
 
+export function lookupBy<T>(array: T[], fn: (x: T, index: number) => string = String): Record<string, T> {
+  const lookup: Record<string, T> = {};
+  for (let i = 0; i < array.length; i++) {
+    const key = fn(array[i], i);
+    lookup[key] = array[i];
+  }
+  return lookup;
+}
+
 export function formatNumber(n: number): string {
   return numeral(n).format('0,0');
 }
