@@ -51,6 +51,7 @@ export interface TasksViewState {
 function statusToColor(status: string): string {
   switch (status) {
     case 'RUNNING': return '#2167d5';
+    case 'WAITING': return '#d5631a';
     case 'PENDING': return '#ffbf00';
     case 'SUCCESS': return '#57d500';
     case 'FAILED': return '#d5100a';
@@ -112,7 +113,8 @@ export class TasksView extends React.Component<TasksViewProps, TasksViewState> {
     });
 
     this.taskQueryManager.runQuery(`SELECT
-  "task_id", "type", "datasource", "created_time", "status", "runner_status"
+  "task_id", "type", "datasource", "created_time",
+  CASE WHEN "status" = 'RUNNING' THEN "runner_status" ELSE "status" END AS "status"
 FROM sys.tasks`);
   }
 
@@ -245,9 +247,12 @@ FROM sys.tasks`);
             accessor: (row) => row.spec.suspended ? 'Suspended' : 'Running',
             Cell: row => {
               const value = row.value;
-              return <span
-                style={{ color: value === 'Suspended' ? '#d58512' : '#2167d5' }}
-              >{value}</span>;
+              return <span>
+                <span
+                  style={{ color: value === 'Suspended' ? '#d58512' : '#2167d5' }}
+                >&#x25cf;&nbsp;</span>
+                {value}
+              </span>;
             }
           },
           {
@@ -361,10 +366,6 @@ FROM sys.tasks`);
                 {value}
               </a>;
             }
-          },
-          {
-            Header: "Runner status",
-            accessor: "runner_status"
           },
           {
             Header: 'Actions',
