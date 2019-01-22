@@ -244,7 +244,7 @@ FROM sys.tasks`);
             Cell: row => {
               const value = row.value;
               return <span
-                style={{ color: value === 'suspended' ? '#d58512' : '#2167d5' }}
+                style={{ color: value === 'Suspended' ? '#d58512' : '#2167d5' }}
               >{value}</span>;
             }
           },

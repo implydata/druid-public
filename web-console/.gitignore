@@ -3,7 +3,6 @@ node_modules/
 resources/
 build/
 public/
-private/
 lib/*.css
 
 .tscache
