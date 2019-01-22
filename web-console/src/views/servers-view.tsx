@@ -302,12 +302,12 @@ WHERE "server_type" = 'historical'`);
       <div className="control-bar">
         <H1>Data servers</H1>
         <Button
-          rightIcon="refresh"
+          icon="refresh"
           text="Refresh"
           onClick={() => this.serverQueryManager.rerunLastQuery()}
         />
         <Button
-          rightIcon="share"
+          icon="console"
           text="Go to SQL"
           onClick={() => goToSql(this.serverQueryManager.getLastQuery())}
         />
@@ -322,7 +322,7 @@ WHERE "server_type" = 'historical'`);
       <div className="control-bar">
         <H1>MiddleManagers</H1>
         <Button
-          rightIcon="refresh"
+          icon="refresh"
           text="Refresh"
           onClick={() => this.middleManagerQueryManager.rerunLastQuery()}
         />

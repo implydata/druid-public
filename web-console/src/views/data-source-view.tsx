@@ -275,12 +275,12 @@ GROUP BY 1`);
       <div className="control-bar">
         <H1>Datasources</H1>
         <Button
-          rightIcon="refresh"
+          icon="refresh"
           text="Refresh"
           onClick={() => this.dataSourceQueryManager.rerunLastQuery()}
         />
         <Button
-          rightIcon="share"
+          icon="console"
           text="Go to SQL"
           onClick={() => goToSql(this.dataSourceQueryManager.getLastQuery())}
         />

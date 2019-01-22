@@ -215,12 +215,12 @@ export class SegmentsView extends React.Component<SegmentsViewProps, SegmentsVie
       <div className="control-bar">
         <H1>Segments</H1>
         <Button
-          rightIcon="refresh"
+          icon="refresh"
           text="Refresh"
           onClick={() => this.segmentsQueryManager.rerunLastQuery()}
         />
         <Button
-          rightIcon="share"
+          icon="console"
           text="Go to SQL"
           onClick={() => goToSql(this.segmentsQueryManager.getLastQuery().query)}
         />

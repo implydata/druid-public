@@ -396,7 +396,7 @@ FROM sys.tasks`);
       <div className="control-bar">
         <H1>Supervisors</H1>
         <Button
-          rightIcon="refresh"
+          icon="refresh"
           text="Refresh"
           onClick={() => this.supervisorQueryManager.rerunLastQuery()}
         />
@@ -406,12 +406,12 @@ FROM sys.tasks`);
       <div className="control-bar">
         <H1>Tasks</H1>
         <Button
-          rightIcon="refresh"
+          icon="refresh"
           text="Refresh"
           onClick={() => this.taskQueryManager.rerunLastQuery()}
         />
         <Button
-          rightIcon="share"
+          icon="console"
           text="Go to SQL"
           onClick={() => goToSql(this.taskQueryManager.getLastQuery())}
         />
