@@ -16,39 +16,39 @@
  * limitations under the License.
  */
 
-@import '../node_modules/normalize.css/normalize';
-@import '../node_modules/@blueprintjs/core/lib/css/blueprint';
-@import '../lib/react-table';
+@import "./variables";
 
-* {
-  position: relative;
-}
-
-html,
-body {
-  //font-family: 'Open Sans', Helvetica, Arial, sans-serif;
+.console-application {
   height: 100%;
-  overflow: hidden;
-  font-size: 13px;
-}
 
-body {
-  &.bp3-dark {
-    background: rgb(41, 55, 66);
+  .bp3-navbar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
   }
 
-  &.mouse-mode {
-    *:focus {
-      outline: none !important;
+  .bp3-navbar-group > a {
+    text-decoration: inherit;
+    color: inherit;
+  }
+
+  .view-container {
+    position: absolute;
+    top: 50px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow-y: scroll;
+    padding: $standard-padding;
+  }
+
+  .control-bar {
+    height: 45px;
+
+    & > * {
+      display: inline-block;
+      margin-right: 15px;
     }
   }
-}
-
-svg {
-  width: auto;
-  height: auto;
-}
-
-.app-container {
-  height: 100%;
 }

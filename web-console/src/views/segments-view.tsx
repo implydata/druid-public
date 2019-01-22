@@ -21,13 +21,9 @@ import * as React from 'react';
 import * as classNames from 'classnames';
 import ReactTable from "react-table";
 import { Filter } from "react-table";
-
-import {
-  H1, H5,
-  Button
-} from "@blueprintjs/core";
-
-import { addFilter, makeTextFilter, makeBooleanFilter, QueryManager, formatBytes, formatNumber } from "../utils";
+import { H1, H5, Button } from "@blueprintjs/core";
+import { addFilter, makeBooleanFilter, QueryManager, formatBytes, formatNumber } from "../utils";
+import "./segments-view.css";
 
 export interface SegmentsViewProps extends React.Props<any> {
   goToSql: (initSql: string) => void;
@@ -47,7 +43,6 @@ interface QueryAndSkip {
 }
 
 export class SegmentsView extends React.Component<SegmentsViewProps, SegmentsViewState> {
-  private mounted: boolean;
   private segmentsQueryManager: QueryManager<QueryAndSkip, any[]>;
 
   constructor(props: SegmentsViewProps, context: any) {
@@ -64,12 +59,11 @@ export class SegmentsView extends React.Component<SegmentsViewProps, SegmentsVie
     };
 
     this.segmentsQueryManager = new QueryManager({
-      processQuery: (query: QueryAndSkip) => {
-        return axios.post("/druid/v2/sql", { query: query.query })
-          .then((response) => response.data.slice(query.skip));
+      processQuery: async (query: QueryAndSkip) => {
+        const sqlResp = await axios.post("/druid/v2/sql", { query: query.query });
+        return sqlResp.data.slice(query.skip);
       },
       onStateChange: ({ result, loading, error }) => {
-        if (!this.mounted) return;
         this.setState({
           segments: result,
           loading
@@ -78,12 +72,8 @@ export class SegmentsView extends React.Component<SegmentsViewProps, SegmentsVie
     })
   }
 
-  componentDidMount(): void {
-    this.mounted = true;
-  }
-
   componentWillUnmount(): void {
-    this.mounted = false;
+    this.segmentsQueryManager.terminate();
   }
 
   private fetchData = (state: any, instance: any) => {
@@ -142,13 +132,11 @@ export class SegmentsView extends React.Component<SegmentsViewProps, SegmentsVie
         {
           Header: "Segment ID",
           accessor: "segment_id",
-          width: 300,
-          Filter: makeTextFilter()
+          width: 300
         },
         {
           Header: "Data Source",
           accessor: "datasource",
-          Filter: makeTextFilter(),
           Cell: row => {
             const value = row.value;
             return <a onClick={() => { this.setState({ segmentFilter: addFilter(segmentFilter, 'datasource', value) }) }}>{value}</a>
@@ -157,7 +145,6 @@ export class SegmentsView extends React.Component<SegmentsViewProps, SegmentsVie
         {
           Header: "Start",
           accessor: "start",
-          Filter: makeTextFilter(),
           Cell: row => {
             const value = row.value;
             return <a onClick={() => { this.setState({ segmentFilter: addFilter(segmentFilter, 'start', value) }) }}>{value}</a>
@@ -166,7 +153,6 @@ export class SegmentsView extends React.Component<SegmentsViewProps, SegmentsVie
         {
           Header: "End",
           accessor: "end",
-          Filter: makeTextFilter(),
           Cell: row => {
             const value = row.value;
             return <a onClick={() => { this.setState({ segmentFilter: addFilter(segmentFilter, 'end', value) }) }}>{value}</a>
@@ -196,7 +182,7 @@ export class SegmentsView extends React.Component<SegmentsViewProps, SegmentsVie
           Filter: makeBooleanFilter()
         },
         {
-          Header: "IS realtime",
+          Header: "Is realtime",
           id: "is_realtime",
           accessor: (row) => String(Boolean(row.is_realtime)),
           Filter: makeBooleanFilter()

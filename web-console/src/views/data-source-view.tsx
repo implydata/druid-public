@@ -21,15 +21,15 @@ import * as React from 'react';
 import * as classNames from 'classnames';
 import ReactTable from "react-table";
 import { Filter } from "react-table";
-
 import {
   H1,
   InputGroup,
   Button,
-  Intent
+  Intent, Checkbox
 } from "@blueprintjs/core";
-
-import { addFilter, makeTextFilter, formatNumber, formatBytes, QueryManager } from "../utils";
+import { AsyncActionDialog } from '../dialogs/async-action-dialog';
+import { addFilter, formatNumber, formatBytes, countBy, QueryManager } from "../utils";
+import "./data-source-view.css";
 
 export interface DataSourcesViewProps extends React.Props<any> {
   goToSql: (initSql: string) => void;
@@ -40,10 +40,14 @@ export interface DataSourcesViewState {
   loadingDataSources: boolean;
   dataSources: any[] | null;
   dataSourceFilter: Filter[];
+
+  showDisabled: boolean;
+  dropDataDatasource: string | null;
+  enableDatasource: string | null;
+  killDatasource: string | null;
 }
 
 export class DataSourcesView extends React.Component<DataSourcesViewProps, DataSourcesViewState> {
-  private mounted: boolean;
   private dataSourceQueryManager: QueryManager<string, any[]>;
 
   constructor(props: DataSourcesViewProps, context: any) {
@@ -51,16 +55,28 @@ export class DataSourcesView extends React.Component<DataSourcesViewProps, DataS
     this.state = {
       loadingDataSources: true,
       dataSources: null,
-      dataSourceFilter: []
-    };
+      dataSourceFilter: [],
 
+      showDisabled: false,
+      dropDataDatasource: null,
+      enableDatasource: null,
+      killDatasource: null
+    };
+  }
+
+  componentDidMount(): void {
     this.dataSourceQueryManager = new QueryManager({
-      processQuery: (query: string) => {
-        return axios.post("/druid/v2/sql", { query })
-          .then((response) => response.data);
+      processQuery: async (query: string) => {
+        const dataSourcesResp = await axios.post("/druid/v2/sql", { query });
+        const dataSources: any = dataSourcesResp.data;
+        const seen = countBy(dataSources, (x: any) => x.datasource);
+
+        const disabledResp = await axios.get('/druid/coordinator/v1/metadata/datasources?includeDisabled');
+        const disabled: string[] = disabledResp.data.filter((d: string) => !seen[d]);
+
+        return dataSources.concat(disabled.map(d => ({ datasource: d, disabled: true })));
       },
       onStateChange: ({ result, loading, error }) => {
-        if (!this.mounted) return;
         this.setState({
           dataSources: result,
           loadingDataSources: loading
@@ -78,89 +94,182 @@ FROM sys.segments
 GROUP BY 1`);
   }
 
-  componentDidMount(): void {
-    this.mounted = true;
+  componentWillUnmount(): void {
+    this.dataSourceQueryManager.terminate();
   }
 
-  componentWillUnmount(): void {
-    this.mounted = false;
+  renderDropDataAction() {
+    const { dropDataDatasource } = this.state;
+
+    return <AsyncActionDialog
+      action={
+        dropDataDatasource ? async () => {
+          const resp = await axios.delete(`/druid/coordinator/v1/datasources/${dropDataDatasource}`, {})
+          return resp.data;
+        } : null
+      }
+      confirmButtonText="Drop data"
+      successText="Data has been dropped"
+      failText="Could not drop data"
+      intent={Intent.DANGER}
+      onClose={(success) => {
+        this.setState({ dropDataDatasource: null });
+        if (success) this.dataSourceQueryManager.rerunLastQuery();
+      }}
+    >
+      <p>
+        {`Are you sure you want to drop all the data for datasource '${dropDataDatasource}'?`}
+      </p>
+    </AsyncActionDialog>;
+  }
+
+  renderEnableAction() {
+    const { enableDatasource } = this.state;
+
+    return <AsyncActionDialog
+      action={
+        enableDatasource ? async () => {
+          const resp = await axios.post(`/druid/coordinator/v1/datasources/${enableDatasource}`, {})
+          return resp.data;
+        } : null
+      }
+      confirmButtonText="Enable datasource"
+      successText="Datasource has been enabled"
+      failText="Could not enable datasource"
+      intent={Intent.PRIMARY}
+      onClose={(success) => {
+        this.setState({ enableDatasource: null });
+        if (success) this.dataSourceQueryManager.rerunLastQuery();
+      }}
+    >
+      <p>
+        {`Are you sure you want to enable datasource '${enableDatasource}'?`}
+      </p>
+    </AsyncActionDialog>;
+  }
+
+  renderKillAction() {
+    const { killDatasource } = this.state;
+
+    return <AsyncActionDialog
+      action={
+        killDatasource ? async () => {
+          const resp = await axios.delete(`/druid/coordinator/v1/datasources/${killDatasource}?kill=true&interval=1000/3000`, {});
+          return resp.data;
+        } : null
+      }
+      confirmButtonText="Permanently delete data"
+      successText="Kill task was issued. Datasource will be deleted"
+      failText="Could not submit kill task"
+      intent={Intent.DANGER}
+      onClose={(success) => {
+        this.setState({ killDatasource: null });
+        if (success) this.dataSourceQueryManager.rerunLastQuery();
+      }}
+    >
+      <p>
+        {`Are you sure you want to permanently delete the data in datasource '${killDatasource}'?`}
+      </p>
+      <p>
+        This action can not be undone.
+      </p>
+    </AsyncActionDialog>;
   }
 
   renderDataSourceTable() {
     const { goToSegments } = this.props;
-    const { dataSources, loadingDataSources, dataSourceFilter } = this.state;
+    const { dataSources, loadingDataSources, dataSourceFilter, showDisabled } = this.state;
 
-    return <ReactTable
-      data={dataSources || []}
-      loading={loadingDataSources}
-      filterable={true}
-      filtered={dataSourceFilter}
-      onFilteredChange={(filtered, column) => {
-        this.setState({ dataSourceFilter: filtered });
-      }}
-      columns={[
-        {
-          Header: "Data source",
-          accessor: "datasource",
-          Filter: makeTextFilter(),
-          Cell: row => {
-            const value = row.value;
-            return <a onClick={() => { this.setState({ dataSourceFilter: addFilter(dataSourceFilter, 'datasource', value) }) }}>{value}</a>
-          }
-        },
-        {
-          Header: "Availability",
-          id: "availability",
-          accessor: (row) => row.num_available_segments / row.num_segments,
-          Filter: makeTextFilter(),
-          Cell: (row) => {
-            const { datasource, num_available_segments, num_segments } = row.original;
-            const segmentsEl = <a onClick={() => goToSegments(datasource)}>{`${num_segments} segments`}</a>;
-            if (num_available_segments === num_segments) {
-              return <span>Fully available ({segmentsEl})</span>;
-            } else {
-              const percentAvailable = (Math.floor((num_available_segments / num_segments) * 1000) / 10).toFixed(1);
-              const missing = num_segments - num_available_segments;
-              const segmentsMissingEl = <a onClick={() => goToSegments(datasource, true)}>{`${missing} segments unavailable`}</a>;
-              return <span>{percentAvailable}% available ({segmentsEl}, {segmentsMissingEl})</span>;
+    let data = dataSources || [];
+    if (!showDisabled) {
+      data = data.filter(d => !d.disabled)
+    }
+
+    return <>
+      <ReactTable
+        data={data}
+        loading={loadingDataSources}
+        filterable={true}
+        filtered={dataSourceFilter}
+        onFilteredChange={(filtered, column) => {
+          this.setState({ dataSourceFilter: filtered });
+        }}
+        columns={[
+          {
+            Header: "Data source",
+            accessor: "datasource",
+            Cell: row => {
+              const value = row.value;
+              return <a onClick={() => { this.setState({ dataSourceFilter: addFilter(dataSourceFilter, 'datasource', value) }) }}>{value}</a>
+            }
+          },
+          {
+            Header: "Availability",
+            id: "availability",
+            filterable: false,
+            accessor: (row) => row.num_available_segments / row.num_segments,
+            Cell: (row) => {
+              const { datasource, num_available_segments, num_segments, disabled } = row.original;
+              if (disabled) return "Disabled";
+              const segmentsEl = <a onClick={() => goToSegments(datasource)}>{`${formatNumber(num_segments)} segments`}</a>;
+              if (num_available_segments === num_segments) {
+                return <span>Fully available ({segmentsEl})</span>;
+              } else {
+                const percentAvailable = (Math.floor((num_available_segments / num_segments) * 1000) / 10).toFixed(1);
+                const missing = num_segments - num_available_segments;
+                const segmentsMissingEl = <a onClick={() => goToSegments(datasource, true)}>{`${formatNumber(missing)} segments unavailable`}</a>;
+                return <span>{percentAvailable}% available ({segmentsEl}, {segmentsMissingEl})</span>;
+              }
+            }
+          },
+          {
+            Header: 'Size',
+            accessor: 'size',
+            filterable: false,
+            width: 100,
+            Cell: (row) => formatBytes(row.value)
+          },
+          {
+            Header: 'Num rows',
+            accessor: 'num_rows',
+            filterable: false,
+            width: 100,
+            Cell: (row) => formatNumber(row.value)
+          },
+          {
+            Header: 'Actions',
+            accessor: 'datasource',
+            id: 'actions',
+            width: 250,
+            filterable: false,
+            Cell: row => {
+              const datasource = row.value;
+              const { disabled } = row.original;
+              if (disabled) {
+                return <div>
+                  <a onClick={() => this.setState({ enableDatasource: datasource })}>Enable</a>&nbsp;&nbsp;&nbsp;
+                  <a onClick={() => this.setState({ killDatasource: datasource })}>Permanently delete data</a>
+                </div>
+              } else {
+                return <div>
+                  <a onClick={() => this.setState({ dropDataDatasource: datasource })}>Drop data</a>
+                </div>
+              }
             }
           }
-        },
-        {
-          Header: 'Size',
-          accessor: 'size',
-          filterable: false,
-          width: 100,
-          Cell: (row) => formatBytes(row.value)
-        },
-        {
-          Header: 'Num rows',
-          accessor: 'num_rows',
-          filterable: false,
-          width: 100,
-          Cell: (row) => formatNumber(row.value)
-        },
-        {
-          Header: 'Actions',
-          accessor: 'datasource',
-          id: 'actions',
-          width: 300,
-          filterable: false,
-          Cell: row => {
-            const id = row.value;
-            return <div>
-              <a onClick={() => null}>drop data</a>
-            </div>
-          }
-        }
-      ]}
-      defaultPageSize={50}
-      className="-striped -highlight"
-    />;
+        ]}
+        defaultPageSize={50}
+        className="-striped -highlight"
+      />
+      {this.renderDropDataAction()}
+      {this.renderEnableAction()}
+      {this.renderKillAction()}
+    </>;
   }
 
   render() {
     const { goToSql } = this.props;
+    const { showDisabled } = this.state;
 
     return <div className="data-sources-view app-view">
       <div className="control-bar">
@@ -175,6 +284,7 @@ GROUP BY 1`);
           text="Go to SQL"
           onClick={() => goToSql(this.dataSourceQueryManager.getLastQuery())}
         />
+        <Checkbox checked={showDisabled} onChange={() => this.setState({ showDisabled: !showDisabled })}>Show disabled</Checkbox>
       </div>
       {this.renderDataSourceTable()}
     </div>

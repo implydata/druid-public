@@ -9,7 +9,7 @@ $DIR/build || echo "Initial build failed";
 ./node_modules/.bin/tsc --watch --preserveWatchOutput &
 
 #echo "Transpiling SCSS files..."
-./node_modules/.bin/node-sass-chokidar src --output ./public --watch --usePolling &
+./node_modules/.bin/node-sass-chokidar src --output ./build --watch --usePolling &
 
 #echo "Webpacking everything..."
 ./node_modules/.bin/webpack -c webpack.config.js --hide-modules --colors --watch --mode development &

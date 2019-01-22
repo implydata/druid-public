@@ -1,3 +1,11 @@
 node/
 node_modules/
 resources/
+build/
+public/
+private/
+lib/*.css
+
+.tscache
+tscommand-*.tmp.txt
+

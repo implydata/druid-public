@@ -8,7 +8,7 @@ const { version } = require('./package.json');
 module.exports = {
   mode: process.env.NODE_ENV || 'development',
   entry: {
-    console: './build/entry.js'
+    'web-console': './build/entry.js'
   },
   output: {
     path: path.resolve(__dirname, './public'),
@@ -21,6 +21,23 @@ module.exports = {
   },
   module: {
     rules: [
+      {
+        test: /\.css$/,
+        use: [
+          {loader: 'style-loader'},
+          {loader: 'css-loader', options: {importLoaders: 1}},
+          { loader: 'postcss-loader',
+            options: {
+              ident: 'postcss',
+              plugins: () => [
+                postcssPresetEnv({
+                  browsers: ['> 1%', 'last 3 versions', 'Firefox ESR', 'Opera 12.1']
+                })
+              ]
+            }
+          }
+        ]
+      },
       {
         test: /\.(png|jpg)$/,
         loader: 'file-loader',

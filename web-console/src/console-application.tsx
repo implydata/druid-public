@@ -19,32 +19,15 @@
 import axios from 'axios';
 import * as React from 'react';
 import * as classNames from 'classnames';
-import { HashRouter, Route, Link } from "react-router-dom";
-
-import {
-  Alignment,
-  Button,
-  Classes,
-  Menu,
-  MenuItem,
-  Navbar,
-  NavbarDivider,
-  NavbarGroup,
-  NavbarHeading,
-  Popover,
-  AnchorButton,
-  Position,
-  Dialog,
-  Tooltip,
-  Intent
-} from "@blueprintjs/core";
-
+import { HashRouter, Route, Switch } from "react-router-dom";
+import { HeaderBar, HeaderActiveTab } from './components/header-bar';
 import { HomeView } from './views/home-view';
 import { ServersView } from './views/servers-view';
 import { DataSourcesView } from './views/data-source-view';
 import { TasksView } from './views/tasks-view';
 import { SegmentsView } from './views/segments-view';
 import { SqlView } from './views/sql-view';
+import "./console-application.css";
 
 export interface ConsoleApplicationProps extends React.Props<any> {
   version: string;
@@ -90,93 +73,36 @@ export class ConsoleApplication extends React.Component<ConsoleApplicationProps,
     window.location.hash = 'sql'
   }
 
-  private handleOpen = () => this.setState({ aboutDialogOpen: true });
-  private handleClose = () => this.setState({ aboutDialogOpen: false });
-
-  renderAboutDialog() {
-    const { aboutDialogOpen } = this.state;
-
-    return <Dialog
-      icon="info-sign"
-      onClose={this.handleClose}
-      title="Apache Druid console"
-      isOpen={aboutDialogOpen}
-      usePortal={true}
-      canEscapeKeyClose={true}
-    >
-      <div className={Classes.DIALOG_BODY}>
-        <p>
-          <strong>
-            Blah
-          </strong>
-        </p>
-        <p>
-          Hello
-        </p>
-        <p>How are you.</p>
-      </div>
-      <div className={Classes.DIALOG_FOOTER}>
-        <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-          <Tooltip content="This button is hooked up to close the dialog.">
-            <Button onClick={this.handleClose}>Close</Button>
-          </Tooltip>
-          <AnchorButton
-            intent={Intent.PRIMARY}
-            href="http://druid.io"
-            target="_blank"
-          >
-            Visit Druid
-          </AnchorButton>
-        </div>
-      </div>
-    </Dialog>;
-  }
-
   render() {
-    const legacyMenu = <Menu>
-      <MenuItem icon="graph" text="Legacy coordinator console" href="/legacy-coordinator-console.html" target="_blank" />
-      <MenuItem icon="map" text="Legacy overlord console" href="/legacy-overlord-console.html" target="_blank" />
-      <MenuItem icon="th" text="Legacy coordinator console (old)" href="/old-console/" target="_blank" />
-    </Menu>;
+    const wrapInViewContainer = (active: HeaderActiveTab, el: JSX.Element) => {
+      return <>
+        <HeaderBar active={active}/>
+        <div className="view-container">{el}</div>
+      </>;
+    };
 
-    const helpMenu  = <Menu>
-      <MenuItem icon="graph" text="About" onClick={this.handleOpen} />
-      <MenuItem icon="th" text="Apache Druid docs" href="http://druid.io/docs/latest" target="_blank" />
-      <MenuItem icon="git-branch" text="Apache Druid GitHub" href="https://github.com/apache/incubator-druid" target="_blank" />
-    </Menu>;
-
-    // Dark mode class: bp3-dark
     return <HashRouter hashType="noslash">
       <div className="console-application">
-        <Navbar>
-          <NavbarGroup align={Alignment.LEFT}>
-            <a href="#"><NavbarHeading>Druid Console</NavbarHeading></a>
-            <NavbarDivider />
-            <AnchorButton className={Classes.MINIMAL} icon="multi-select" text="Datasources" href="#datasources" />
-            <AnchorButton className={Classes.MINIMAL} icon="full-stacked-chart" text="Segments" href="#segments" />
-            <AnchorButton className={Classes.MINIMAL} icon="gantt-chart" text="Tasks" href="#tasks" />
-            <AnchorButton className={Classes.MINIMAL} icon="database" text="Servers" href="#servers" />
-            <NavbarDivider />
-            <AnchorButton className={Classes.MINIMAL} icon="console" text="SQL" href="#sql" />
-          </NavbarGroup>
-          <NavbarGroup align={Alignment.RIGHT}>
-            <Popover content={legacyMenu} position={Position.BOTTOM_LEFT}>
-              <Button className={Classes.MINIMAL} icon="share" text="Legacy" />
-            </Popover>
-            <Popover content={helpMenu} position={Position.BOTTOM_LEFT}>
-              <Button className={Classes.MINIMAL} icon="info-sign" text="Help" />
-            </Popover>
-          </NavbarGroup>
-        </Navbar>
-        <div className="view-container">
-          <Route path="/" exact component={HomeView} />
-          <Route path="/datasources" component={() => <DataSourcesView goToSql={this.goToSql} goToSegments={this.goToSegments}/>} />
-          <Route path="/segments" component={() => <SegmentsView goToSql={this.goToSql} dataSource={this.dataSource} onlyUnavailable={this.onlyUnavailable}/>} />
-          <Route path="/tasks" component={() => <TasksView taskId={this.taskId} goToSql={this.goToSql}/>} />
-          <Route path="/servers" component={() => <ServersView goToSql={this.goToSql} goToTask={this.goToTask}/>} />
-          <Route path="/sql" component={() => <SqlView initSql={this.initSql}/>} />
-        </div>
-        {this.renderAboutDialog()}
+        <Switch>
+          <Route path="/datasources" component={() => {
+            return wrapInViewContainer('datasources', <DataSourcesView goToSql={this.goToSql} goToSegments={this.goToSegments}/>);
+          }} />
+          <Route path="/segments" component={() => {
+            return wrapInViewContainer('segments', <SegmentsView goToSql={this.goToSql} dataSource={this.dataSource} onlyUnavailable={this.onlyUnavailable}/>);
+          }} />
+          <Route path="/tasks" component={() => {
+            return wrapInViewContainer('tasks', <TasksView taskId={this.taskId} goToSql={this.goToSql}/>);
+          }} />
+          <Route path="/servers" component={() => {
+            return wrapInViewContainer('servers', <ServersView goToSql={this.goToSql} goToTask={this.goToTask}/>);
+          }} />
+          <Route path="/sql" component={() => {
+            return wrapInViewContainer('sql', <SqlView initSql={this.initSql}/>);
+          }} />
+          <Route component={() => {
+            return wrapInViewContainer(null, <HomeView/>)
+          }} />
+        </Switch>
       </div>
     </HashRouter>
   }

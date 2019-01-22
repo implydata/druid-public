@@ -20,6 +20,8 @@ import { Button, InputGroup, Intent, HTMLSelect } from '@blueprintjs/core';
 import * as numeral from "numeral";
 import * as React from 'react';
 import { Filter, FilterRender } from 'react-table';
+import debounce = require('lodash.debounce');
+
 
 export function addFilter(filters: Filter[], id: string, value: string): Filter[] {
   let currentFilter = filters.find(f => f.id === id);
@@ -64,6 +66,15 @@ export function makeBooleanFilter(): FilterRender {
   }
 }
 
+export function countBy<T>(array: T[], fn: (x: T, index: number) => string = String): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (let i = 0; i < array.length; i++) {
+    const key = fn(array[i], i);
+    counts[key] = (counts[key] || 0) + 1;
+  }
+  return counts;
+}
+
 export function formatNumber(n: number): string {
   return numeral(n).format('0,0');
 }
@@ -87,14 +98,18 @@ export interface QueryState<R> {
 export interface QueryManagerOptions<Q, R> {
   processQuery: (query: Q) => Promise<R>;
   onStateChange?: (queryResolve: QueryState<R>) => void;
+  debounceIdle?: number;
+  debounceLoading?: number;
 }
 
 export class QueryManager<Q, R> {
   private processQuery: (query: Q) => Promise<R>;
   private onStateChange?: (queryResolve: QueryState<R>) => void;
 
-
+  private terminated = false;
+  private nextQuery: Q;
   private lastQuery: Q;
+  private actuallyLoading = false;
   private state: QueryState<R> = {
     result: null,
     loading: false,
@@ -102,31 +117,42 @@ export class QueryManager<Q, R> {
   };
   private currentQueryId = 0;
 
+  private runWhenIdle: () => void;
+  private runWhenLoading: () => void;
+
   constructor(options: QueryManagerOptions<Q, R>) {
     this.processQuery = options.processQuery;
     this.onStateChange = options.onStateChange;
+    if (options.debounceIdle !== 0) {
+      this.runWhenIdle = debounce(this.run, options.debounceIdle || 100);
+    } else {
+      this.runWhenIdle = this.run;
+    }
+    if (options.debounceLoading !== 0) {
+      this.runWhenLoading = debounce(this.run, options.debounceLoading || 200);
+    } else {
+      this.runWhenLoading = this.run;
+    }
   }
 
   private setState(queryState: QueryState<R>) {
     this.state = queryState;
-    if (this.onStateChange) this.onStateChange(queryState);
+    if (this.onStateChange && !this.terminated) {
+      this.onStateChange(queryState);
+    }
   }
 
-  public runQuery(query: Q): void {
+  private run() {
+    this.lastQuery = this.nextQuery;
     this.currentQueryId++;
     let myQueryId = this.currentQueryId;
 
-    this.setState({
-      result: null,
-      loading: true,
-      error: null
-    });
-
-    this.lastQuery = query;
-    this.processQuery(query)
+    this.actuallyLoading = true;
+    this.processQuery(this.lastQuery)
       .then(
         (result) => {
           if (this.currentQueryId !== myQueryId) return;
+          this.actuallyLoading = false;
           this.setState({
             result,
             loading: false,
@@ -135,6 +161,7 @@ export class QueryManager<Q, R> {
         },
         (e: Error) => {
           if (this.currentQueryId !== myQueryId) return;
+          this.actuallyLoading = false;
           this.setState({
             result: null,
             loading: false,
@@ -142,6 +169,32 @@ export class QueryManager<Q, R> {
           })
         }
       )
+  }
+
+  private trigger() {
+    const currentActuallyLoading = this.actuallyLoading;
+
+    this.setState({
+      result: null,
+      loading: true,
+      error: null
+    });
+
+    if (currentActuallyLoading) {
+      this.runWhenLoading();
+    } else {
+      this.runWhenIdle();
+    }
+  }
+
+  public runQuery(query: Q): void {
+    this.nextQuery = query;
+    this.trigger();
+  }
+
+  public rerunLastQuery(): void {
+    this.nextQuery = this.lastQuery;
+    this.trigger();
   }
 
   public getLastQuery(): Q {
@@ -152,7 +205,7 @@ export class QueryManager<Q, R> {
     return this.state;
   }
 
-  public rerunLastQuery(): void {
-    this.runQuery(this.lastQuery);
+  public terminate(): void {
+    this.terminated = true;
   }
 }

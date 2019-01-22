@@ -22,14 +22,13 @@ import * as classNames from 'classnames';
 import ReactTable from "react-table";
 import { Filter } from "react-table";
 import { sum } from "d3-array";
-
 import {
   Button,
   H1,
   Switch
 } from "@blueprintjs/core";
-
-import { addFilter, formatBytesCompact, makeTextFilter, QueryManager } from "../utils";
+import { addFilter, formatBytesCompact, QueryManager } from "../utils";
+import "./servers-view.css";
 
 function formatQueues(segmentsToLoad: number, segmentsToLoadSize: number, segmentsToDrop: number, segmentsToDropSize: number): string {
   let queueParts: string[] = [];
@@ -59,7 +58,6 @@ export interface ServersViewState {
 }
 
 export class ServersView extends React.Component<ServersViewProps, ServersViewState> {
-  private mounted: boolean;
   private serverQueryManager: QueryManager<string, any[]>;
   private middleManagerQueryManager: QueryManager<string, any[]>;
 
@@ -75,7 +73,9 @@ export class ServersView extends React.Component<ServersViewProps, ServersViewSt
       middleManagers: null,
       middleManagerFilter: []
     };
+  }
 
+  componentDidMount(): void {
     this.serverQueryManager = new QueryManager({
       processQuery: async (query: string) => {
         let serversResponse = await axios.post("/druid/v2/sql", { query });
@@ -93,7 +93,6 @@ export class ServersView extends React.Component<ServersViewProps, ServersViewSt
         });
       },
       onStateChange: ({ result, loading, error }) => {
-        if (!this.mounted) return;
         this.setState({
           servers: result,
           serversLoading: loading
@@ -107,12 +106,11 @@ FROM sys.servers
 WHERE "server_type" = 'historical'`);
 
     this.middleManagerQueryManager = new QueryManager({
-      processQuery: (query: string) => {
-        return axios.get("/druid/indexer/v1/workers")
-          .then((response) => response.data);
+      processQuery: async (query: string) => {
+        const resp = await axios.get("/druid/indexer/v1/workers");
+        return resp.data;
       },
       onStateChange: ({ result, loading, error }) => {
-        if (!this.mounted) return;
         this.setState({
           middleManagers: result,
           middleManagersLoading: loading
@@ -123,12 +121,9 @@ WHERE "server_type" = 'historical'`);
     this.middleManagerQueryManager.runQuery('dummy');
   }
 
-  componentDidMount(): void {
-    this.mounted = true;
-  }
-
   componentWillUnmount(): void {
-    this.mounted = false;
+    this.serverQueryManager.terminate();
+    this.middleManagerQueryManager.terminate();
   }
 
   renderServersTable() {
@@ -168,7 +163,6 @@ WHERE "server_type" = 'historical'`);
         {
           Header: "Tier",
           accessor: "tier",
-          Filter: makeTextFilter(),
           Cell: row => {
             const value = row.value;
             return <a onClick={() => { this.setState({ serverFilter: addFilter(serverFilter, 'tier', value) }) }}>{value}</a>
@@ -177,8 +171,7 @@ WHERE "server_type" = 'historical'`);
         {
           Header: "Server",
           accessor: "server",
-          width: 300,
-          Filter: makeTextFilter()
+          width: 300
         },
         {
           Header: "Size",
@@ -221,13 +214,11 @@ WHERE "server_type" = 'historical'`);
         {
           Header: "Host",
           accessor: "host",
-          Filter: makeTextFilter(),
           Aggregated: () => ''
         },
         {
           Header: "Port",
           id: 'port',
-          Filter: makeTextFilter(),
           accessor: (row) => {
             let ports: string[] = [];
             if (row.plaintext_port !== -1) {
@@ -263,7 +254,6 @@ WHERE "server_type" = 'historical'`);
           Header: "Host",
           id: "host",
           accessor: (row) => row.worker.host,
-          Filter: makeTextFilter(),
           Cell: row => {
             const value = row.value;
             return <a onClick={() => { this.setState({ middleManagerFilter: addFilter(middleManagerFilter, 'host', value) }) }}>{value}</a>
@@ -273,25 +263,21 @@ WHERE "server_type" = 'historical'`);
           Header: "Usage",
           id: "usage",
           accessor: (row) => `${row.currCapacityUsed} / ${row.worker.capacity}`,
-          filterable: false,
-          Filter: makeTextFilter()
+          filterable: false
         },
         {
           Header: "Availability groups",
           id: "availabilityGroups",
           accessor: (row) => row.availabilityGroups.length,
           filterable: false,
-          Filter: makeTextFilter(),
         },
         {
           Header: "Last completed task time",
-          accessor: "lastCompletedTaskTime",
-          Filter: makeTextFilter()
+          accessor: "lastCompletedTaskTime"
         },
         {
           Header: "Blacklisted until",
-          accessor: "blacklistedUntil",
-          Filter: makeTextFilter()
+          accessor: "blacklistedUntil"
         }
       ]}
       defaultPageSize={10}

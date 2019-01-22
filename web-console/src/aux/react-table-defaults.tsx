@@ -16,39 +16,23 @@
  * limitations under the License.
  */
 
-@import '../node_modules/normalize.css/normalize';
-@import '../node_modules/@blueprintjs/core/lib/css/blueprint';
-@import '../lib/react-table';
 
-* {
-  position: relative;
-}
+import * as React from 'react';
+import { ReactTableDefaults } from "react-table";
+import { Button } from "@blueprintjs/core";
+import { makeTextFilter } from '../utils';
 
-html,
-body {
-  //font-family: 'Open Sans', Helvetica, Arial, sans-serif;
-  height: 100%;
-  overflow: hidden;
-  font-size: 13px;
-}
-
-body {
-  &.bp3-dark {
-    background: rgb(41, 55, 66);
-  }
-
-  &.mouse-mode {
-    *:focus {
-      outline: none !important;
-    }
+class FullButton extends React.Component {
+  render() {
+    return <Button fill={true} {...this.props}/>;
   }
 }
 
-svg {
-  width: auto;
-  height: auto;
-}
-
-.app-container {
-  height: 100%;
-}
+Object.assign(ReactTableDefaults, {
+  //defaultPageSize: 10,
+  //minRows: 3
+  // etc...
+  FilterComponent: makeTextFilter(),
+  PreviousComponent: FullButton,
+  NextComponent: FullButton
+});

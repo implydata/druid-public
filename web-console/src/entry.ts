@@ -20,6 +20,8 @@ import 'es6-shim/es6-shim';
 import 'es7-shim'; // Webpack with automatically pick browser.js which does the shim()
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
+import "./aux/react-table-defaults";
+import "./entry.css";
 
 import { ConsoleApplication } from './console-application';
 
@@ -35,3 +37,29 @@ ReactDOM.render(
   ),
   container
 );
+
+// ---------------------------------
+// Taken from https://hackernoon.com/removing-that-ugly-focus-ring-and-keeping-it-too-6c8727fefcd2
+
+let mode: 'mouse' | 'tab' = 'mouse';
+
+function handleTab(e: KeyboardEvent) {
+  if (e.keyCode !== 9) return;
+  if (mode === 'tab') return;
+  mode = 'tab';
+  document.body.classList.remove('mouse-mode');
+  document.body.classList.add('tab-mode');
+  window.removeEventListener('keydown', handleTab);
+  window.addEventListener('mousedown', handleMouseDown);
+}
+
+function handleMouseDown() {
+  if (mode === 'mouse') return;
+  mode = 'mouse';
+  document.body.classList.remove('tab-mode');
+  document.body.classList.add('mouse-mode');
+  window.removeEventListener('mousedown', handleMouseDown);
+  window.addEventListener('keydown', handleTab);
+}
+
+window.addEventListener('keydown', handleTab);

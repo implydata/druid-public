@@ -22,6 +22,7 @@ import * as classNames from 'classnames';
 import ReactTable from "react-table";
 import { SqlControl } from '../components/sql-control';
 import { QueryManager } from '../utils';
+import "./sql-view.css";
 
 export interface SqlViewProps extends React.Props<any> {
   initSql: string | null;
@@ -33,7 +34,6 @@ export interface SqlViewState {
 }
 
 export class SqlView extends React.Component<SqlViewProps, SqlViewState> {
-  private mounted: boolean;
   private sqlQueryManager: QueryManager<string, any[][]>;
 
   constructor(props: SqlViewProps, context: any) {
@@ -42,18 +42,28 @@ export class SqlView extends React.Component<SqlViewProps, SqlViewState> {
       loading: false,
       results: null
     };
+  }
 
+  componentDidMount(): void {
     this.sqlQueryManager = new QueryManager({
-      processQuery: (query: string) => {
-        return axios.post("/druid/v2/sql", {
-          query,
-          resultFormat: "array",
-          header: true
-        })
-          .then((response) => response.data);
+      processQuery: async (query: string) => {
+        const trimmedQuery = query.trim();
+        if (trimmedQuery.startsWith('{') && trimmedQuery.endsWith('}')) {
+          // Secret way to issue a standard query
+          throw new Error('ToDo: issue a normal query');
+          //const respRune = await axios.post("/druid/v2", JSON.parse(query));
+          //return respRune.data;
+        } else {
+          const respSql = await axios.post("/druid/v2/sql", {
+            query,
+            resultFormat: "array",
+            header: true
+          });
+
+          return respSql.data;
+        }
       },
       onStateChange: ({ result, loading, error }) => {
-        if (!this.mounted) return;
         this.setState({
           results: result,
           loading
@@ -62,12 +72,8 @@ export class SqlView extends React.Component<SqlViewProps, SqlViewState> {
     })
   }
 
-  componentDidMount(): void {
-    this.mounted = true;
-  }
-
   componentWillUnmount(): void {
-    this.mounted = false;
+    this.sqlQueryManager.terminate();
   }
 
   renderResultTable() {

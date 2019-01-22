@@ -21,11 +21,12 @@ import * as React from 'react';
 import * as classNames from 'classnames';
 import ReactTable from "react-table";
 import { Filter } from "react-table";
-
 import {
   H1, H5,
   Card
 } from "@blueprintjs/core";
+import "./home-view.css";
+import { QueryManager } from '../utils';
 
 export interface HomeViewProps extends React.Props<any> {
 }
@@ -37,6 +38,8 @@ export interface HomeViewState {
 }
 
 export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
+  private statusQueryManager: QueryManager<string, any>;
+
   constructor(props: HomeViewProps, context: any) {
     super(props, context);
     this.state = {
@@ -44,23 +47,28 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
       status: null,
       statusError: null
     };
+  }
 
-    axios.get('/status')
-      .then((response) => {
+  componentDidMount(): void {
+    this.statusQueryManager = new QueryManager({
+      processQuery: async (query) => {
+        const statusResp = await axios.get('/status');
+        return statusResp.data;
+      },
+      onStateChange: ({ result, loading, error }) => {
         this.setState({
-          statusLoading: false,
-          status: response.data,
-          statusError: null
+          status: result,
+          statusLoading: loading,
+          statusError: error
         });
-      })
-      .catch((error) => {
-        this.setState({
-          statusLoading: false,
-          status: null,
-          statusError: error.message
-        });
-        console.log(error);
-      });
+      }
+    });
+
+    this.statusQueryManager.runQuery('dummy')
+  }
+
+  componentWillUnmount(): void {
+    this.statusQueryManager.terminate();
   }
 
   render() {
