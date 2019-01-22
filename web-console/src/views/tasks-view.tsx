@@ -21,7 +21,7 @@ import * as React from 'react';
 import * as classNames from 'classnames';
 import ReactTable from "react-table";
 import { Filter } from "react-table";
-import { Button, H1, Alert, Intent } from "@blueprintjs/core";
+import { Button, H1, ButtonGroup, Intent, Label } from "@blueprintjs/core";
 import { addFilter, QueryManager } from "../utils";
 import { AsyncActionDialog } from "../dialogs/async-action-dialog";
 import "./tasks-view.css";
@@ -43,6 +43,7 @@ export interface TasksViewState {
   loadingTasks: boolean;
   tasks: any[] | null;
   taskFilter: Filter[];
+  groupTasksBy: null | 'type' | 'datasource' | 'status';
 
   killTaskId: string | null;
 }
@@ -75,6 +76,7 @@ export class TasksView extends React.Component<TasksViewProps, TasksViewState> {
       loadingTasks: true,
       tasks: null,
       taskFilter: props.taskId ? [{ id: 'task_id', value: props.taskId }] : [],
+      groupTasksBy: null,
 
       killTaskId: null
     };
@@ -309,7 +311,7 @@ FROM sys.tasks`);
   }
 
   renderTaskTable() {
-    const { tasks, loadingTasks, taskFilter } = this.state;
+    const { tasks, loadingTasks, taskFilter, groupTasksBy } = this.state;
 
     return <>
       <ReactTable
@@ -320,6 +322,7 @@ FROM sys.tasks`);
         onFilteredChange={(filtered, column) => {
           this.setState({ taskFilter: filtered });
         }}
+        pivotBy={groupTasksBy ? [groupTasksBy] : []}
         columns={[
           {
             Header: "Task ID",
@@ -370,6 +373,7 @@ FROM sys.tasks`);
             width: 300,
             filterable: false,
             Cell: row => {
+              if (row.aggregated) return '';
               const id = row.value;
               const { status } = row.original;
               return <div>
@@ -379,7 +383,8 @@ FROM sys.tasks`);
                 <a href={`/druid/indexer/v1/task/${id}/log?offset=-8192`} target="_blank">Log (last 8kb)</a>&nbsp;&nbsp;&nbsp;
                 { (status === 'RUNNING') && <a onClick={() => this.setState({ killTaskId: id })}>Kill</a> }
               </div>
-            }
+            },
+            Aggregated: row => ''
           }
         ]}
         defaultPageSize={20}
@@ -391,6 +396,7 @@ FROM sys.tasks`);
 
   render() {
     const { goToSql } = this.props;
+    const { groupTasksBy } = this.state;
 
     return <div className="tasks-view app-view">
       <div className="control-bar">
@@ -415,6 +421,13 @@ FROM sys.tasks`);
           text="Go to SQL"
           onClick={() => goToSql(this.taskQueryManager.getLastQuery())}
         />
+        <Label>Group by</Label>
+        <ButtonGroup>
+          <Button active={groupTasksBy === null} onClick={() => this.setState({ groupTasksBy: null })}>None</Button>
+          <Button active={groupTasksBy === 'type'} onClick={() => this.setState({ groupTasksBy: 'type' })}>Type</Button>
+          <Button active={groupTasksBy === 'datasource'} onClick={() => this.setState({ groupTasksBy: 'datasource' })}>Datasource</Button>
+          <Button active={groupTasksBy === 'status'} onClick={() => this.setState({ groupTasksBy: 'status' })}>Status</Button>
+        </ButtonGroup>
       </div>
       {this.renderTaskTable()}
     </div>
