@@ -74,7 +74,17 @@ export class DataSourcesView extends React.Component<DataSourcesViewProps, DataS
         const disabledResp = await axios.get('/druid/coordinator/v1/metadata/datasources?includeDisabled');
         const disabled: string[] = disabledResp.data.filter((d: string) => !seen[d]);
 
-        return dataSources.concat(disabled.map(d => ({ datasource: d, disabled: true })));
+        const rulesResp = await axios.get('/druid/coordinator/v1/rules');
+        const rules = rulesResp.data;
+        const defaultRules = rules['_default'];
+
+        const allDatasources = dataSources.concat(disabled.map(d => ({ datasource: d, disabled: true })));
+        allDatasources.forEach((ds: any) => {
+          ds.rules = rules[ds.datasource] || [];
+          ds.defaultRules = defaultRules;
+        });
+
+        return allDatasources;
       },
       onStateChange: ({ result, loading, error }) => {
         this.setState({
@@ -223,6 +233,24 @@ GROUP BY 1`);
             }
           },
           {
+            Header: 'Retention',
+            id: 'retention',
+            accessor: (row) => row.rules.length,
+            filterable: false,
+            Cell: row => {
+              const { rules } = row.original;
+              let text: string;
+              if (rules.length === 0) {
+                text = 'default';
+              } else if (rules.length === 1) {
+                text = rules[0].type;
+              } else {
+                text = `${rules.length} rules`;
+              }
+              return <span>{text} <a onClick={() => alert('ToDo')}>(change)</a></span>;
+            }
+          },
+          {
             Header: 'Size',
             accessor: 'size',
             filterable: false,
@@ -240,7 +268,7 @@ GROUP BY 1`);
             Header: 'Actions',
             accessor: 'datasource',
             id: 'actions',
-            width: 250,
+            width: 200,
             filterable: false,
             Cell: row => {
               const datasource = row.value;
@@ -248,7 +276,7 @@ GROUP BY 1`);
               if (disabled) {
                 return <div>
                   <a onClick={() => this.setState({ enableDatasource: datasource })}>Enable</a>&nbsp;&nbsp;&nbsp;
-                  <a onClick={() => this.setState({ killDatasource: datasource })}>Permanently delete data</a>
+                  <a onClick={() => this.setState({ killDatasource: datasource })}>Permanently delete</a>
                 </div>
               } else {
                 return <div>
