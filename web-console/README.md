@@ -1,4 +1,4 @@
-# Druid Console
+# Druid console
 
 ## How to run
 
@@ -20,7 +20,7 @@
         }
 
         location / {
-            root /<path/to/your>/neo-druid-console;
+            root /<path/to/your>/druid/web-console;
             index index.html;
         }
     }

@@ -240,7 +240,7 @@ FROM sys.tasks`);
           {
             Header: "Status",
             id: 'status',
-            accessor: (row) => row.spec.suspended ? 'suspended' : 'running',
+            accessor: (row) => row.spec.suspended ? 'Suspended' : 'Running',
             Cell: row => {
               const value = row.value;
               return <span
