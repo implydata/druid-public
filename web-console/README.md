@@ -26,9 +26,11 @@
     }
 ```
 
+3. Run `npm run watch`
+
 ## How to watch and run (alternative method)
 
-1. Run `$ npm start`
+1. Run `npm start`
 
 2. That's it.
 
