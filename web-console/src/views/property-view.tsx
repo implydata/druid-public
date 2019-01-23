@@ -71,7 +71,7 @@ export class PropertyView extends React.Component<PropertyViewProps, PropertyVie
     this.propertyQueryManager.terminate();
   }
 
-  renderDataSourceTable() {
+  renderPropertyTable() {
     const { propertyValuePairs } = this.state;
 
     return <>
@@ -109,7 +109,7 @@ export class PropertyView extends React.Component<PropertyViewProps, PropertyVie
           onClick={() => this.propertyQueryManager.rerunLastQuery()}
         />
       </div>
-      {this.renderDataSourceTable()}
+      {this.renderPropertyTable()}
     </div>
   }
 }
