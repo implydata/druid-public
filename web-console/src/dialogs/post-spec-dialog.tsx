@@ -79,8 +79,8 @@ export class PostSpecDialog extends React.Component<PostSpecDialogProps, PostSpe
         multiline={true}
         minLines={30}
         maxLines={30}
-        placeholder={"Enter specifications to post"}
-        onChange={ (e) => { this.setState({ spec: e }) }}
+        placeholder={"Enter the specifications to post"}
+        onChange={ (e) => {this.setState({ spec: e })}}
       />
       <div className={Classes.DIALOG_FOOTER}>
         <div className={Classes.DIALOG_FOOTER_ACTIONS}>
@@ -90,7 +90,7 @@ export class PostSpecDialog extends React.Component<PostSpecDialogProps, PostSpe
           <Button
             text="Submit"
             intent={Intent.PRIMARY}
-            onClick={ () => { this.postSpec() }}
+            onClick={() => this.postSpec()}
           />
         </div>
       </div>

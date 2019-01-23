@@ -26,7 +26,6 @@ import { addFilter, QueryManager } from "../utils";
 import { AsyncActionDialog } from "../dialogs/async-action-dialog";
 import { PostSpecDialog } from "../dialogs/post-spec-dialog";
 import "./tasks-view.scss";
-import {RuntimePropertyDialog} from "../dialogs/runtime-property-dialog";
 
 export interface TasksViewProps extends React.Props<any> {
   taskId: string | null;
