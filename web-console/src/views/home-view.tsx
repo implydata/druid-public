@@ -27,7 +27,6 @@ import {
 } from "@blueprintjs/core";
 import "./home-view.scss";
 import { QueryManager } from '../utils';
-import {render} from "react-dom";
 
 interface DataCount {
   dataSourceCount: number,
@@ -100,7 +99,7 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
       }
     });
 
-    this.statusQueryManager.runQuery("dummy");
+    this.statusQueryManager.runQuery('dummy');
 
     this.dataSourceQueryManager = new QueryManager({
       processQuery: async (query) => {
@@ -123,7 +122,7 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
       }
     });
 
-    this.dataSourceQueryManager.runQuery("SELECT datasource FROM sys.segments GROUP BY 1");
+    this.dataSourceQueryManager.runQuery('SELECT datasource FROM sys.segments GROUP BY 1');
 
     this.segmentQueryManager = new QueryManager({
       processQuery: async (query) => {
@@ -146,7 +145,7 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
       }
     });
 
-    this.segmentQueryManager.runQuery("SELECT COUNT(*) FROM sys.segments");
+    this.segmentQueryManager.runQuery('SELECT COUNT(*) FROM sys.segments');
 
     this.taskQueryManager = new QueryManager({
       processQuery: async (query) => {
@@ -198,7 +197,7 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
       }
     });
 
-    this.taskQueryManager.runQuery("SELECT status FROM sys.tasks");
+    this.taskQueryManager.runQuery('SELECT status FROM sys.tasks');
 
     this.dataServerQueryManager = new QueryManager({
       processQuery: async (query) => {
@@ -242,7 +241,7 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
       }
     });
 
-    this.middleManagerQueryManager.runQuery("dummy");
+    this.middleManagerQueryManager.runQuery('dummy');
   }
 
   componentWillUnmount(): void {
