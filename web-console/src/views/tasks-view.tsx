@@ -24,7 +24,7 @@ import { Filter } from "react-table";
 import { Button, H1, ButtonGroup, Intent, Label } from "@blueprintjs/core";
 import { addFilter, QueryManager } from "../utils";
 import { AsyncActionDialog } from "../dialogs/async-action-dialog";
-import "./tasks-view.css";
+import "./tasks-view.scss";
 
 export interface TasksViewProps extends React.Props<any> {
   taskId: string | null;

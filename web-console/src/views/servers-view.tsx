@@ -28,7 +28,7 @@ import {
   Switch
 } from "@blueprintjs/core";
 import { addFilter, formatBytesCompact, QueryManager } from "../utils";
-import "./servers-view.css";
+import "./servers-view.scss";
 
 function formatQueues(segmentsToLoad: number, segmentsToLoadSize: number, segmentsToDrop: number, segmentsToDropSize: number): string {
   let queueParts: string[] = [];

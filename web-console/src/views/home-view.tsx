@@ -25,7 +25,7 @@ import {
   H1, H5,
   Card
 } from "@blueprintjs/core";
-import "./home-view.css";
+import "./home-view.scss";
 import { QueryManager } from '../utils';
 
 export interface HomeViewProps extends React.Props<any> {

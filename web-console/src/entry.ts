@@ -21,7 +21,7 @@ import 'es7-shim'; // Webpack with automatically pick browser.js which does the 
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import "./aux/react-table-defaults";
-import "./entry.css";
+import "./entry.scss";
 
 import { ConsoleApplication } from './console-application';
 

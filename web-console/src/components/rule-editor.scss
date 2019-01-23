@@ -16,3 +16,20 @@
  * limitations under the License.
  */
 
+ .rule-editor {
+   .right {
+    text-align: right;
+   }
+
+  margin-bottom: 20px;
+
+   .title {
+
+
+    display: flex;
+
+    .spacer {
+      flex: 1;
+    }
+   }
+ }

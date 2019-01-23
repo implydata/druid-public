@@ -22,7 +22,7 @@ import * as classNames from 'classnames';
 import ReactTable from "react-table";
 import { SqlControl } from '../components/sql-control';
 import { QueryManager } from '../utils';
-import "./sql-view.css";
+import "./sql-view.scss";
 
 export interface SqlViewProps extends React.Props<any> {
   initSql: string | null;

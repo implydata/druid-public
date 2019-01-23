@@ -27,7 +27,7 @@ import { DataSourcesView } from './views/data-source-view';
 import { TasksView } from './views/tasks-view';
 import { SegmentsView } from './views/segments-view';
 import { SqlView } from './views/sql-view';
-import "./console-application.css";
+import "./console-application.scss";
 
 export interface ConsoleApplicationProps extends React.Props<any> {
   version: string;
