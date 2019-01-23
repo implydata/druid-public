@@ -5,7 +5,7 @@ const postcssPresetEnv = require('postcss-preset-env');
 
 const { version } = require('./package.json');
 
-module.exports = {
+module.exports = env => ({
   mode: process.env.NODE_ENV || 'development',
   entry: {
     'web-console': './src/entry.ts'
@@ -25,8 +25,8 @@ module.exports = {
     index: './index.html',
     port: 18081,
     proxy: {
-      '/status': 'http://172.31.5.116:8888',
-      '/druid': 'http://172.31.5.116:8888'
+      '/status': `http://${env.host}:8888`,
+      '/druid': `http://${env.host}:8888`
     }
   },
   module: {
@@ -68,4 +68,4 @@ module.exports = {
     // From: https://stackoverflow.com/questions/25384360/how-to-prevent-moment-js-from-loading-locales-with-webpack/25426019#25426019
     new webpack.IgnorePlugin(/^\.\/locale$/, /moment$/)
   ]
-};
+});

@@ -10,7 +10,7 @@
     "pretest": "./script/build",
     "run": "./script/run",
     "test": "exit 0",
-    "start": "webpack-dev-server --hot --open"
+    "start": "webpack-dev-server --hot --open --env.host=172.31.5.116"
   },
   "dependencies": {
     "@blueprintjs/core": "^3.11.0",
