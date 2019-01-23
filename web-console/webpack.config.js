@@ -25,8 +25,8 @@ module.exports = env => ({
     index: './index.html',
     port: 18081,
     proxy: {
-      '/status': `http://${env.host}:8888`,
-      '/druid': `http://${env.host}:8888`
+      '/status': `http://${(env || {}).host || 'localhost:8888'}`,
+      '/druid': `http://${(env || {}).host || 'localhost:8888'}`
     }
   },
   module: {
