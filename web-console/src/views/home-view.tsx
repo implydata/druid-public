@@ -29,9 +29,6 @@ import "./home-view.scss";
 import { QueryManager } from '../utils';
 import {render} from "react-dom";
 
-export interface HomeViewProps extends React.Props<any> {
-}
-
 interface DataCount {
   dataSourceCount: number,
   segmentCount: number,
@@ -52,12 +49,15 @@ interface DataCountLoading {
   middleManagerCountLoading: boolean
 }
 
+export interface HomeViewProps extends React.Props<any> {
+}
+
 export interface HomeViewState {
   statusLoading: boolean;
   status: any;
   statusError: string | null;
   dataCount: Partial<DataCount>;
-  dataCountLoading: Partial<DataCountLoading>;
+  dataCountLoading: DataCountLoading;
 }
 
 export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
@@ -109,14 +109,17 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
         return dataSourceCount;
       },
       onStateChange: ({ result, loading, error }) => {
-        let newCount = this.state.dataCount;
-        let newCountLoading = this.state.dataCountLoading;
-        newCount.dataSourceCount = result;
-        newCountLoading.dataSourceCountLoading = loading;
         this.setState({
-          dataCount: newCount,
-          dataCountLoading: newCountLoading
-        });
+            dataCount: {
+              ...this.state.dataCount,
+              dataSourceCount: result
+            },
+            dataCountLoading: {
+              ...this.state.dataCountLoading,
+              dataSourceCountLoading: loading
+            }
+          }
+        )
       }
     });
 
@@ -129,14 +132,17 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
         return segmentCount;
       },
       onStateChange: ({ result, loading, error }) => {
-        let newCount = this.state.dataCount;
-        let newCountLoading = this.state.dataCountLoading;
-        newCount.segmentCount = result;
-        newCountLoading.segmentCountLoading = loading;
         this.setState({
-          dataCount: newCount,
-          dataCountLoading: newCountLoading
-        });
+            dataCount: {
+              ...this.state.dataCount,
+              segmentCount: result
+            },
+            dataCountLoading: {
+              ...this.state.dataCountLoading,
+              segmentCountLoading: loading
+            }
+          }
+        )
       }
     });
 
@@ -174,18 +180,21 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
       },
       onStateChange: ({ result, loading, error }) => {
         if (result === null) return;
-        let newCount = this.state.dataCount;
-        newCount.successTaskCount = result.successTaskCount;
-        newCount.failedTaskCount = result.failedTaskCount;
-        newCount.runningTaskCount = result.runningTaskCount;
-        newCount.pendingTaskCount = result.pendingTaskCount;
-        newCount.waitingTaskCount = result.waitingTaskCount;
-        let newCountLoading = this.state.dataCountLoading;
-        newCountLoading.taskCountLoading = loading;
         this.setState({
-          dataCount: newCount,
-          dataCountLoading: newCountLoading
-        });
+            dataCount: {
+              ...this.state.dataCount,
+              successTaskCount: result.successTaskCount,
+              failedTaskCount: result.failedTaskCount,
+              runningTaskCount: result.runningTaskCount,
+              pendingTaskCount: result.pendingTaskCount,
+              waitingTaskCount: result.waitingTaskCount
+            },
+            dataCountLoading: {
+              ...this.state.dataCountLoading,
+              taskCountLoading: loading
+            }
+          }
+        )
       }
     });
 
@@ -198,13 +207,15 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
         return dataServerCount;
       },
       onStateChange: ({ result, loading, error }) => {
-        let newCount = this.state.dataCount;
-        let newCountLoading = this.state.dataCountLoading;
-        newCount.dataServerCount = result;
-        newCountLoading.dataServerCountLoading = loading;
         this.setState({
-          dataCount: newCount,
-          dataCountLoading: newCountLoading
+          dataCount: {
+            ...this.state.dataCount,
+            dataServerCount: result
+          },
+          dataCountLoading: {
+            ...this.state.dataCountLoading,
+            dataServerCountLoading: loading
+          }
         });
       }
     });
@@ -218,13 +229,15 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
         return middleManagerCount;
       },
       onStateChange: ({ result, loading, error }) => {
-        let newCount = this.state.dataCount;
-        let newCountLoading = this.state.dataCountLoading;
-        newCount.middleManagerCount = result;
-        newCountLoading.middleManagerCountLoading = loading;
         this.setState({
-          dataCount: newCount,
-          dataCountLoading: newCountLoading
+          dataCount: {
+            ...this.state.dataCount,
+            middleManagerCount: result
+          },
+          dataCountLoading: {
+            ...this.state.dataCountLoading,
+            middleManagerCountLoading: loading
+          }
         });
       }
     });
@@ -234,6 +247,11 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
 
   componentWillUnmount(): void {
     this.statusQueryManager.terminate();
+    this.dataSourceQueryManager.terminate();
+    this.segmentQueryManager.terminate();
+    this.taskQueryManager.terminate();
+    this.dataServerQueryManager.terminate();
+    this.middleManagerQueryManager.terminate();
   }
 
   renderTaskCounts(): JSX.Element {
@@ -276,13 +294,13 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
       <a href="#datasources">
         <Card interactive={true}>
           <H5>Datasources</H5>
-          <p>{dataCountLoading.dataSourceCountLoading ? "Loading status..." : `${dataCount.dataSourceCount} datasources`}</p>
+          <p>{dataCountLoading.dataSourceCountLoading ? `Loading status...` : `${dataCount.dataSourceCount} datasources`}</p>
         </Card>
       </a>
       <a href="#segments">
         <Card interactive={true}>
           <H5>Segments</H5>
-          <p>{dataCountLoading.segmentCountLoading ? "Loading status..." : `${dataCount.segmentCount} segments`}</p>
+          <p>{dataCountLoading.segmentCountLoading ? `Loading status...` : `${dataCount.segmentCount} segments`}</p>
         </Card>
       </a>
       <a href="#tasks">
@@ -294,8 +312,8 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
       <a href="#servers">
         <Card interactive={true}>
           <H5>Servers</H5>
-          <p>{dataCountLoading.dataServerCountLoading ? "Loading status..." : `${dataCount.dataServerCount} data servers`}</p>
-          <p>{dataCountLoading.middleManagerCountLoading ? "Loading status..." : `${dataCount.middleManagerCount} middle managers`}</p>
+          <p>{dataCountLoading.dataServerCountLoading ? `Loading status...` : `${dataCount.dataServerCount} data servers`}</p>
+          <p>{dataCountLoading.middleManagerCountLoading ? `Loading status...` : `${dataCount.middleManagerCount} middle managers`}</p>
         </Card>
       </a>
     </div>

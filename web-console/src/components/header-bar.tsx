@@ -74,7 +74,6 @@ export class HeaderBar extends React.Component<HeaderBarProps, HeaderBarState> {
     const configMenu = <Menu>
       <MenuItem text="Cluster config" onClick={() => this.setState({ runtimePropertiesDialogOpen: true })}/>
       <MenuItem text="Property" href="#property" active={active === 'property'} />
-      <MenuItem text="Lookups"/>
     </Menu>
 
     return <Navbar className="header-bar">
