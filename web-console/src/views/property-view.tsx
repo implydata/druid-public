@@ -95,7 +95,7 @@ export class PropertyView extends React.Component<PropertyViewProps, PropertyVie
   render() {
     return <div className="property-view app-view">
       <div className="control-bar">
-        <H1>Druid Status Property</H1>
+        <H1>Druid status property</H1>
       </div>
       {this.renderDataSourceTable()}
     </div>
