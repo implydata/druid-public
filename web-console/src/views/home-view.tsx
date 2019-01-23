@@ -197,7 +197,7 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
       }
     });
 
-    this.taskQueryManager.runQuery('SELECT status FROM sys.tasks');
+    this.taskQueryManager.runQuery('SELECT CASE WHEN "status" = \'RUNNING\' THEN "runner_status" ELSE "status" END AS "status" FROM sys.tasks');
 
     this.dataServerQueryManager = new QueryManager({
       processQuery: async (query) => {
