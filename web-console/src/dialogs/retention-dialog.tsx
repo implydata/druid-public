@@ -81,12 +81,12 @@ function deflateRule(r: Rule) {
   switch (r.time) {
     case 'byInterval':
       o.interval = r.value;
-      o.tieredReplicants = o.tieredReplicants;
+      o.tieredReplicants = r.tieredReplicants;
       break;
 
     case 'byPeriod':
       o.period = r.value;
-      o.tieredReplicants = o.tieredReplicants;
+      o.tieredReplicants = r.tieredReplicants;
       break;
   }
 
