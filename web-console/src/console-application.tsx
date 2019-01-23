@@ -27,6 +27,7 @@ import { DataSourcesView } from './views/data-source-view';
 import { TasksView } from './views/tasks-view';
 import { SegmentsView } from './views/segments-view';
 import { SqlView } from './views/sql-view';
+import { DruidStatusPropertyView } from "./views/property-status-view";
 import "./console-application.scss";
 
 export interface ConsoleApplicationProps extends React.Props<any> {
@@ -98,6 +99,9 @@ export class ConsoleApplication extends React.Component<ConsoleApplicationProps,
           }} />
           <Route path="/sql" component={() => {
             return wrapInViewContainer('sql', <SqlView initSql={this.initSql}/>);
+          }} />
+          <Route path="/druidstatusproperty" component={() => {
+            return wrapInViewContainer( 'druidstatusproperty', <DruidStatusPropertyView />);
           }} />
           <Route component={() => {
             return wrapInViewContainer(null, <HomeView/>)

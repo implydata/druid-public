@@ -35,7 +35,7 @@ import { AboutDialog } from "../dialogs/about-dialog";
 import { RuntimePropertyDialog } from '../dialogs/runtime-property-dialog';
 import "./header-bar.scss";
 
-export type HeaderActiveTab = null | 'datasources' | 'segments' | 'tasks' | 'servers' | 'sql';
+export type HeaderActiveTab = null | 'datasources' | 'segments' | 'tasks' | 'servers' | 'sql' | 'druidstatusproperty';
 
 export interface HeaderBarProps extends React.Props<any> {
   active: HeaderActiveTab;
@@ -71,6 +71,12 @@ export class HeaderBar extends React.Component<HeaderBarProps, HeaderBarState> {
       <MenuItem icon="git-branch" text="Apache Druid GitHub" href="https://github.com/apache/incubator-druid" target="_blank" />
     </Menu>;
 
+    const configMenu = <Menu>
+      <MenuItem text="Cluster config" onClick={() => this.setState({ runtimePropertiesDialogOpen: true })}/>
+      <MenuItem text="Druid status property" href="#druidstatusproperty" active={active === 'druidstatusproperty'} />
+      <MenuItem text="Lookups"/>
+    </Menu>
+
     return <Navbar className="header-bar">
       <NavbarGroup align={Alignment.LEFT}>
         <a href="#"><NavbarHeading>Druid Console</NavbarHeading></a>
@@ -81,7 +87,9 @@ export class HeaderBar extends React.Component<HeaderBarProps, HeaderBarState> {
         <AnchorButton className={Classes.MINIMAL} icon="database" text="Servers" href="#servers" active={active === 'servers'} />
         <NavbarDivider />
         <AnchorButton className={Classes.MINIMAL} icon="console" text="SQL" href="#sql" active={active === 'sql'} />
-        <Button className={Classes.MINIMAL} icon="settings" text="Config" onClick={() => this.setState({ runtimePropertiesDialogOpen: true })} />
+        <Popover content={configMenu} position={Position.BOTTOM_LEFT}>
+          <Button className={Classes.MINIMAL} icon="settings" text="Config"/>
+        </Popover>
       </NavbarGroup>
       <NavbarGroup align={Alignment.RIGHT}>
         <Popover content={legacyMenu} position={Position.BOTTOM_LEFT}>
