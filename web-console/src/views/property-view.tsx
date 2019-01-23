@@ -24,18 +24,18 @@ import { Filter } from "react-table";
 import {
   H1,
 } from "@blueprintjs/core";
-import "./data-source-view.css";
+import "./property-view.css";
 
-export interface DruidStatusPropertyViewProps extends React.Props<any> {
+export interface PropertyViewProps extends React.Props<any> {
 
 }
 
-export interface DruidStatusPropertyViewState {
+export interface PropertyViewState {
   propertyValuePairs: {}[]
 }
 
-export class DruidStatusPropertyView extends React.Component<DruidStatusPropertyViewProps, DruidStatusPropertyViewState> {
-  constructor(props: DruidStatusPropertyViewProps, context: any) {
+export class PropertyView extends React.Component<PropertyViewProps, PropertyViewState> {
+  constructor(props: PropertyViewProps, context: any) {
     super(props, context);
     this.state = {
       propertyValuePairs: []
@@ -76,11 +76,13 @@ export class DruidStatusPropertyView extends React.Component<DruidStatusProperty
             Header: 'Property',
             accessor: 'property',
             width: 300,
+            filterable: true,
             Cell: (row) => row.value
           },
           {
             Header: 'Value',
             accessor: 'value',
+            filterable: true,
             Cell: (row) => row.value
           }
         ]}
@@ -91,7 +93,7 @@ export class DruidStatusPropertyView extends React.Component<DruidStatusProperty
   }
 
   render() {
-    return <div className="data-sources-view app-view">
+    return <div className="property-view app-view">
       <div className="control-bar">
         <H1>Druid Status Property</H1>
       </div>

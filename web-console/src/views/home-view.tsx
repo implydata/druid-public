@@ -27,19 +27,29 @@ import {
 } from "@blueprintjs/core";
 import "./home-view.scss";
 import { QueryManager } from '../utils';
+import {render} from "react-dom";
 
 export interface HomeViewProps extends React.Props<any> {
 }
-
 
 interface DataCount {
   dataSourceCount: number,
   segmentCount: number,
   runningTaskCount: number,
   pendingTaskCount: number,
-  completeTaskCount: number,
-  serverCount: number,
+  successTaskCount: number,
+  failedTaskCount: number,
+  waitingTaskCount: number,
+  dataServerCount: number,
   middleManagerCount: number
+}
+
+interface DataCountLoading {
+  dataSourceCountLoading: boolean,
+  segmentCountLoading: boolean,
+  taskCountLoading: boolean,
+  dataServerCountLoading: boolean,
+  middleManagerCountLoading: boolean
 }
 
 export interface HomeViewState {
@@ -47,11 +57,16 @@ export interface HomeViewState {
   status: any;
   statusError: string | null;
   dataCount: Partial<DataCount>;
+  dataCountLoading: Partial<DataCountLoading>;
 }
 
 export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
   private statusQueryManager: QueryManager<string, any>;
-  private countQueryManager: QueryManager<string[],any>;
+  private dataSourceQueryManager: QueryManager<string, any>;
+  private segmentQueryManager: QueryManager<string, any>;
+  private taskQueryManager: QueryManager<string, any>;
+  private dataServerQueryManager: QueryManager<string, any>;
+  private middleManagerQueryManager: QueryManager<string, any>;
 
   constructor(props: HomeViewProps, context: any) {
     super(props, context);
@@ -59,7 +74,14 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
       statusLoading: true,
       status: null,
       statusError: null,
-      dataCount: {}
+      dataCount: {},
+      dataCountLoading: {
+        dataSourceCountLoading: true,
+        segmentCountLoading: true,
+        taskCountLoading: true,
+        dataServerCountLoading: true,
+        middleManagerCountLoading: true
+      }
     };
   }
 
@@ -78,70 +100,171 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
       }
     });
 
-    this.countQueryManager = new QueryManager({
-      processQuery: async (queries) => {
-        const dataSourceResp = await axios.post("/druid/v2/sql", { query: queries[0] });
-        const segmentResp = await axios.post("/druid/v2/sql", { query: queries[1] });
-        const taskResp = await axios.post("/druid/v2/sql", { query: queries[2] });
-        const serverResp = await axios.post("/druid/v2/sql", { query: queries[3] });
-        const workerResp = await axios.get("/druid/indexer/v1/workers");
+    this.statusQueryManager.runQuery("dummy");
+
+    this.dataSourceQueryManager = new QueryManager({
+      processQuery: async (query) => {
+        const dataSourceResp = await axios.post("/druid/v2/sql", { query: query });
         const dataSourceCount = dataSourceResp.data.length;
+        return dataSourceCount;
+      },
+      onStateChange: ({ result, loading, error }) => {
+        let newCount = this.state.dataCount;
+        let newCountLoading = this.state.dataCountLoading;
+        newCount.dataSourceCount = result;
+        newCountLoading.dataSourceCountLoading = loading;
+        this.setState({
+          dataCount: newCount,
+          dataCountLoading: newCountLoading
+        });
+      }
+    });
+
+    this.dataSourceQueryManager.runQuery("SELECT datasource FROM sys.segments GROUP BY 1");
+
+    this.segmentQueryManager = new QueryManager({
+      processQuery: async (query) => {
+        const segmentResp = await axios.post("/druid/v2/sql", { query });
         const segmentCount = segmentResp.data[0].EXPR$0;
+        return segmentCount;
+      },
+      onStateChange: ({ result, loading, error }) => {
+        let newCount = this.state.dataCount;
+        let newCountLoading = this.state.dataCountLoading;
+        newCount.segmentCount = result;
+        newCountLoading.segmentCountLoading = loading;
+        this.setState({
+          dataCount: newCount,
+          dataCountLoading: newCountLoading
+        });
+      }
+    });
+
+    this.segmentQueryManager.runQuery("SELECT COUNT(*) FROM sys.segments");
+
+    this.taskQueryManager = new QueryManager({
+      processQuery: async (query) => {
+        const taskResp = await axios.post("/druid/v2/sql", { query });
         let successTaskCount = 0;
         let failedTaskCount = 0;
         let runningTaskCount = 0;
-        for (let status of taskResp.data) {
-          if (status.status === "SUCCESS") {
+        let pendingTaskCount = 0;
+        let waitingTaskCount = 0;
+        for (let dataStatus of taskResp.data) {
+          if (dataStatus.status === "SUCCESS") {
             successTaskCount++;
-          } else if (status.status === "FAILED") {
+          } else if (dataStatus.status === "FAILED") {
             failedTaskCount++;
-          } else {
+          } else if (dataStatus.status === "RUNNING") {
             runningTaskCount++;
+          } else if (dataStatus.status === "WAITING") {
+            waitingTaskCount++;
+          } else {
+            pendingTaskCount++;
           }
         }
-        const serverCount = serverResp.data[0].EXPR$0;
-        const workerCount = workerResp.data.length;
-        const dataCount: DataCount = {
-          dataSourceCount: dataSourceCount,
-          segmentCount: segmentCount,
+        const taskCounts = {
+          successTaskCount: successTaskCount,
+          failedTaskCount: failedTaskCount,
           runningTaskCount: runningTaskCount,
-          pendingTaskCount: failedTaskCount,
-          completeTaskCount: successTaskCount,
-          serverCount: serverCount,
-          middleManagerCount: workerCount
+          pendingTaskCount: pendingTaskCount,
+          waitingTaskCount: waitingTaskCount
         }
-        console.log("1",dataSourceResp);
-        console.log("2",segmentResp);
-        console.log("3",taskResp);
-        console.log("4", serverResp);
-        console.log("5",workerResp);
-        return dataCount;
+        return taskCounts;
       },
       onStateChange: ({ result, loading, error }) => {
+        if (result === null) return;
+        let newCount = this.state.dataCount;
+        newCount.successTaskCount = result.successTaskCount;
+        newCount.failedTaskCount = result.failedTaskCount;
+        newCount.runningTaskCount = result.runningTaskCount;
+        newCount.pendingTaskCount = result.pendingTaskCount;
+        newCount.waitingTaskCount = result.waitingTaskCount;
+        let newCountLoading = this.state.dataCountLoading;
+        newCountLoading.taskCountLoading = loading;
         this.setState({
-          dataCount: result
+          dataCount: newCount,
+          dataCountLoading: newCountLoading
         });
       }
-    })
+    });
 
-    const dataSourceQuery:string = `SELECT datasource FROM sys.segments GROUP BY 1`;
-    // const dataSourceQuery:string = `SELECT COUNT (DISTINCT datasource) FROM sys.segments`;
-    const segmentQuery:string = `SELECT COUNT(*) FROM sys.segments`;
-    const taskQuery:string = `SELECT status FROM sys.tasks`;
-    const serverQuery: string = `SELECT COUNT(*) FROM sys.servers WHERE "server_type" = 'historical'`;
+    this.taskQueryManager.runQuery("SELECT status FROM sys.tasks");
 
-    const queries: string[] = [dataSourceQuery, segmentQuery, taskQuery, serverQuery];
+    this.dataServerQueryManager = new QueryManager({
+      processQuery: async (query) => {
+        const dataServerResp = await axios.post("/druid/v2/sql", { query });
+        const dataServerCount = dataServerResp.data[0].EXPR$0;
+        return dataServerCount;
+      },
+      onStateChange: ({ result, loading, error }) => {
+        let newCount = this.state.dataCount;
+        let newCountLoading = this.state.dataCountLoading;
+        newCount.dataServerCount = result;
+        newCountLoading.dataServerCountLoading = loading;
+        this.setState({
+          dataCount: newCount,
+          dataCountLoading: newCountLoading
+        });
+      }
+    });
 
-    this.statusQueryManager.runQuery("dummy");
-    this.countQueryManager.runQuery(queries);
+    this.dataServerQueryManager.runQuery(`SELECT COUNT(*) FROM sys.servers WHERE "server_type" = 'historical'`);
+
+    this.middleManagerQueryManager = new QueryManager({
+      processQuery: async (query) => {
+        const middleManagerResp = await axios.get("/druid/indexer/v1/workers");
+        const middleManagerCount = middleManagerResp.data.length;
+        return middleManagerCount;
+      },
+      onStateChange: ({ result, loading, error }) => {
+        let newCount = this.state.dataCount;
+        let newCountLoading = this.state.dataCountLoading;
+        newCount.middleManagerCount = result;
+        newCountLoading.middleManagerCountLoading = loading;
+        this.setState({
+          dataCount: newCount,
+          dataCountLoading: newCountLoading
+        });
+      }
+    });
+
+    this.middleManagerQueryManager.runQuery("dummy");
   }
 
   componentWillUnmount(): void {
     this.statusQueryManager.terminate();
   }
 
+  renderTaskCounts(): JSX.Element {
+    const { dataCount, dataCountLoading } = this.state;
+    let renderedElement: JSX.Element;
+    if (dataCountLoading.taskCountLoading) {
+      renderedElement = <p>Loading status...</p>
+    } else {
+      let buffer: JSX.Element[] = [];
+      if (dataCount.runningTaskCount != 0) {
+        buffer.push(<p key={"runningtaskcount"}>{`${dataCount.runningTaskCount} running tasks`}</p>);
+      }
+      if (dataCount.pendingTaskCount != 0) {
+        buffer.push(<p key={"pendingtaskcount"}>{`${dataCount.pendingTaskCount} pending tasks`}</p>);
+      }
+      if (dataCount.successTaskCount != 0) {
+        buffer.push(<p key={"successtaskcount"}>{`${dataCount.successTaskCount} success tasks`}</p>);
+      }
+      if (dataCount.waitingTaskCount != 0) {
+        buffer.push(<p key={"waitingtaskcount"}>{`${dataCount.waitingTaskCount} waiting tasks`}</p>);
+      }
+      if (dataCount.failedTaskCount != 0) {
+        buffer.push(<p key={"failedtaskcount"}>{`${dataCount.failedTaskCount} failed tasks`}</p>);
+      }
+      renderedElement = <div>{buffer}</div>
+    }
+    return renderedElement;
+  }
+
   render() {
-    const { status, statusLoading, statusError, dataCount } = this.state;
+    const { status, statusLoading, statusError, dataCount, dataCountLoading } = this.state;
 
     return <div className="home-view app-view">
       <a href="/status">
@@ -153,28 +276,26 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
       <a href="#datasources">
         <Card interactive={true}>
           <H5>Datasources</H5>
-          <p>{dataCount == null ? "Loading..." : `${dataCount.dataSourceCount} datasources`}</p>
+          <p>{dataCountLoading.dataSourceCountLoading ? "Loading status..." : `${dataCount.dataSourceCount} datasources`}</p>
         </Card>
       </a>
       <a href="#segments">
         <Card interactive={true}>
           <H5>Segments</H5>
-          <p>{dataCount == null ? "Loading..." : `${dataCount.segmentCount} segments`}</p>
+          <p>{dataCountLoading.segmentCountLoading ? "Loading status..." : `${dataCount.segmentCount} segments`}</p>
         </Card>
       </a>
       <a href="#tasks">
         <Card interactive={true}>
           <H5>Tasks</H5>
-          <p>{dataCount == null ? "Loading..." : `${dataCount.runningTaskCount} running tasks`}</p>
-          <p>{dataCount == null ? "Loading..." : `${dataCount.pendingTaskCount} pending tasks`}</p>
-          <p>{dataCount == null ? "Loading..." : `${dataCount.completeTaskCount} completed tasks`}</p>
+          {this.renderTaskCounts()}
         </Card>
       </a>
       <a href="#servers">
         <Card interactive={true}>
           <H5>Servers</H5>
-          <p>{dataCount == null ? "Loading..." : `${dataCount.serverCount} data servers`}</p>
-          <p>{dataCount == null ? "Loading..." : `${dataCount.middleManagerCount} middle managers`}</p>
+          <p>{dataCountLoading.dataServerCountLoading ? "Loading status..." : `${dataCount.dataServerCount} data servers`}</p>
+          <p>{dataCountLoading.middleManagerCountLoading ? "Loading status..." : `${dataCount.middleManagerCount} middle managers`}</p>
         </Card>
       </a>
     </div>

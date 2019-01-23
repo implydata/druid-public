@@ -35,7 +35,7 @@ import { AboutDialog } from "../dialogs/about-dialog";
 import { RuntimePropertyDialog } from '../dialogs/runtime-property-dialog';
 import "./header-bar.scss";
 
-export type HeaderActiveTab = null | 'datasources' | 'segments' | 'tasks' | 'servers' | 'sql' | 'druidstatusproperty';
+export type HeaderActiveTab = null | 'datasources' | 'segments' | 'tasks' | 'servers' | 'sql' | 'property';
 
 export interface HeaderBarProps extends React.Props<any> {
   active: HeaderActiveTab;
@@ -73,7 +73,7 @@ export class HeaderBar extends React.Component<HeaderBarProps, HeaderBarState> {
 
     const configMenu = <Menu>
       <MenuItem text="Cluster config" onClick={() => this.setState({ runtimePropertiesDialogOpen: true })}/>
-      <MenuItem text="Druid status property" href="#druidstatusproperty" active={active === 'druidstatusproperty'} />
+      <MenuItem text="Property" href="#property" active={active === 'property'} />
       <MenuItem text="Lookups"/>
     </Menu>
 
