@@ -28,6 +28,26 @@ import {
 import "./home-view.scss";
 import { QueryManager } from '../utils';
 
+interface DataCount {
+  dataSourceCount: number,
+  segmentCount: number,
+  runningTaskCount: number,
+  pendingTaskCount: number,
+  successTaskCount: number,
+  failedTaskCount: number,
+  waitingTaskCount: number,
+  dataServerCount: number,
+  middleManagerCount: number
+}
+
+interface DataCountLoading {
+  dataSourceCountLoading: boolean,
+  segmentCountLoading: boolean,
+  taskCountLoading: boolean,
+  dataServerCountLoading: boolean,
+  middleManagerCountLoading: boolean
+}
+
 export interface HomeViewProps extends React.Props<any> {
 }
 
@@ -35,17 +55,32 @@ export interface HomeViewState {
   statusLoading: boolean;
   status: any;
   statusError: string | null;
+  dataCount: Partial<DataCount>;
+  dataCountLoading: DataCountLoading;
 }
 
 export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
   private statusQueryManager: QueryManager<string, any>;
+  private dataSourceQueryManager: QueryManager<string, any>;
+  private segmentQueryManager: QueryManager<string, any>;
+  private taskQueryManager: QueryManager<string, any>;
+  private dataServerQueryManager: QueryManager<string, any>;
+  private middleManagerQueryManager: QueryManager<string, any>;
 
   constructor(props: HomeViewProps, context: any) {
     super(props, context);
     this.state = {
       statusLoading: true,
       status: null,
-      statusError: null
+      statusError: null,
+      dataCount: {},
+      dataCountLoading: {
+        dataSourceCountLoading: true,
+        segmentCountLoading: true,
+        taskCountLoading: true,
+        dataServerCountLoading: true,
+        middleManagerCountLoading: true
+      }
     };
   }
 
@@ -64,15 +99,188 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
       }
     });
 
-    this.statusQueryManager.runQuery('dummy')
+    this.statusQueryManager.runQuery(`dummy`);
+
+    this.dataSourceQueryManager = new QueryManager({
+      processQuery: async (query) => {
+        const dataSourceResp = await axios.post("/druid/v2/sql", { query: query });
+        const dataSourceCount: number = dataSourceResp.data.length;
+        return dataSourceCount;
+      },
+      onStateChange: ({ result, loading, error }) => {
+        this.setState({
+            dataCount: {
+              ...this.state.dataCount,
+              dataSourceCount: result
+            },
+            dataCountLoading: {
+              ...this.state.dataCountLoading,
+              dataSourceCountLoading: loading
+            }
+          }
+        )
+      }
+    });
+
+    this.dataSourceQueryManager.runQuery(`SELECT datasource FROM sys.segments GROUP BY 1`);
+
+    this.segmentQueryManager = new QueryManager({
+      processQuery: async (query) => {
+        const segmentResp = await axios.post("/druid/v2/sql", { query });
+        const segmentCount: number = segmentResp.data[0].count;
+        return segmentCount;
+      },
+      onStateChange: ({ result, loading, error }) => {
+        this.setState({
+            dataCount: {
+              ...this.state.dataCount,
+              segmentCount: result
+            },
+            dataCountLoading: {
+              ...this.state.dataCountLoading,
+              segmentCountLoading: loading
+            }
+          }
+        )
+      }
+    });
+
+    this.segmentQueryManager.runQuery(`SELECT COUNT(*) as "count" FROM sys.segments`);
+
+    this.taskQueryManager = new QueryManager({
+      processQuery: async (query) => {
+        const taskResp = await axios.post("/druid/v2/sql", { query });
+        let taskCounts = {
+          successTaskCount: 0,
+          failedTaskCount: 0,
+          runningTaskCount: 0,
+          waitingTaskCount: 0,
+          pendingTaskCount: 0
+        };
+        for (let dataStatus of taskResp.data) {
+          if (dataStatus.status === "SUCCESS") {
+            taskCounts.successTaskCount = dataStatus.count;
+          } else if (dataStatus.status === "FAILED") {
+            taskCounts.failedTaskCount = dataStatus.count;
+          } else if (dataStatus.status === "RUNNING") {
+            taskCounts.runningTaskCount = dataStatus.count;
+          } else if (dataStatus.status === "WAITING") {
+            taskCounts.waitingTaskCount = dataStatus.count;
+          } else {
+            taskCounts.pendingTaskCount = dataStatus.count;
+          }
+        }
+        return taskCounts;
+      },
+      onStateChange: ({ result, loading, error }) => {
+        if (result === null) return;
+        this.setState({
+            dataCount: {
+              ...this.state.dataCount,
+              successTaskCount: result.successTaskCount,
+              failedTaskCount: result.failedTaskCount,
+              runningTaskCount: result.runningTaskCount,
+              pendingTaskCount: result.pendingTaskCount,
+              waitingTaskCount: result.waitingTaskCount
+            },
+            dataCountLoading: {
+              ...this.state.dataCountLoading,
+              taskCountLoading: loading
+            }
+          }
+        )
+      }
+    });
+
+    this.taskQueryManager.runQuery(`SELECT 
+    CASE WHEN "status" = \'RUNNING\' THEN "runner_status" ELSE "status" END AS "status",
+    COUNT (*) AS "count"
+    FROM sys.tasks
+    GROUP BY 1`);
+
+    this.dataServerQueryManager = new QueryManager({
+      processQuery: async (query) => {
+        const dataServerResp = await axios.post("/druid/v2/sql", { query });
+        const dataServerCount: number = dataServerResp.data[0].count;
+        return dataServerCount;
+      },
+      onStateChange: ({ result, loading, error }) => {
+        this.setState({
+          dataCount: {
+            ...this.state.dataCount,
+            dataServerCount: result
+          },
+          dataCountLoading: {
+            ...this.state.dataCountLoading,
+            dataServerCountLoading: loading
+          }
+        });
+      }
+    });
+
+    this.dataServerQueryManager.runQuery(`SELECT COUNT(*) as "count" FROM sys.servers WHERE "server_type" = 'historical'`);
+
+    this.middleManagerQueryManager = new QueryManager({
+      processQuery: async (query) => {
+        const middleManagerResp = await axios.get("/druid/indexer/v1/workers");
+        const middleManagerCount: number = middleManagerResp.data.length;
+        return middleManagerCount;
+      },
+      onStateChange: ({ result, loading, error }) => {
+        this.setState({
+          dataCount: {
+            ...this.state.dataCount,
+            middleManagerCount: result
+          },
+          dataCountLoading: {
+            ...this.state.dataCountLoading,
+            middleManagerCountLoading: loading
+          }
+        });
+      }
+    });
+
+    this.middleManagerQueryManager.runQuery(`dummy`);
   }
 
   componentWillUnmount(): void {
     this.statusQueryManager.terminate();
+    this.dataSourceQueryManager.terminate();
+    this.segmentQueryManager.terminate();
+    this.taskQueryManager.terminate();
+    this.dataServerQueryManager.terminate();
+    this.middleManagerQueryManager.terminate();
+  }
+
+  renderTaskCounts(): JSX.Element {
+    const { dataCount, dataCountLoading } = this.state;
+    let renderedElement: JSX.Element;
+    if (dataCountLoading.taskCountLoading) {
+      renderedElement = <p>Loading status...</p>
+    } else {
+      let buffer: JSX.Element[] = [];
+      if (dataCount.runningTaskCount != 0) {
+        buffer.push(<p key={"runningtaskcount"}>{`${dataCount.runningTaskCount} running tasks`}</p>);
+      }
+      if (dataCount.pendingTaskCount != 0) {
+        buffer.push(<p key={"pendingtaskcount"}>{`${dataCount.pendingTaskCount} pending tasks`}</p>);
+      }
+      if (dataCount.successTaskCount != 0) {
+        buffer.push(<p key={"successtaskcount"}>{`${dataCount.successTaskCount} success tasks`}</p>);
+      }
+      if (dataCount.waitingTaskCount != 0) {
+        buffer.push(<p key={"waitingtaskcount"}>{`${dataCount.waitingTaskCount} waiting tasks`}</p>);
+      }
+      if (dataCount.failedTaskCount != 0) {
+        buffer.push(<p key={"failedtaskcount"}>{`${dataCount.failedTaskCount} failed tasks`}</p>);
+      }
+      renderedElement = <div>{buffer}</div>
+    }
+    return renderedElement;
   }
 
   render() {
-    const { status, statusLoading, statusError } = this.state;
+    const { status, statusLoading, statusError, dataCount, dataCountLoading } = this.state;
 
     return <div className="home-view app-view">
       <a href="/status">
@@ -84,29 +292,26 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
       <a href="#datasources">
         <Card interactive={true}>
           <H5>Datasources</H5>
-          <p>12 datasources</p>
+          <p>{dataCountLoading.dataSourceCountLoading ? `Loading status...` : `${dataCount.dataSourceCount} datasources`}</p>
         </Card>
       </a>
       <a href="#segments">
         <Card interactive={true}>
           <H5>Segments</H5>
-          <p>120 segments</p>
-          <p>34 time chunks</p>
+          <p>{dataCountLoading.segmentCountLoading ? `Loading status...` : `${dataCount.segmentCount} segments`}</p>
         </Card>
       </a>
       <a href="#tasks">
         <Card interactive={true}>
           <H5>Tasks</H5>
-          <p>12 running tasks</p>
-          <p>7 pending tasks</p>
-          <p>5 recently completed tasks</p>
+          {this.renderTaskCounts()}
         </Card>
       </a>
       <a href="#servers">
         <Card interactive={true}>
           <H5>Servers</H5>
-          <p>3 Data servers</p>
-          <p>3 MiddleManagers</p>
+          <p>{dataCountLoading.dataServerCountLoading ? `Loading status...` : `${dataCount.dataServerCount} data servers`}</p>
+          <p>{dataCountLoading.middleManagerCountLoading ? `Loading status...` : `${dataCount.middleManagerCount} middle managers`}</p>
         </Card>
       </a>
     </div>
