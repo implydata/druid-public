@@ -32,7 +32,7 @@ import {
   ButtonGroup,
   HTMLSelect
 } from "@blueprintjs/core";
-import "./runtime-property-dialog.css"
+import "./runtime-property-dialog.scss"
 import { AutoForm } from '../components/auto-form';
 
 interface ConfigSetting {
@@ -179,7 +179,7 @@ export class RuntimePropertyDialog extends React.Component<RuntimePropertyDialog
               type: "number"
             }
           ]}
-          modal={configSetting}
+          model={configSetting}
           onChange={m => this.setState({ configSetting: m })}
         />
         <FormGroup label={"Who is making this change?"}>

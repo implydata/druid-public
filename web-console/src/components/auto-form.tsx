@@ -43,7 +43,7 @@ interface Field {
 
 export interface AutoFormProps<T> extends React.Props<any> {
   fields: Field[];
-  modal: T,
+  model: T,
   onChange: (newValue: T) => void
 }
 
@@ -64,24 +64,24 @@ export class AutoForm<T> extends React.Component<AutoFormProps<T>, AutoFormState
   }
 
   private renderNumberInput(field: Field): JSX.Element {
-    const { modal, onChange } = this.props;
+    const { model, onChange } = this.props;
     return <NumericInput
-      value={(modal as any)[field.name]}
+      value={(model as any)[field.name]}
       onValueChange={v => {
         if (isNaN(v)) return;
-        onChange(Object.assign({}, modal, { [field.name]: v }));
+        onChange(Object.assign({}, model, { [field.name]: v }));
       }}
       min={field.min || 0}
     />;
   }
 
   private renderSizeBytesInput(field: Field): JSX.Element {
-    const { modal, onChange } = this.props;
+    const { model, onChange } = this.props;
     return <NumericInput
-      value={(modal as any)[field.name]}
+      value={(model as any)[field.name]}
       onValueChange={v => {
         if (isNaN(v)) return;
-        onChange(Object.assign({}, modal, { [field.name]: v }));
+        onChange(Object.assign({}, model, { [field.name]: v }));
       }}
       min={0}
       stepSize={1000}
@@ -90,33 +90,33 @@ export class AutoForm<T> extends React.Component<AutoFormProps<T>, AutoFormState
   }
 
   private renderStringInput(field: Field): JSX.Element {
-    const { modal, onChange } = this.props;
+    const { model, onChange } = this.props;
     return <InputGroup
-      value={(modal as any)[field.name]}
+      value={(model as any)[field.name]}
       onChange={(v: any) => {
-        onChange(Object.assign({}, modal, { [field.name]: v }));
+        onChange(Object.assign({}, model, { [field.name]: v }));
       }}
     />;
   }
 
   private renderBooleanInput(field: Field): JSX.Element {
-    const { modal, onChange } = this.props;
+    const { model, onChange } = this.props;
     return <HTMLSelect
       options={["True", "False"]}
-      value={(modal as any)[field.name] === true ? "True" : "False"}
+      value={(model as any)[field.name] === true ? "True" : "False"}
       onChange={e => {
-        onChange(Object.assign({}, modal, { [field.name]: e.currentTarget.value === "True" }));
+        onChange(Object.assign({}, model, { [field.name]: e.currentTarget.value === "True" }));
       }}
     />
   }
 
   private renderStringArrayInput(field: Field): JSX.Element {
-    const { modal, onChange } = this.props;
+    const { model, onChange } = this.props;
     const label = field.label || AutoForm.makeLabelName(field.name);
     return <TagInput
-      values={(modal as any)[field.name] || []}
+      values={(model as any)[field.name] || []}
       onChange={(v: any) => {
-        onChange(Object.assign({}, modal, { [field.name]: v }));
+        onChange(Object.assign({}, model, { [field.name]: v }));
       }}
       addOnBlur={true}
     />;

@@ -6,14 +6,8 @@ set -e
 
 rm -rf build public
 
-echo "Transpiling TypeScript..."
-./node_modules/.bin/tsc
-
 echo "Transpiling ReactTable CSS..."
 ./node_modules/.bin/stylus lib/react-table.styl -o lib/react-table.css
-
-echo "Transpiling SCSS files..."
-./node_modules/.bin/node-sass-chokidar --quiet --output-style=compressed  src/ --output ./build
 
 echo "Webpacking everything..."
 ./node_modules/.bin/webpack -c webpack.config.js --silent

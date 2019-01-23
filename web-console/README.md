@@ -26,6 +26,12 @@
     }
 ```
 
+## How to watch and run (alternative method)
+
+1. Run `$ npm start`
+
+2. That's it.
+
 ## List of non SQL APIs used
 
 ```
@@ -33,4 +39,4 @@ GET /status
 GET /druid/indexer/v1/supervisor?full
 GET /druid/indexer/v1/workers
 GET /druid/coordinator/v1/loadqueue?simple
-``` 
+```

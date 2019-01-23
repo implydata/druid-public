@@ -23,7 +23,7 @@ import ReactTable from "react-table";
 import { Filter } from "react-table";
 import { H1, H5, Button } from "@blueprintjs/core";
 import { addFilter, makeBooleanFilter, QueryManager, formatBytes, formatNumber } from "../utils";
-import "./segments-view.css";
+import "./segments-view.scss";
 
 export interface SegmentsViewProps extends React.Props<any> {
   goToSql: (initSql: string) => void;

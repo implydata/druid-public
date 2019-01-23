@@ -33,7 +33,7 @@ import {
 } from "@blueprintjs/core";
 import { AboutDialog } from "../dialogs/about-dialog";
 import { RuntimePropertyDialog } from '../dialogs/runtime-property-dialog';
-import "./header-bar.css";
+import "./header-bar.scss";
 
 export type HeaderActiveTab = null | 'datasources' | 'segments' | 'tasks' | 'servers' | 'sql';
 

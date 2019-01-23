@@ -29,7 +29,9 @@ import {
 } from "@blueprintjs/core";
 import { AsyncActionDialog } from '../dialogs/async-action-dialog';
 import { addFilter, formatNumber, formatBytes, countBy, lookupBy, QueryManager } from "../utils";
-import "./data-source-view.css";
+import { RetentionDialog } from '../dialogs/retention-dialog';
+
+import "./data-source-view.scss";
 
 export interface DataSourcesViewProps extends React.Props<any> {
   goToSql: (initSql: string) => void;
@@ -42,6 +44,7 @@ export interface DataSourcesViewState {
   dataSourceFilter: Filter[];
 
   showDisabled: boolean;
+  retentionDialogOpenOn: string | null;
   dropDataDatasource: string | null;
   enableDatasource: string | null;
   killDatasource: string | null;
@@ -58,6 +61,7 @@ export class DataSourcesView extends React.Component<DataSourcesViewProps, DataS
       dataSourceFilter: [],
 
       showDisabled: false,
+      retentionDialogOpenOn: null,
       dropDataDatasource: null,
       enableDatasource: null,
       killDatasource: null
@@ -104,7 +108,7 @@ export class DataSourcesView extends React.Component<DataSourcesViewProps, DataS
   COUNT(*) AS num_segments,
   COUNT(*) FILTER(WHERE is_available = 1) AS num_available_segments,
   SUM("size") AS size,
-  SUM("num_rows") AS num_rows 
+  SUM("num_rows") AS num_rows
 FROM sys.segments
 GROUP BY 1`);
   }
@@ -191,6 +195,16 @@ GROUP BY 1`);
     </AsyncActionDialog>;
   }
 
+  renderRetentionDialog() {
+    const { retentionDialogOpenOn } = this.state;
+
+    return <RetentionDialog
+      dataSource={retentionDialogOpenOn}
+      isOpen={retentionDialogOpenOn != null}
+      onClose={() => this.setState({retentionDialogOpenOn: null})}
+    />;
+  }
+
   renderDataSourceTable() {
     const { goToSegments } = this.props;
     const { dataSources, loadingDataSources, dataSourceFilter, showDisabled } = this.state;
@@ -252,7 +266,8 @@ GROUP BY 1`);
               } else {
                 text = `${rules.length} rules`;
               }
-              return <span>{text} <a onClick={() => alert('ToDo')}>&#9998;</a></span>;
+
+              return <span>{text} <a onClick={() => this.setState({retentionDialogOpenOn: row.original.datasource})}>&#9998;</a></span>;
             }
           },
           {
@@ -313,6 +328,7 @@ GROUP BY 1`);
       {this.renderDropDataAction()}
       {this.renderEnableAction()}
       {this.renderKillAction()}
+      {this.renderRetentionDialog()}
     </>;
   }
 
