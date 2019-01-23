@@ -99,12 +99,12 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
       }
     });
 
-    this.statusQueryManager.runQuery('dummy');
+    this.statusQueryManager.runQuery(`dummy`);
 
     this.dataSourceQueryManager = new QueryManager({
       processQuery: async (query) => {
         const dataSourceResp = await axios.post("/druid/v2/sql", { query: query });
-        const dataSourceCount = dataSourceResp.data.length;
+        const dataSourceCount: number = dataSourceResp.data.length;
         return dataSourceCount;
       },
       onStateChange: ({ result, loading, error }) => {
@@ -122,12 +122,12 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
       }
     });
 
-    this.dataSourceQueryManager.runQuery('SELECT datasource FROM sys.segments GROUP BY 1');
+    this.dataSourceQueryManager.runQuery(`SELECT datasource FROM sys.segments GROUP BY 1`);
 
     this.segmentQueryManager = new QueryManager({
       processQuery: async (query) => {
         const segmentResp = await axios.post("/druid/v2/sql", { query });
-        const segmentCount = segmentResp.data[0].EXPR$0;
+        const segmentCount: number = segmentResp.data[0].count;
         return segmentCount;
       },
       onStateChange: ({ result, loading, error }) => {
@@ -145,35 +145,30 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
       }
     });
 
-    this.segmentQueryManager.runQuery('SELECT COUNT(*) FROM sys.segments');
+    this.segmentQueryManager.runQuery(`SELECT COUNT(*) as "count" FROM sys.segments`);
 
     this.taskQueryManager = new QueryManager({
       processQuery: async (query) => {
         const taskResp = await axios.post("/druid/v2/sql", { query });
-        let successTaskCount = 0;
-        let failedTaskCount = 0;
-        let runningTaskCount = 0;
-        let pendingTaskCount = 0;
-        let waitingTaskCount = 0;
+        let taskCounts = {
+          successTaskCount: 0,
+          failedTaskCount: 0,
+          runningTaskCount: 0,
+          waitingTaskCount: 0,
+          pendingTaskCount: 0
+        };
         for (let dataStatus of taskResp.data) {
           if (dataStatus.status === "SUCCESS") {
-            successTaskCount++;
+            taskCounts.successTaskCount = dataStatus.count;
           } else if (dataStatus.status === "FAILED") {
-            failedTaskCount++;
+            taskCounts.failedTaskCount = dataStatus.count;
           } else if (dataStatus.status === "RUNNING") {
-            runningTaskCount++;
+            taskCounts.runningTaskCount = dataStatus.count;
           } else if (dataStatus.status === "WAITING") {
-            waitingTaskCount++;
+            taskCounts.waitingTaskCount = dataStatus.count;
           } else {
-            pendingTaskCount++;
+            taskCounts.pendingTaskCount = dataStatus.count;
           }
-        }
-        const taskCounts = {
-          successTaskCount: successTaskCount,
-          failedTaskCount: failedTaskCount,
-          runningTaskCount: runningTaskCount,
-          pendingTaskCount: pendingTaskCount,
-          waitingTaskCount: waitingTaskCount
         }
         return taskCounts;
       },
@@ -197,12 +192,16 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
       }
     });
 
-    this.taskQueryManager.runQuery('SELECT CASE WHEN "status" = \'RUNNING\' THEN "runner_status" ELSE "status" END AS "status" FROM sys.tasks');
+    this.taskQueryManager.runQuery(`SELECT 
+    CASE WHEN "status" = \'RUNNING\' THEN "runner_status" ELSE "status" END AS "status",
+    COUNT (*) AS "count"
+    FROM sys.tasks
+    GROUP BY 1`);
 
     this.dataServerQueryManager = new QueryManager({
       processQuery: async (query) => {
         const dataServerResp = await axios.post("/druid/v2/sql", { query });
-        const dataServerCount = dataServerResp.data[0].EXPR$0;
+        const dataServerCount: number = dataServerResp.data[0].count;
         return dataServerCount;
       },
       onStateChange: ({ result, loading, error }) => {
@@ -219,12 +218,12 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
       }
     });
 
-    this.dataServerQueryManager.runQuery(`SELECT COUNT(*) FROM sys.servers WHERE "server_type" = 'historical'`);
+    this.dataServerQueryManager.runQuery(`SELECT COUNT(*) as "count" FROM sys.servers WHERE "server_type" = 'historical'`);
 
     this.middleManagerQueryManager = new QueryManager({
       processQuery: async (query) => {
         const middleManagerResp = await axios.get("/druid/indexer/v1/workers");
-        const middleManagerCount = middleManagerResp.data.length;
+        const middleManagerCount: number = middleManagerResp.data.length;
         return middleManagerCount;
       },
       onStateChange: ({ result, loading, error }) => {
@@ -241,7 +240,7 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
       }
     });
 
-    this.middleManagerQueryManager.runQuery('dummy');
+    this.middleManagerQueryManager.runQuery(`dummy`);
   }
 
   componentWillUnmount(): void {
