@@ -46,7 +46,7 @@ export interface HomeViewState {
   statusLoading: boolean;
   status: any;
   statusError: string | null;
-  dataCount: any;
+  dataCount: Partial<DataCount>;
 }
 
 export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
@@ -125,14 +125,14 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
     })
 
     const dataSourceQuery:string = `SELECT datasource FROM sys.segments GROUP BY 1`;
-    // const dataSourceQuery:string = `SELECT COUNT(DISTINCT datasource) FROM sys.segments`;
+    // const dataSourceQuery:string = `SELECT COUNT (DISTINCT datasource) FROM sys.segments`;
     const segmentQuery:string = `SELECT COUNT(*) FROM sys.segments`;
     const taskQuery:string = `SELECT status FROM sys.tasks`;
     const serverQuery: string = `SELECT COUNT(*) FROM sys.servers WHERE "server_type" = 'historical'`;
 
     const queries: string[] = [dataSourceQuery, segmentQuery, taskQuery, serverQuery];
 
-    this.statusQueryManager.runQuery(serverQuery);
+    this.statusQueryManager.runQuery("dummy");
     this.countQueryManager.runQuery(queries);
   }
 
@@ -141,7 +141,7 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
   }
 
   render() {
-    const { status, statusLoading, statusError } = this.state;
+    const { status, statusLoading, statusError, dataCount } = this.state;
 
     return <div className="home-view app-view">
       <a href="/status">
@@ -153,28 +153,28 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
       <a href="#datasources">
         <Card interactive={true}>
           <H5>Datasources</H5>
-          <p>{this.state.dataCount == null ? "Loading..." : `${this.state.dataCount.dataSourceCount} datasources`}</p>
+          <p>{dataCount == null ? "Loading..." : `${dataCount.dataSourceCount} datasources`}</p>
         </Card>
       </a>
       <a href="#segments">
         <Card interactive={true}>
           <H5>Segments</H5>
-          <p>{this.state.dataCount == null ? "Loading..." : `${this.state.dataCount.segmentCount} segments`}</p>
+          <p>{dataCount == null ? "Loading..." : `${dataCount.segmentCount} segments`}</p>
         </Card>
       </a>
       <a href="#tasks">
         <Card interactive={true}>
           <H5>Tasks</H5>
-          <p>{this.state.dataCount == null ? "Loading..." : `${this.state.dataCount.runningTaskCount} running tasks`}</p>
-          <p>{this.state.dataCount == null ? "Loading..." : `${this.state.dataCount.pendingTaskCount} pending tasks`}</p>
-          <p>{this.state.dataCount == null ? "Loading..." : `${this.state.dataCount.completeTaskCount} completed tasks`}</p>
+          <p>{dataCount == null ? "Loading..." : `${dataCount.runningTaskCount} running tasks`}</p>
+          <p>{dataCount == null ? "Loading..." : `${dataCount.pendingTaskCount} pending tasks`}</p>
+          <p>{dataCount == null ? "Loading..." : `${dataCount.completeTaskCount} completed tasks`}</p>
         </Card>
       </a>
       <a href="#servers">
         <Card interactive={true}>
           <H5>Servers</H5>
-          <p>{this.state.dataCount == null ? "Loading..." : `${this.state.dataCount.serverCount} data servers`}</p>
-          <p>{this.state.dataCount == null ? "Loading..." : `${this.state.dataCount.middleManagerCount} middle managers`}</p>
+          <p>{dataCount == null ? "Loading..." : `${dataCount.serverCount} data servers`}</p>
+          <p>{dataCount == null ? "Loading..." : `${dataCount.middleManagerCount} middle managers`}</p>
         </Card>
       </a>
     </div>

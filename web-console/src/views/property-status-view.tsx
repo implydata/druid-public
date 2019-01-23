@@ -50,7 +50,6 @@ export class DruidStatusPropertyView extends React.Component<DruidStatusProperty
     } catch (error) {
       console.error(error)
     }
-    console.log(resp);
     let propValPairs = [];
     for (let property in resp) {
       propValPairs.push({
@@ -58,7 +57,6 @@ export class DruidStatusPropertyView extends React.Component<DruidStatusProperty
         value: resp[property]
       })
     }
-    console.log(propValPairs)
     this.setState({propertyValuePairs: propValPairs} );
   }
 
@@ -72,23 +70,21 @@ export class DruidStatusPropertyView extends React.Component<DruidStatusProperty
     return <>
       <ReactTable
         data={propertyValuePairs}
+        filterable={true}
         columns={[
           {
             Header: 'Property',
             accessor: 'property',
-            filterable: false,
             width: 300,
             Cell: (row) => row.value
           },
           {
             Header: 'Value',
             accessor: 'value',
-            filterable: false,
-            // width: 300,
             Cell: (row) => row.value
           }
         ]}
-        defaultPageSize={50}
+        defaultPageSize={100}
         className="-striped -highlight"
       />
     </>;
@@ -98,17 +94,6 @@ export class DruidStatusPropertyView extends React.Component<DruidStatusProperty
     return <div className="data-sources-view app-view">
       <div className="control-bar">
         <H1>Druid Status Property</H1>
-        {/*<Button*/}
-          {/*rightIcon="refresh"*/}
-          {/*text="Refresh"*/}
-          {/*onClick={() => this.dataSourceQueryManager.rerunLastQuery()}*/}
-        {/*/>*/}
-        {/*<Button*/}
-          {/*rightIcon="share"*/}
-          {/*text="Go to SQL"*/}
-          {/*onClick={() => goToSql(this.dataSourceQueryManager.getLastQuery())}*/}
-        {/*/>*/}
-        {/*<Checkbox checked={showDisabled} onChange={() => this.setState({ showDisabled: !showDisabled })}>Show disabled</Checkbox>*/}
       </div>
       {this.renderDataSourceTable()}
     </div>
