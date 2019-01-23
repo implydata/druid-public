@@ -21,12 +21,9 @@ import * as React from 'react';
 import * as classNames from 'classnames';
 import ReactTable from "react-table";
 import { Filter } from "react-table";
-import {
-  Button,
-  H1,
-} from "@blueprintjs/core";
-import "./property-view.css";
-import {QueryManager} from "../utils";
+import { Button, H1 } from "@blueprintjs/core";
+import { QueryManager } from "../utils";
+import "./property-view.scss";
 
 export interface PropertyViewProps extends React.Props<any> {
 
