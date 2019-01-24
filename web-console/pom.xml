@@ -93,7 +93,7 @@
                 <artifactId>maven-resources-plugin</artifactId>
                 <configuration>
                     <!-- put console resources in their own package directory -->
-                    <outputDirectory>${project.build.outputDirectory}/apache/druid/console</outputDirectory>
+                    <outputDirectory>${project.build.outputDirectory}/org/apache/druid/console</outputDirectory>
                 </configuration>
             </plugin>
         </plugins>

@@ -123,6 +123,7 @@
         <module>aws-common</module>
         <module>extendedset</module>
         <module>hll</module>
+        <module>web-console</module>
         <!-- Core extensions -->
         <module>extensions-core/avro-extensions</module>
         <module>extensions-core/datasketches</module>
