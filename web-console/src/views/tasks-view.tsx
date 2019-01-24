@@ -21,9 +21,10 @@ import * as React from 'react';
 import * as classNames from 'classnames';
 import ReactTable from "react-table";
 import { Filter } from "react-table";
-import { Button, H1, ButtonGroup, Intent, Label } from "@blueprintjs/core";
+import {Button, H1, ButtonGroup, Intent, Label, Navbar} from "@blueprintjs/core";
 import { addFilter, QueryManager } from "../utils";
 import { AsyncActionDialog } from "../dialogs/async-action-dialog";
+import { PostSpecDialog } from "../dialogs/post-spec-dialog";
 import "./tasks-view.scss";
 
 export interface TasksViewProps extends React.Props<any> {
@@ -46,6 +47,9 @@ export interface TasksViewState {
   groupTasksBy: null | 'type' | 'datasource' | 'status';
 
   killTaskId: string | null;
+
+  supervisorPostSpecDialogOpen: boolean;
+  taskPostSpecDialogOpen: boolean;
 }
 
 function statusToColor(status: string): string {
@@ -79,7 +83,10 @@ export class TasksView extends React.Component<TasksViewProps, TasksViewState> {
       taskFilter: props.taskId ? [{ id: 'task_id', value: props.taskId }] : [],
       groupTasksBy: null,
 
-      killTaskId: null
+      killTaskId: null,
+
+      supervisorPostSpecDialogOpen: false,
+      taskPostSpecDialogOpen: false
     };
   }
 
@@ -399,7 +406,7 @@ FROM sys.tasks`);
 
   render() {
     const { goToSql } = this.props;
-    const { groupTasksBy } = this.state;
+    const { groupTasksBy, supervisorPostSpecDialogOpen, taskPostSpecDialogOpen } = this.state;
 
     return <div className="tasks-view app-view">
       <div className="control-bar">
@@ -408,6 +415,11 @@ FROM sys.tasks`);
           icon="refresh"
           text="Refresh"
           onClick={() => this.supervisorQueryManager.rerunLastQuery()}
+        />
+        <Button
+          icon="add"
+          text="Post spec"
+          onClick={() => this.setState({ supervisorPostSpecDialogOpen: true })}
         />
       </div>
       {this.renderSupervisorTable()}
@@ -431,8 +443,23 @@ FROM sys.tasks`);
           <Button active={groupTasksBy === 'datasource'} onClick={() => this.setState({ groupTasksBy: 'datasource' })}>Datasource</Button>
           <Button active={groupTasksBy === 'status'} onClick={() => this.setState({ groupTasksBy: 'status' })}>Status</Button>
         </ButtonGroup>
+        <Button
+          icon="add"
+          text="Post spec"
+          onClick={() => this.setState({ taskPostSpecDialogOpen: true })}
+        />
       </div>
       {this.renderTaskTable()}
+      <PostSpecDialog
+        isOpen={ supervisorPostSpecDialogOpen }
+        postEndpoint={"/druid/indexer/v1/supervisor"}
+        onClose={() => this.setState({ supervisorPostSpecDialogOpen: false })}
+      />
+      <PostSpecDialog
+        isOpen={ taskPostSpecDialogOpen }
+        postEndpoint={"/druid/indexer/v1/task"}
+        onClose={() => this.setState({ taskPostSpecDialogOpen: false })}
+      />
     </div>
   }
 }
