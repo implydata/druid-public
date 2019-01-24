@@ -24,23 +24,53 @@ import { SqlControl } from '../components/sql-control';
 import { QueryManager } from '../utils';
 import "./sql-view.scss";
 
+export interface HeaderRows {
+  header: string[];
+  rows: any[][];
+}
+
 export interface SqlViewProps extends React.Props<any> {
   initSql: string | null;
 }
 
 export interface SqlViewState {
   loading: boolean;
-  results: any[] | null;
+  result: HeaderRows | null;
 }
 
 export class SqlView extends React.Component<SqlViewProps, SqlViewState> {
-  private sqlQueryManager: QueryManager<string, any[][]>;
+  static processRune(queryType: string, rune: any[]): HeaderRows {
+    console.log(rune);
+    if (!rune.length) {
+      return {
+        header: [],
+        rows: []
+      };
+    }
+
+    switch (queryType) {
+      case 'timeseries':
+        const header = Object.keys(rune[0].result);
+        return {
+          header: ['timestamp'].concat(header),
+          rows: rune.map((r: Record<string, any>) => {
+            const { timestamp, result } = r;
+            return [timestamp].concat(header.map(h => result[h]));
+          })
+        };
+
+      default:
+        throw new Error(`unsupported query type '${queryType}'`);
+    }
+  }
+
+  private sqlQueryManager: QueryManager<string, HeaderRows>;
 
   constructor(props: SqlViewProps, context: any) {
     super(props, context);
     this.state = {
       loading: false,
-      results: null
+      result: null
     };
   }
 
@@ -50,9 +80,11 @@ export class SqlView extends React.Component<SqlViewProps, SqlViewState> {
         const trimmedQuery = query.trim();
         if (trimmedQuery.startsWith('{') && trimmedQuery.endsWith('}')) {
           // Secret way to issue a standard query
-          throw new Error('ToDo: issue a normal query');
-          //const respRune = await axios.post("/druid/v2", JSON.parse(query));
-          //return respRune.data;
+          const queryJson = JSON.parse(query);
+          const queryType = queryJson.queryType;
+          if (typeof queryType !== 'string') throw new Error('must have query type');
+          const runeResp = await axios.post("/druid/v2", queryJson);
+          return SqlView.processRune(queryType, runeResp.data);
         } else {
           const respSql = await axios.post("/druid/v2/sql", {
             query,
@@ -60,12 +92,16 @@ export class SqlView extends React.Component<SqlViewProps, SqlViewState> {
             header: true
           });
 
-          return respSql.data;
+          const result = respSql.data;
+          return {
+            header: (result && result.length) ? result[0] : [],
+            rows: (result && result.length) ? result.slice(1) : []
+          };
         }
       },
       onStateChange: ({ result, loading, error }) => {
         this.setState({
-          results: result,
+          result,
           loading
         });
       }
@@ -77,14 +113,12 @@ export class SqlView extends React.Component<SqlViewProps, SqlViewState> {
   }
 
   renderResultTable() {
-    const { results, loading } = this.state;
-
-    const header: string[] = (results && results.length) ? results[0] : [];
+    const { result, loading } = this.state;
 
     return <ReactTable
-      data={results ? results.slice(1) : []}
+      data={result ? result.rows : []}
       loading={loading}
-      columns={header.map((h, i) => ({ Header: h, accessor: String(i) }))}
+      columns={(result ? result.header : []).map((h, i) => ({ Header: h, accessor: String(i) }))}
       defaultPageSize={10}
       className="-striped -highlight"
     />;

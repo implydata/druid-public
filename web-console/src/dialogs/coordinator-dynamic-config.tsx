@@ -32,79 +32,50 @@ import {
   ButtonGroup,
   HTMLSelect
 } from "@blueprintjs/core";
-import "./runtime-property-dialog.scss"
 import { AutoForm } from '../components/auto-form';
+import "./coordinator-dynamic-config.scss";
 
-interface ConfigSetting {
-  balancerComputeThreads: number,
-  emitBalancingStats: boolean,
-  killAllDataSources: boolean,
-  killDataSourceWhitelist : string[],
-  killPendingSegmentsSkipList: string[],
-  maxSegmentsInNodeLoadingQueue: number,
-  maxSegmentsToMove: number,
-  mergeBytesLimit: number,
-  mergeSegmentsLimit: number,
-  millisToWaitBeforeDeleting: number,
-  replicantLifeTime: number,
-  replicationThrottleLimit: number
-}
-
-export interface RuntimePropertyDialogProps extends React.Props<any> {
+export interface CoordinatorDynamicConfigDialogProps extends React.Props<any> {
   isOpen: boolean,
   onClose: () => void
 }
 
-export interface RuntimePropertyDialogState {
-  configSetting: Partial<ConfigSetting>;
+export interface CoordinatorDynamicConfigDialogState {
+  config: Record<string, any> | null;
   configAuthor: string;
   configComment: string;
 }
 
-export class RuntimePropertyDialog extends React.Component<RuntimePropertyDialogProps, RuntimePropertyDialogState> {
-  constructor(props: RuntimePropertyDialogProps) {
+export class CoordinatorDynamicConfigDialog extends React.Component<CoordinatorDynamicConfigDialogProps, CoordinatorDynamicConfigDialogState> {
+  constructor(props: CoordinatorDynamicConfigDialogProps) {
     super(props);
     this.state = {
-      configSetting: {},
+      config: null,
       configComment: "",
       configAuthor: ""
     }
   }
 
   async getClusterConfig() {
-    let resp: any;
+    let config: Record<string, any> | null = null;
     try {
-      resp = await axios.get("/druid/coordinator/v1/config");
-      resp = resp.data
+      const configResp = await axios.get("/druid/coordinator/v1/config");
+      config = configResp.data
     } catch (error) {
       console.error(error)
     }
-    console.log(resp);
     this.setState({
-      configSetting: {
-        balancerComputeThreads: resp.balancerComputeThreads,
-        emitBalancingStats: resp.emitBalancingStats,
-        killAllDataSources: resp.killAllDataSources,
-        killDataSourceWhitelist: resp.killDataSourceWhitelist,
-        killPendingSegmentsSkipList: resp.killPendingSegmentsSkipList,
-        maxSegmentsInNodeLoadingQueue: resp.maxSegmentsInNodeLoadingQueue,
-        maxSegmentsToMove : resp.maxSegmentsToMove,
-        mergeBytesLimit : resp.mergeBytesLimit,
-        mergeSegmentsLimit : resp.mergeSegmentsLimit,
-        millisToWaitBeforeDeleting : resp.millisToWaitBeforeDeleting,
-        replicantLifetime: resp.replicantLifetime,
-        replicationThrottleLimit: resp.replicationThrottleLimit
-      }
+      config
     });
   }
 
   private saveClusterConfig(): void {
     const { onClose } = this.props;
-    let newState: any = this.state.configSetting;
+    let newState: any = this.state.config;
     const whiteList: any[] = newState["killDataSourceWhitelist"];
     const skipList: any[] = newState["killPendingSegmentsSkipList"];
-    newState["killDataSourceWhitelist"] = newState["killDataSourceWhitelist"].join(",");
-    newState["killPendingSegmentsSkipList"] = newState["killPendingSegmentsSkipList"].join(",");
+    //newState["killDataSourceWhitelist"] = newState["killDataSourceWhitelist"].join(",");
+    //newState["killPendingSegmentsSkipList"] = newState["killPendingSegmentsSkipList"].join(",");
     axios.post("/druid/coordinator/v1/config", newState, {
       headers:{
         "X-Druid-Author": this.state.configAuthor,
@@ -118,14 +89,14 @@ export class RuntimePropertyDialog extends React.Component<RuntimePropertyDialog
 
   render() {
     const { isOpen, onClose } = this.props;
-    const { configSetting } = this.state;
+    const { config } = this.state;
 
     return <Dialog
-      className="runtime-property-dialog"
+      className="coordinator-dynamic-config"
       isOpen={ isOpen }
-      onOpening={ () => {this.getClusterConfig();}}
+      onOpening={() => {this.getClusterConfig()}}
       onClose={ onClose }
-      title={"Edit cluster config"}
+      title={"Coordinator dynamic config"}
     >
       <div className={`dialog-body ${Classes.DIALOG_BODY}`}>
         <AutoForm
@@ -179,8 +150,8 @@ export class RuntimePropertyDialog extends React.Component<RuntimePropertyDialog
               type: "number"
             }
           ]}
-          model={configSetting}
-          onChange={m => this.setState({ configSetting: m })}
+          model={config}
+          onChange={m => this.setState({ config: m })}
         />
         <FormGroup label={"Who is making this change?"}>
           <InputGroup

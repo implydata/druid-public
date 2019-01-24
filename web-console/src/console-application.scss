@@ -44,11 +44,21 @@
   }
 
   .control-bar {
-    height: 45px;
+    height: 35px;
 
     & > * {
       display: inline-block;
       margin-right: 15px;
+      vertical-align: bottom;
+    }
+
+    .control-label {
+      font-size: 35px;
+      line-height: 35px;
+    }
+
+    label.bp3-label {
+      margin-bottom: 7px;
     }
   }
 }

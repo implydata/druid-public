@@ -16,30 +16,8 @@
  * limitations under the License.
  */
 
-.runtime-property-dialog {
-  .dialog-body {
-    overflow: scroll;
-    max-height: 70vh;
-    margin: 10px 15px;
-
-    .bp3-form-group {
-      padding: 0 15px;
-      margin: 0 0 5px;
-    }
-  ;
-
-    .bp3-html-select {
-      width: 195px;
-    }
-
-    .config-comment {
-      margin-top: 10px;
-      padding: 0 15px;
-
-      textarea {
-        max-width: 200px;
-        padding: 0 15px;
-      }
-    }
+.post-spec-dialog {
+  .post-spec-dialog-textarea {
+    margin: 20px;
   }
 }

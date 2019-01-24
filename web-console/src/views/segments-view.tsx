@@ -213,7 +213,7 @@ export class SegmentsView extends React.Component<SegmentsViewProps, SegmentsVie
 
     return <div className="segments-view app-view">
       <div className="control-bar">
-        <H1>Segments</H1>
+        <div className="control-label">Segments</div>
         <Button
           icon="refresh"
           text="Refresh"
