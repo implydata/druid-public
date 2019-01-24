@@ -30,6 +30,7 @@ import {
 import { AsyncActionDialog } from '../dialogs/async-action-dialog';
 import { addFilter, formatNumber, formatBytes, countBy, lookupBy, QueryManager } from "../utils";
 import { RetentionDialog } from '../dialogs/retention-dialog';
+import { Loader } from '../components/loader';
 
 import "./data-source-view.scss";
 
@@ -207,6 +208,10 @@ GROUP BY 1`);
   renderDataSourceTable() {
     const { goToSegments } = this.props;
     const { dataSources, loadingDataSources, dataSourceFilter, showDisabled } = this.state;
+
+    if (loadingDataSources) {
+      return <Loader/>;
+    }
 
     let data = dataSources || [];
     if (!showDisabled) {
