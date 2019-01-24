@@ -21,24 +21,11 @@ import axios from 'axios';
 import {
   FormGroup,
   Button,
-  ControlGroup,
-  InputGroup,
-  Dialog,
-  NumericInput,
-  Classes,
-  Tooltip,
-  AnchorButton,
-  TagInput,
-  Intent,
-  ButtonGroup,
-  HTMLSelect,
-  Popover,
-  Menu, MenuItem,
-  Position
 } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
 
 import { RuleEditor } from '../components/rule-editor';
+import { SnitchDialog } from './snitch-dialog';
 
 import "./retention-dialog.scss"
 
@@ -103,9 +90,6 @@ export interface RetentionDialogState {
   rules: Rule[];
   originalRules: Rule[];
   tiers: any[];
-  author: string;
-  comment: string;
-  saveDisabled: boolean;
 }
 
 export class RetentionDialog extends React.Component<RetentionDialogProps, RetentionDialogState> {
@@ -114,10 +98,7 @@ export class RetentionDialog extends React.Component<RetentionDialogProps, Reten
     this.state = {
       originalRules: [],
       rules: [],
-      tiers: [],
-      comment: "",
-      author: "",
-      saveDisabled: true
+      tiers: []
     }
   }
 
@@ -142,7 +123,7 @@ export class RetentionDialog extends React.Component<RetentionDialogProps, Reten
     });
   }
 
-  private save(): void {
+  save = (author: string, comment: string) => {
     const { onClose, dataSource } = this.props;
     const { rules } = this.state;
 
@@ -150,8 +131,8 @@ export class RetentionDialog extends React.Component<RetentionDialogProps, Reten
 
     axios.post(`/druid/coordinator/v1/rules/${dataSource}`, deflatedRules, {
       headers:{
-        "X-Druid-Author": this.state.author,
-        "X-Druid-Comment": this.state.comment
+        "X-Druid-Author": author,
+        "X-Druid-Comment": comment
       }
     });
 
@@ -159,7 +140,7 @@ export class RetentionDialog extends React.Component<RetentionDialogProps, Reten
   }
 
   changeRule = (newRule: Rule, index: number) => {
-    const { rules, author, comment } = this.state;
+    const { rules } = this.state;
 
     const newRules = rules.map((r, i) => {
       if (i === index) return newRule;
@@ -167,26 +148,7 @@ export class RetentionDialog extends React.Component<RetentionDialogProps, Reten
     });
 
     this.setState({
-      rules: newRules,
-      saveDisabled: !author || !comment
-    });
-  }
-
-  changeAuthor(newAuthor: string)  {
-    const { author, comment } = this.state;
-
-    this.setState({
-      author: newAuthor,
-      saveDisabled: !newAuthor || !comment
-    });
-  }
-
-  changeComment(newComment: string)  {
-    const { author, comment } = this.state;
-
-    this.setState({
-      comment: newComment,
-      saveDisabled: !author || !newComment
+      rules: newRules
     });
   }
 
@@ -199,7 +161,6 @@ export class RetentionDialog extends React.Component<RetentionDialogProps, Reten
       rules: newRules
     });
   }
-
 
   renderRule = (rule: Rule, index: number) => {
     const { tiers, rules } = this.state;
@@ -236,49 +197,26 @@ export class RetentionDialog extends React.Component<RetentionDialogProps, Reten
 
   render() {
     const { isOpen, onClose } = this.props;
-    const { rules, saveDisabled } = this.state;
+    const { rules } = this.state;
 
-    return <Dialog
-      className={`retention-dialog`}
+    return <SnitchDialog
+      className="retention-dialog"
+      saveDisabled={false}
       isOpen={ isOpen }
       onOpening={ () => {this.getClusterConfig();}}
       onClose={ onClose }
-      title={"Edit retention rules"}
+      title="Edit retention rules"
+      onReset={this.reset}
+      onSave={this.save}
     >
-      <div className={`dialog-body ${Classes.DIALOG_BODY}`}>
-        <FormGroup>
-          {rules.map(this.renderRule)}
-        </FormGroup>
+      <FormGroup>
+        {rules.map(this.renderRule)}
+      </FormGroup>
 
-        <FormGroup className="right">
-          <Button icon={IconNames.PLUS} onClick={this.addRule}>New rule</Button>
-        </FormGroup>
+      <FormGroup className="right">
+        <Button icon={IconNames.PLUS} onClick={this.addRule}>New rule</Button>
+      </FormGroup>
 
-        <FormGroup label={"Who is making this change?"}>
-          <InputGroup
-            onChange={(e: any) => this.changeAuthor(e.target.value)}
-          />
-        </FormGroup>
-        <FormGroup className={"comment"}>
-          <InputGroup
-            placeholder={"Please comment"}
-            onChange={(e: any) => this.changeComment(e.target.value)}
-            large={true}
-          />
-        </FormGroup>
-      </div>
-      <div className={Classes.DIALOG_FOOTER}>
-        <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-          <Button onClick={this.reset} intent={"none"}>Reset</Button>
-          <Button onClick={onClose}>Close</Button>
-          <Button
-            disabled={saveDisabled}
-            text="Save"
-            onClick={() => this.save()}
-            intent={Intent.PRIMARY}
-          />
-        </div>
-      </div>
-    </Dialog>
+    </SnitchDialog>
   }
 }
