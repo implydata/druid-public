@@ -84,9 +84,10 @@ export class PostSpecDialog extends React.Component<PostSpecDialogProps, PostSpe
       />
       <div className={Classes.DIALOG_FOOTER}>
         <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-          <Button onClick={onClose}>
-            Close
-          </Button>
+          <Button
+            text="Close"
+            onClick={onClose}
+          />
           <Button
             text="Submit"
             intent={Intent.PRIMARY}
