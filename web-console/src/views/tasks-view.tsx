@@ -410,7 +410,7 @@ FROM sys.tasks`);
 
     return <div className="tasks-view app-view">
       <div className="control-bar">
-        <H1>Supervisors</H1>
+        <div className="control-label">Supervisors</div>
         <Button
           icon="refresh"
           text="Refresh"
@@ -425,7 +425,7 @@ FROM sys.tasks`);
       {this.renderSupervisorTable()}
 
       <div className="control-bar">
-        <H1>Tasks</H1>
+        <div className="control-label">Tasks</div>
         <Button
           icon="refresh"
           text="Refresh"

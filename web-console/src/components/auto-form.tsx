@@ -43,7 +43,7 @@ interface Field {
 
 export interface AutoFormProps<T> extends React.Props<any> {
   fields: Field[];
-  model: T,
+  model: T | null,
   onChange: (newValue: T) => void
 }
 
@@ -141,10 +141,10 @@ export class AutoForm<T> extends React.Component<AutoFormProps<T>, AutoFormState
   }
 
   render() {
-    const { fields } = this.props;
+    const { fields, model } = this.props;
 
     return <div className="auto-form">
-      {fields.map(field => this.renderField(field))}
+      {model && fields.map(field => this.renderField(field))}
     </div>
   }
 }

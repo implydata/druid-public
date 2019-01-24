@@ -16,14 +16,30 @@
  * limitations under the License.
  */
 
-.property-view {
-  height: 100%;
-  width: 100%;
+.coordinator-dynamic-config {
+  .dialog-body {
+    overflow: scroll;
+    max-height: 70vh;
+    margin: 10px 15px;
 
-  .ReactTable {
-    position: absolute;
-    top: 60px;
-    bottom: 0;
-    width: 100%;
+    .bp3-form-group {
+      padding: 0 15px;
+      margin: 0 0 5px;
+    }
+  ;
+
+    .bp3-html-select {
+      width: 195px;
+    }
+
+    .config-comment {
+      margin-top: 10px;
+      padding: 0 15px;
+
+      textarea {
+        max-width: 200px;
+        padding: 0 15px;
+      }
+    }
   }
 }

@@ -53,13 +53,6 @@ module.exports = env => ({
             },
             {loader: 'sass-loader'} // compiles Sass to CSS, using Node Sass by default
         ]
-      },
-        {
-        test: /\.(png|jpg)$/,
-        loader: 'file-loader',
-        options: {
-          name: 'images/[name].[ext]'
-        }
       }
     ]
   },

@@ -22,11 +22,7 @@ import * as classNames from 'classnames';
 import ReactTable from "react-table";
 import { Filter } from "react-table";
 import { sum } from "d3-array";
-import {
-  Button,
-  H1,
-  Switch
-} from "@blueprintjs/core";
+import { Button, H1, Switch } from "@blueprintjs/core";
 import { addFilter, formatBytesCompact, QueryManager } from "../utils";
 import "./servers-view.scss";
 
@@ -130,23 +126,9 @@ WHERE "server_type" = 'historical'`);
     const { servers, serversLoading, serverFilter, groupByTier } = this.state;
 
     const fillIndicator = (value: number) => {
-      return <div className="fill-indicator"
-        style={{
-          width: '100%',
-          height: '100%',
-          backgroundColor: '#dadada',
-          borderRadius: '2px'
-        }}
-      >
-        <div
-          style={{
-            width: `${value * 100}%`,
-            height: '100%',
-            backgroundColor: '#85cc00',
-            borderRadius: '2px',
-            transition: 'all .2s ease-out'
-          }}
-        />
+      return <div className="fill-indicator">
+        <div className="bar" style={{ width: `${value * 100}%` }}/>
+        <div className="label">{(value * 100).toFixed(1) + '%'}</div>
       </div>;
     }
 
@@ -161,17 +143,18 @@ WHERE "server_type" = 'historical'`);
       pivotBy={groupByTier ? ["tier"] : []}
       columns={[
         {
+          Header: "Server",
+          accessor: "server",
+          width: 300,
+          Aggregated: row => ''
+        },
+        {
           Header: "Tier",
           accessor: "tier",
           Cell: row => {
             const value = row.value;
             return <a onClick={() => { this.setState({ serverFilter: addFilter(serverFilter, 'tier', value) }) }}>{value}</a>
           }
-        },
-        {
-          Header: "Server",
-          accessor: "server",
-          width: 300
         },
         {
           Header: "Size",
@@ -181,8 +164,8 @@ WHERE "server_type" = 'historical'`);
           accessor: (row) => row.max_size ? (row.curr_size / row.max_size) : null,
           Aggregated: row => {
             const originals = row.subRows.map(r => r._original);
-            const totalCurr = sum(originals, s => s.currSize);
-            const totalMax = sum(originals, s => s.currMax);
+            const totalCurr = sum(originals, s => s.curr_size);
+            const totalMax = sum(originals, s => s.max_size);
             return fillIndicator(totalCurr / totalMax);
           },
           Cell: row => {
@@ -300,7 +283,7 @@ WHERE "server_type" = 'historical'`);
 
     return <div className="servers-view app-view">
       <div className="control-bar">
-        <H1>Data servers</H1>
+        <div className="control-label">Historicals</div>
         <Button
           icon="refresh"
           text="Refresh"
@@ -320,7 +303,7 @@ WHERE "server_type" = 'historical'`);
       {this.renderServersTable()}
 
       <div className="control-bar">
-        <H1>MiddleManagers</H1>
+        <div className="control-label">MiddleManagers</div>
         <Button
           icon="refresh"
           text="Refresh"

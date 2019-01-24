@@ -337,7 +337,7 @@ GROUP BY 1`);
 
     return <div className="data-sources-view app-view">
       <div className="control-bar">
-        <H1>Datasources</H1>
+        <div className="control-label">Datasources</div>
         <Button
           icon="refresh"
           text="Refresh"
