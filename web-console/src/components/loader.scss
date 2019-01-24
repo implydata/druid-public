@@ -23,10 +23,10 @@
   left: 50%;
   transform: translate(-50%, -50%);
 
-  @mixin drive-by($delay) {
-    @keyframes drive-by-#{$delay} {
+  @mixin drive-by($approach, $takeoff) {
+    @keyframes drive-by-#{$approach}-#{$takeoff} {
       0% {
-        transform: translate(#{(-100 - $delay*30 + '%')}, 0);
+        transform: translate(#{(-100 - $approach*30 + '%')}, 0);
         opacity: 0;
       }
 
@@ -41,12 +41,12 @@
       }
 
       100% {
-        transform: translate(#{(100 + $delay*30 + '%')}, 0);
+        transform: translate(#{(100 + $takeoff*30 + '%')}, 0);
         opacity: 0;
       }
     }
 
-    animation: drive-by-#{$delay} 2s infinite;
+    animation: drive-by-#{$approach}-#{$takeoff} 2s infinite;
   }
 
   svg {
@@ -56,19 +56,19 @@
 
     path {
       &.one {
-        @include drive-by(2);
+        @include drive-by(2, 4);
       }
 
       &.two {
-        @include drive-by(3);
+        @include drive-by(3, 3);
       }
 
       &.three {
-        @include drive-by(6);
+        @include drive-by(6, 2);
       }
 
       &.four {
-        @include drive-by(7);
+        @include drive-by(7, 2);
       }
     }
   }
