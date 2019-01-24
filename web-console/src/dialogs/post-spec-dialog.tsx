@@ -48,7 +48,7 @@ export class PostSpecDialog extends React.Component<PostSpecDialogProps, PostSpe
 
     this.postSpecQueryManager = new QueryManager({
       processQuery: async (query: string) => {
-        const resp = await axios.post(postEndpoint, { spec });
+        const resp = await axios.post(postEndpoint, JSON.parse(spec) );
         return resp.data;
       }
     })
