@@ -82,11 +82,12 @@ export class SqlView extends React.Component<SqlViewProps, SqlViewState> {
         const trimmedQuery = query.trim();
         if (trimmedQuery.startsWith('{') && trimmedQuery.endsWith('}')) {
           // Secret way to issue a standard query
-          const queryJson = JSON.parse(query);
-          const queryType = queryJson.queryType;
+          const runeQuery = JSON.parse(query);
+          const queryType = runeQuery.queryType;
           if (typeof queryType !== 'string') throw new Error('must have query type');
-          const runeResp = await axios.post("/druid/v2", queryJson);
+          const runeResp = await axios.post("/druid/v2", runeQuery);
           return SqlView.processRune(queryType, runeResp.data);
+
         } else {
           let respSql: any;
           try {
