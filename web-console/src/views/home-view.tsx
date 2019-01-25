@@ -29,23 +29,23 @@ import "./home-view.scss";
 import { QueryManager } from '../utils';
 
 interface DataCount {
-  dataSourceCount: number,
-  segmentCount: number,
-  runningTaskCount: number,
-  pendingTaskCount: number,
-  successTaskCount: number,
-  failedTaskCount: number,
-  waitingTaskCount: number,
-  dataServerCount: number,
-  middleManagerCount: number
+  datasourceCount: number;
+  segmentCount: number;
+  runningTaskCount: number;
+  pendingTaskCount: number;
+  successTaskCount: number;
+  failedTaskCount: number;
+  waitingTaskCount: number;
+  dataServerCount: number;
+  middleManagerCount: number;
 }
 
 interface DataCountLoading {
-  dataSourceCountLoading: boolean,
-  segmentCountLoading: boolean,
-  taskCountLoading: boolean,
-  dataServerCountLoading: boolean,
-  middleManagerCountLoading: boolean
+  datasourceCountLoading: boolean;
+  segmentCountLoading: boolean;
+  taskCountLoading: boolean;
+  dataServerCountLoading: boolean;
+  middleManagerCountLoading: boolean;
 }
 
 export interface HomeViewProps extends React.Props<any> {
@@ -55,13 +55,14 @@ export interface HomeViewState {
   statusLoading: boolean;
   status: any;
   statusError: string | null;
+
   dataCount: Partial<DataCount>;
   dataCountLoading: DataCountLoading;
 }
 
 export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
   private statusQueryManager: QueryManager<string, any>;
-  private dataSourceQueryManager: QueryManager<string, any>;
+  private datasourceQueryManager: QueryManager<string, any>;
   private segmentQueryManager: QueryManager<string, any>;
   private taskQueryManager: QueryManager<string, any>;
   private dataServerQueryManager: QueryManager<string, any>;
@@ -70,12 +71,13 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
   constructor(props: HomeViewProps, context: any) {
     super(props, context);
     this.state = {
-      statusLoading: true,
+      statusLoading: false,
       status: null,
       statusError: null,
+
       dataCount: {},
       dataCountLoading: {
-        dataSourceCountLoading: true,
+        datasourceCountLoading: true,
         segmentCountLoading: true,
         taskCountLoading: true,
         dataServerCountLoading: true,
@@ -92,8 +94,8 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
       },
       onStateChange: ({ result, loading, error }) => {
         this.setState({
-          status: result,
           statusLoading: loading,
+          status: result,
           statusError: error
         });
       }
@@ -101,28 +103,32 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
 
     this.statusQueryManager.runQuery(`dummy`);
 
-    this.dataSourceQueryManager = new QueryManager({
+    // -------------------------
+
+    this.datasourceQueryManager = new QueryManager({
       processQuery: async (query) => {
-        const dataSourceResp = await axios.post("/druid/v2/sql", { query: query });
-        const dataSourceCount: number = dataSourceResp.data.length;
-        return dataSourceCount;
+        const datasourceResp = await axios.post("/druid/v2/sql", { query: query });
+        const datasourceCount: number = datasourceResp.data.length;
+        return datasourceCount;
       },
       onStateChange: ({ result, loading, error }) => {
         this.setState({
             dataCount: {
               ...this.state.dataCount,
-              dataSourceCount: result
+              datasourceCount: result
             },
             dataCountLoading: {
               ...this.state.dataCountLoading,
-              dataSourceCountLoading: loading
+              datasourceCountLoading: loading
             }
           }
         )
       }
     });
 
-    this.dataSourceQueryManager.runQuery(`SELECT datasource FROM sys.segments GROUP BY 1`);
+    this.datasourceQueryManager.runQuery(`SELECT datasource FROM sys.segments GROUP BY 1`);
+
+    // -------------------------
 
     this.segmentQueryManager = new QueryManager({
       processQuery: async (query) => {
@@ -146,6 +152,8 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
     });
 
     this.segmentQueryManager.runQuery(`SELECT COUNT(*) as "count" FROM sys.segments`);
+
+    // -------------------------
 
     this.taskQueryManager = new QueryManager({
       processQuery: async (query) => {
@@ -192,11 +200,13 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
       }
     });
 
+    // -------------------------
+
     this.taskQueryManager.runQuery(`SELECT
-    CASE WHEN "status" = \'RUNNING\' THEN "runner_status" ELSE "status" END AS "status",
-    COUNT (*) AS "count"
-    FROM sys.tasks
-    GROUP BY 1`);
+  CASE WHEN "status" = 'RUNNING' THEN "runner_status" ELSE "status" END AS "status",
+  COUNT (*) AS "count"
+FROM sys.tasks
+GROUP BY 1`);
 
     this.dataServerQueryManager = new QueryManager({
       processQuery: async (query) => {
@@ -245,7 +255,7 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
 
   componentWillUnmount(): void {
     this.statusQueryManager.terminate();
-    this.dataSourceQueryManager.terminate();
+    this.datasourceQueryManager.terminate();
     this.segmentQueryManager.terminate();
     this.taskQueryManager.terminate();
     this.dataServerQueryManager.terminate();
@@ -282,7 +292,7 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
       <a href="#datasources">
         <Card interactive={true}>
           <H5>Datasources</H5>
-          <p>{dataCountLoading.dataSourceCountLoading ? `Loading...` : `${dataCount.dataSourceCount} datasources`}</p>
+          <p>{dataCountLoading.datasourceCountLoading ? `Loading...` : `${dataCount.datasourceCount} datasources`}</p>
         </Card>
       </a>
       <a href="#segments">

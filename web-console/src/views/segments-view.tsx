@@ -27,7 +27,7 @@ import "./segments-view.scss";
 
 export interface SegmentsViewProps extends React.Props<any> {
   goToSql: (initSql: string) => void;
-  dataSource: string | null;
+  datasource: string | null;
   onlyUnavailable: boolean | null;
 }
 
@@ -50,7 +50,7 @@ export class SegmentsView extends React.Component<SegmentsViewProps, SegmentsVie
     super(props, context);
 
     const segmentFilter: Filter[] = [];
-    if (props.dataSource) segmentFilter.push({ id: 'datasource', value: props.dataSource });
+    if (props.datasource) segmentFilter.push({ id: 'datasource', value: props.datasource });
     if (props.onlyUnavailable) segmentFilter.push({ id: 'is_available', value: 'false' });
 
     this.state = {

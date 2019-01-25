@@ -31,6 +31,7 @@ import "./tasks-view.scss";
 export interface TasksViewProps extends React.Props<any> {
   taskId: string | null;
   goToSql: (initSql: string) => void;
+  goToMiddleManager: (middleManager: string) => void;
 }
 
 export interface TasksViewState {
@@ -390,6 +391,7 @@ FROM sys.tasks`);
   }
 
   renderTaskTable() {
+    const { goToMiddleManager } = this.props;
     const { tasks, tasksLoading, tasksError, taskFilter, groupTasksBy } = this.state;
 
     return <>
@@ -445,7 +447,7 @@ FROM sys.tasks`);
                   style={{ color: statusToColor(value) }}
                 >&#x25cf;&nbsp;</span>
                 {value}
-                { location && <a onClick={() => alert('ToDo')} title={`Go to: ${location}`}>&nbsp;&#x279A;</a> }
+                { location && <a onClick={() => goToMiddleManager(location)} title={`Go to: ${location}`}>&nbsp;&#x279A;</a> }
                 { errorMsg && <a onClick={() => this.setState({ alertErrorMsg: errorMsg })} title={errorMsg}>&nbsp;&#x2718;</a> }
               </span>;
             }

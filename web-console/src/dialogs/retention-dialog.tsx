@@ -81,7 +81,7 @@ function deflateRule(r: Rule) {
 }
 
 export interface RetentionDialogProps extends React.Props<any> {
-  dataSource: string | null;
+  datasource: string | null;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -103,11 +103,11 @@ export class RetentionDialog extends React.Component<RetentionDialogProps, Reten
   }
 
   async getClusterConfig() {
-    const { dataSource } = this.props;
+    const { datasource } = this.props;
 
     let resp: any;
     try {
-      resp = await axios.get(`/druid/coordinator/v1/rules/${dataSource}`);
+      resp = await axios.get(`/druid/coordinator/v1/rules/${datasource}`);
       resp = resp.data
     } catch (error) {
       console.error(error)
@@ -124,12 +124,12 @@ export class RetentionDialog extends React.Component<RetentionDialogProps, Reten
   }
 
   save = (author: string, comment: string) => {
-    const { onClose, dataSource } = this.props;
+    const { onClose, datasource } = this.props;
     const { rules } = this.state;
 
     const deflatedRules = rules.map(deflateRule);
 
-    axios.post(`/druid/coordinator/v1/rules/${dataSource}`, deflatedRules, {
+    axios.post(`/druid/coordinator/v1/rules/${datasource}`, deflatedRules, {
       headers:{
         "X-Druid-Author": author,
         "X-Druid-Comment": comment

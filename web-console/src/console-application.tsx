@@ -39,9 +39,10 @@ export interface ConsoleApplicationState {
 
 export class ConsoleApplication extends React.Component<ConsoleApplicationProps, ConsoleApplicationState> {
   private taskId: string | null;
-  private dataSource: string | null;
+  private datasource: string | null;
   private onlyUnavailable: boolean | null;
   private initSql: string | null;
+  private middleManager: string | null;
 
   constructor(props: ConsoleApplicationProps, context: any) {
     super(props, context);
@@ -53,9 +54,10 @@ export class ConsoleApplication extends React.Component<ConsoleApplicationProps,
   private resetInitialsDelay() {
     setTimeout(() => {
       this.taskId = null;
-      this.dataSource = null;
+      this.datasource = null;
       this.onlyUnavailable = null;
       this.initSql = null;
+      this.middleManager = null;
     }, 50);
   }
 
@@ -65,10 +67,16 @@ export class ConsoleApplication extends React.Component<ConsoleApplicationProps,
     this.resetInitialsDelay();
   }
 
-  private goToSegments = (dataSource: string, onlyUnavailable = false) => {
-    this.dataSource = dataSource;
+  private goToSegments = (datasource: string, onlyUnavailable = false) => {
+    this.datasource = datasource;
     this.onlyUnavailable = onlyUnavailable;
     window.location.hash = 'segments';
+    this.resetInitialsDelay();
+  }
+
+  private goToMiddleManager = (middleManager: string) => {
+    this.middleManager = middleManager;
+    window.location.hash = 'servers';
     this.resetInitialsDelay();
   }
 
@@ -93,10 +101,10 @@ export class ConsoleApplication extends React.Component<ConsoleApplicationProps,
             return wrapInViewContainer('datasources', <DatasourcesView goToSql={this.goToSql} goToSegments={this.goToSegments}/>);
           }} />
           <Route path="/segments" component={() => {
-            return wrapInViewContainer('segments', <SegmentsView goToSql={this.goToSql} dataSource={this.dataSource} onlyUnavailable={this.onlyUnavailable}/>);
+            return wrapInViewContainer('segments', <SegmentsView goToSql={this.goToSql} datasource={this.datasource} onlyUnavailable={this.onlyUnavailable}/>);
           }} />
           <Route path="/tasks" component={() => {
-            return wrapInViewContainer('tasks', <TasksView taskId={this.taskId} goToSql={this.goToSql}/>);
+            return wrapInViewContainer('tasks', <TasksView taskId={this.taskId} goToSql={this.goToSql} goToMiddleManager={this.goToMiddleManager}/>);
           }} />
           <Route path="/servers" component={() => {
             return wrapInViewContainer('servers', <ServersView goToSql={this.goToSql} goToTask={this.goToTask}/>);

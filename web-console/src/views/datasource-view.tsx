@@ -36,7 +36,7 @@ import "./datasource-view.scss";
 
 export interface DatasourcesViewProps extends React.Props<any> {
   goToSql: (initSql: string) => void;
-  goToSegments: (dataSource: string, onlyUnavailable?: boolean) => void;
+  goToSegments: (datasource: string, onlyUnavailable?: boolean) => void;
 }
 
 export interface DatasourcesViewState {
@@ -57,7 +57,7 @@ export class DatasourcesView extends React.Component<DatasourcesViewProps, Datas
   static FULLY_AVAILABLE_COLOR = '#57d500';
   static PARTIALLY_AVAILABLE_COLOR = '#ffbf00';
 
-  private dataSourceQueryManager: QueryManager<string, any[]>;
+  private datasourceQueryManager: QueryManager<string, any[]>;
 
   constructor(props: DatasourcesViewProps, context: any) {
     super(props, context);
@@ -76,7 +76,7 @@ export class DatasourcesView extends React.Component<DatasourcesViewProps, Datas
   }
 
   componentDidMount(): void {
-    this.dataSourceQueryManager = new QueryManager({
+    this.datasourceQueryManager = new QueryManager({
       processQuery: async (query: string) => {
         let datasourcesResp: any;
         try {
@@ -95,7 +95,7 @@ export class DatasourcesView extends React.Component<DatasourcesViewProps, Datas
         const defaultRules = rules['_default'];
 
         const compactionResp = await axios.get('/druid/coordinator/v1/config/compaction');
-        const compaction = lookupBy(compactionResp.data.compactionConfigs, (c: any) => c.dataSource);
+        const compaction = lookupBy(compactionResp.data.compactionConfigs, (c: any) => c.datasource);
 
         const allDatasources = datasources.concat(disabled.map(d => ({ datasource: d, disabled: true })));
         allDatasources.forEach((ds: any) => {
@@ -115,7 +115,7 @@ export class DatasourcesView extends React.Component<DatasourcesViewProps, Datas
       }
     });
 
-    this.dataSourceQueryManager.runQuery(`SELECT
+    this.datasourceQueryManager.runQuery(`SELECT
   datasource,
   COUNT(*) AS num_segments,
   COUNT(*) FILTER(WHERE is_available = 1) AS num_available_segments,
@@ -126,7 +126,7 @@ GROUP BY 1`);
   }
 
   componentWillUnmount(): void {
-    this.dataSourceQueryManager.terminate();
+    this.datasourceQueryManager.terminate();
   }
 
   renderDropDataAction() {
@@ -145,7 +145,7 @@ GROUP BY 1`);
       intent={Intent.DANGER}
       onClose={(success) => {
         this.setState({ dropDataDatasource: null });
-        if (success) this.dataSourceQueryManager.rerunLastQuery();
+        if (success) this.datasourceQueryManager.rerunLastQuery();
       }}
     >
       <p>
@@ -170,7 +170,7 @@ GROUP BY 1`);
       intent={Intent.PRIMARY}
       onClose={(success) => {
         this.setState({ enableDatasource: null });
-        if (success) this.dataSourceQueryManager.rerunLastQuery();
+        if (success) this.datasourceQueryManager.rerunLastQuery();
       }}
     >
       <p>
@@ -195,7 +195,7 @@ GROUP BY 1`);
       intent={Intent.DANGER}
       onClose={(success) => {
         this.setState({ killDatasource: null });
-        if (success) this.dataSourceQueryManager.rerunLastQuery();
+        if (success) this.datasourceQueryManager.rerunLastQuery();
       }}
     >
       <p>
@@ -211,7 +211,7 @@ GROUP BY 1`);
     const { retentionDialogOpenOn } = this.state;
 
     return <RetentionDialog
-      dataSource={retentionDialogOpenOn}
+      datasource={retentionDialogOpenOn}
       isOpen={retentionDialogOpenOn != null}
       onClose={() => this.setState({retentionDialogOpenOn: null})}
     />;
@@ -370,12 +370,12 @@ GROUP BY 1`);
         <Button
           icon="refresh"
           text="Refresh"
-          onClick={() => this.dataSourceQueryManager.rerunLastQuery()}
+          onClick={() => this.datasourceQueryManager.rerunLastQuery()}
         />
         <Button
           icon="console"
           text="Go to SQL"
-          onClick={() => goToSql(this.dataSourceQueryManager.getLastQuery())}
+          onClick={() => goToSql(this.datasourceQueryManager.getLastQuery())}
         />
         <Checkbox checked={showDisabled} onChange={() => this.setState({ showDisabled: !showDisabled })}>Show disabled</Checkbox>
       </div>
