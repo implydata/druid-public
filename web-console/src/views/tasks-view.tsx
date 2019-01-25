@@ -131,6 +131,13 @@ FROM sys.tasks`);
     this.taskQueryManager.terminate();
   }
 
+  private submitSpec(endpoint: string, spec: string):void {
+    axios.post(endpoint, JSON.stringify(spec))
+      .catch( (error) => {
+        console.error(error);
+      });
+  }
+
   renderResumeSupervisorAction() {
     const { resumeSupervisorId } = this.state;
 
@@ -456,13 +463,13 @@ FROM sys.tasks`);
       {this.renderTaskTable()}
       <PostSpecDialog
         isOpen={ supervisorPostSpecDialogOpen }
-        postEndpoint={"/druid/indexer/v1/supervisor"}
         onClose={() => this.setState({ supervisorPostSpecDialogOpen: false })}
+        onSubmit={ (spec: string) => this.submitSpec('/druid/indexer/v1/supervisor', spec) }
       />
       <PostSpecDialog
         isOpen={ taskPostSpecDialogOpen }
-        postEndpoint={"/druid/indexer/v1/task"}
         onClose={() => this.setState({ taskPostSpecDialogOpen: false })}
+        onSubmit={ (spec: string) => this.submitSpec('/druid/indexer/v1/task', spec) }
       />
     </div>
   }

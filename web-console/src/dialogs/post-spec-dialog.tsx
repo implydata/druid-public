@@ -24,7 +24,7 @@ import {QueryManager} from "../utils";
 
 export interface PostSpecDialogProps extends React.Props<any> {
   isOpen: boolean,
-  postEndpoint: string,
+  onSubmit: (spec: string) => void,
   onClose: () => void
 }
 
@@ -33,8 +33,6 @@ export interface PostSpecDialogState {
 }
 
 export class PostSpecDialog extends React.Component<PostSpecDialogProps, PostSpecDialogState> {
-  private postSpecQueryManager: QueryManager<string, any[]>;
-
   constructor(props: PostSpecDialogProps) {
     super(props);
     this.state = {
@@ -42,26 +40,10 @@ export class PostSpecDialog extends React.Component<PostSpecDialogProps, PostSpe
     }
   }
 
-  componentDidMount(): void {
-    const { postEndpoint } = this.props;
-    const { spec } = this.state;
-
-    this.postSpecQueryManager = new QueryManager({
-      processQuery: async (query: string) => {
-        const resp = await axios.post(postEndpoint, JSON.parse(spec) );
-        return resp.data;
-      }
-    })
-  }
-
-  componentWillUnmount(): void {
-    this.postSpecQueryManager.terminate();
-  }
-
   private postSpec(): void {
-    const { onClose } = this.props;
-
-    this.postSpecQueryManager.runQuery("dummy");
+    const { onClose, onSubmit } = this.props;
+    const { spec } = this.state;
+    onSubmit(spec);
     onClose();
   }
 
