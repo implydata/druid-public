@@ -38,6 +38,7 @@ function formatQueues(segmentsToLoad: number, segmentsToLoadSize: number, segmen
 }
 
 export interface ServersViewProps extends React.Props<any> {
+  middleManager: string | null;
   goToSql: (initSql: string) => void;
   goToTask: (taskId: string) => void;
 }
@@ -71,7 +72,7 @@ export class ServersView extends React.Component<ServersViewProps, ServersViewSt
       middleManagersLoading: true,
       middleManagers: null,
       middleManagersError: null,
-      middleManagerFilter: []
+      middleManagerFilter: props.middleManager ? [{ id: 'host', value: props.middleManager }] : [],
     };
   }
 
@@ -258,12 +259,14 @@ WHERE "server_type" = 'historical'`);
         {
           Header: "Usage",
           id: "usage",
+          width: 60,
           accessor: (row) => `${row.currCapacityUsed} / ${row.worker.capacity}`,
           filterable: false
         },
         {
           Header: "Availability groups",
           id: "availabilityGroups",
+          width: 60,
           accessor: (row) => row.availabilityGroups.length,
           filterable: false,
         },

@@ -101,13 +101,13 @@ export class ConsoleApplication extends React.Component<ConsoleApplicationProps,
             return wrapInViewContainer('datasources', <DatasourcesView goToSql={this.goToSql} goToSegments={this.goToSegments}/>);
           }} />
           <Route path="/segments" component={() => {
-            return wrapInViewContainer('segments', <SegmentsView goToSql={this.goToSql} datasource={this.datasource} onlyUnavailable={this.onlyUnavailable}/>);
+            return wrapInViewContainer('segments', <SegmentsView datasource={this.datasource} onlyUnavailable={this.onlyUnavailable} goToSql={this.goToSql}/>);
           }} />
           <Route path="/tasks" component={() => {
             return wrapInViewContainer('tasks', <TasksView taskId={this.taskId} goToSql={this.goToSql} goToMiddleManager={this.goToMiddleManager}/>);
           }} />
           <Route path="/servers" component={() => {
-            return wrapInViewContainer('servers', <ServersView goToSql={this.goToSql} goToTask={this.goToTask}/>);
+            return wrapInViewContainer('servers', <ServersView middleManager={this.middleManager} goToSql={this.goToSql} goToTask={this.goToTask}/>);
           }} />
           <Route path="/sql" component={() => {
             return wrapInViewContainer('sql', <SqlView initSql={this.initSql}/>);

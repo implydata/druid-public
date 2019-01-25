@@ -441,13 +441,14 @@ FROM sys.tasks`);
               if (row.aggregated) return '';
               const value = row.value;
               const location = row.original.location;
+              const locationHostname = location ? location.split(':')[0] : null;
               const errorMsg = row.original.error_msg;
               return <span>
                 <span
                   style={{ color: statusToColor(value) }}
                 >&#x25cf;&nbsp;</span>
                 {value}
-                { location && <a onClick={() => goToMiddleManager(location)} title={`Go to: ${location}`}>&nbsp;&#x279A;</a> }
+                { location && <a onClick={() => goToMiddleManager(locationHostname)} title={`Go to: ${locationHostname}`}>&nbsp;&#x279A;</a> }
                 { errorMsg && <a onClick={() => this.setState({ alertErrorMsg: errorMsg })} title={errorMsg}>&nbsp;&#x2718;</a> }
               </span>;
             }

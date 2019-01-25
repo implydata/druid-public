@@ -101,7 +101,7 @@ export class DatasourcesView extends React.Component<DatasourcesViewProps, Datas
         const defaultRules = rules['_default'];
 
         const compactionResp = await axios.get('/druid/coordinator/v1/config/compaction');
-        const compaction = lookupBy(compactionResp.data.compactionConfigs, (c: any) => c.datasource);
+        const compaction = lookupBy(compactionResp.data.compactionConfigs, (c: any) => c.dataSource);
 
         const allDatasources = datasources.concat(disabled.map(d => ({ datasource: d, disabled: true })));
         allDatasources.forEach((ds: any) => {
