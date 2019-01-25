@@ -252,9 +252,31 @@ FROM sys.tasks`);
         columns={[
           {
             Header: "Datasource",
-            accessor: "id",
             id: 'datasource',
+            accessor: "id",
             width: 300
+          },
+          {
+            Header: 'Type',
+            id: 'type',
+            accessor: (row) => {
+              const { spec } = row;
+              if (!spec) return '';
+              const { tuningConfig } = spec;
+              if (!tuningConfig) return '';
+              return tuningConfig.type;
+            }
+          },
+          {
+            Header: 'Topic/Stream',
+            id: 'topic',
+            accessor: (row) => {
+              const { spec } = row;
+              if (!spec) return '';
+              const { ioConfig } = spec;
+              if (!ioConfig) return '';
+              return ioConfig.topic || ioConfig.stream || '';
+            }
           },
           {
             Header: "Status",
@@ -428,8 +450,8 @@ FROM sys.tasks`);
           onClick={() => this.supervisorQueryManager.rerunLastQuery()}
         />
         <Button
-          icon="add"
-          text="Post spec"
+          icon="plus"
+          text="Post supervisor"
           onClick={() => this.setState({ supervisorPostSpecDialogOpen: true })}
         />
       </div>
@@ -455,8 +477,8 @@ FROM sys.tasks`);
           <Button active={groupTasksBy === 'status'} onClick={() => this.setState({ groupTasksBy: 'status' })}>Status</Button>
         </ButtonGroup>
         <Button
-          icon="add"
-          text="Post spec"
+          icon="plus"
+          text="Post task"
           onClick={() => this.setState({ taskPostSpecDialogOpen: true })}
         />
       </div>
