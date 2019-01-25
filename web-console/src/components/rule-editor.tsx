@@ -23,6 +23,7 @@ import {
   Button,
   ControlGroup,
   Card,
+  Label,
   InputGroup,
   HTMLSelect,
   Popover,
@@ -32,23 +33,19 @@ import {
 } from "@blueprintjs/core";
 
 import { IconNames } from "@blueprintjs/icons";
+
+import { Rule, RuleTime, RuleType } from '../models';
+
 import './rule-editor.scss';
 
-type RuleType = 'drop' | 'load';
-type RuleTime = 'forever' | 'byPeriod' | 'byInterval';
-
-interface Rule {
-  type: RuleType;
-  time: RuleTime;
-  value?: string;
-  tieredReplicants?: Record<string, number>;
-}
 
 export interface RuleEditorProps extends React.Props<any> {
   rule: Rule;
   tiers: any[];
   onChange: (newRule: Rule) => void;
   onDelete: () => void;
+  moveUp?: () => void;
+  moveDown?: () => void;
 }
 
 export interface RuleEditorState {
@@ -72,45 +69,25 @@ export class RuleEditor extends React.Component<RuleEditorProps, RuleEditorState
     if (rule.type === 'drop') return null;
 
     const changeTierValue = (tierName: string, value: string) => {
-      const newTierReplicants = Object.assign({}, rule.tieredReplicants, {[tierName]: value})
-      const newRule = Object.assign({}, rule, {tieredReplicants: newTierReplicants});
-
-      onChange(newRule);
+      onChange(rule.changeTierValue(tierName, value));
     };
 
     const changeTier = (oldTierName: string, newTierName: string) => {
-      const newTierReplicants = Object.assign({}, rule.tieredReplicants, {[newTierName]: (rule.tieredReplicants as any)[oldTierName]})
-      const newRule = Object.assign({}, rule, {tieredReplicants: newTierReplicants});
-
-      onChange(newRule);
+      onChange(rule.changeTier(oldTierName, newTierName));
     };
 
-    const tierMenu = (selected: string) => (
-      <Popover
-        content={
-          <Menu>
-            {
-              tiers.map(t => <MenuItem onClick={() => changeTier(selected, t)} key={t} text={t} active={t === selected}/>)
-            }
-          </Menu>
-        }
-        position={Position.BOTTOM_RIGHT}
-      >
-        <Button minimal rightIcon="caret-down">
-          {selected}
-        </Button>
-      </Popover>
-    );
-
+    const keys = Object.keys(rule.tieredReplicants || {});
     const tierElements: JSX.Element[] = [];
     for (let key in rule.tieredReplicants) {
       tierElements.push(<ControlGroup key={key}>
+        <Button minimal style={{pointerEvents: 'none'}}>Replicants:</Button>
         <InputGroup
           value={'' + rule.tieredReplicants[key]}
           onChange={(e: any) => changeTierValue(key, e.target.value)}
-          rightElement={tierMenu(key)}
         />
-        <Button onClick={() => this.removeTier(key)} icon={IconNames.TRASH}></Button>
+        <Button minimal style={{pointerEvents: 'none'}}>Tier:</Button>
+        <HTMLSelect value={rule.type} options={tiers} onChange={e => changeTier(key, e.target.value)}/>
+        <Button disabled={keys.length === 1} onClick={() => this.removeTier(key)} icon={IconNames.TRASH}></Button>
       </ControlGroup>);
     }
 
@@ -147,9 +124,7 @@ export class RuleEditor extends React.Component<RuleEditorProps, RuleEditorState
       }
     }
 
-    const newTierReplicants = Object.assign({}, rule.tieredReplicants, {[newTierName]: 1});
-    const newRule = Object.assign({}, rule, {tieredReplicants: newTierReplicants});
-    onChange(newRule);
+    onChange(rule.changeTierValue(newTierName, 1));
   }
 
   renderTierAdder() {
@@ -163,7 +138,7 @@ export class RuleEditor extends React.Component<RuleEditorProps, RuleEditorState
   }
 
   render() {
-    const { tiers, onChange, rule, onDelete } = this.props;
+    const { tiers, onChange, rule, onDelete, moveUp, moveDown } = this.props;
     const { isOpen } = this.state;
 
     if (!rule) return null;
@@ -189,6 +164,8 @@ export class RuleEditor extends React.Component<RuleEditorProps, RuleEditorState
       <div className="title">
         <Button className="left" minimal rightIcon={isOpen ? IconNames.CARET_DOWN : IconNames.CARET_RIGHT} onClick={() => this.setState({isOpen: !isOpen})}>{this.getSummary()}</Button>
         <div className="spacer"/>
+        {moveUp ? <Button minimal icon={IconNames.ARROW_UP} onClick={moveUp}/> : null}
+        {moveDown ? <Button minimal icon={IconNames.ARROW_DOWN} onClick={moveDown}/> : null}
         <Button minimal icon={IconNames.TRASH} onClick={onDelete}/>
       </div>
 
@@ -196,7 +173,7 @@ export class RuleEditor extends React.Component<RuleEditorProps, RuleEditorState
       <Collapse isOpen={isOpen}>
         <Card>
 
-          <FormGroup label="Type">
+          <FormGroup>
             <ControlGroup>
               <HTMLSelect value={rule.type} options={ruleTypes} onChange={e => change(e.target.value, 'type')}/>
               <HTMLSelect value={rule.time} options={ruleTime} onChange={e => change(e.target.value, 'time')}/>
@@ -205,7 +182,7 @@ export class RuleEditor extends React.Component<RuleEditorProps, RuleEditorState
           </FormGroup>
 
           {rule.type === 'load'
-            ? <FormGroup label="Tiers">
+            ? <FormGroup>
                 { this.renderTiers() }
                 { this.renderTierAdder()}
               </FormGroup>

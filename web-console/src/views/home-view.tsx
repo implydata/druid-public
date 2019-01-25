@@ -23,10 +23,13 @@ import ReactTable from "react-table";
 import { Filter } from "react-table";
 import {
   H1, H5,
-  Card
+  Card, Icon
 } from "@blueprintjs/core";
-import "./home-view.scss";
+import { IconNames } from "@blueprintjs/icons";
+
 import { QueryManager } from '../utils';
+
+import './home-view.scss';
 
 interface DataCount {
   datasourceCount: number;
@@ -71,7 +74,7 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
   constructor(props: HomeViewProps, context: any) {
     super(props, context);
     this.state = {
-      statusLoading: false,
+      statusLoading: true,
       status: null,
       statusError: null,
 
@@ -285,31 +288,31 @@ GROUP BY 1`);
     return <div className="home-view app-view">
       <a href="/status">
         <Card interactive={true}>
-          <H5>Status</H5>
+          <H5><Icon color="#bfccd5" icon={IconNames.INFO_SIGN}/> Status</H5>
           <p>{statusLoading ? `Loading...` : (statusError ? statusError : `Apache Druid is running version ${status.version}`)}</p>
         </Card>
       </a>
       <a href="#datasources">
         <Card interactive={true}>
-          <H5>Datasources</H5>
+          <H5><Icon color="#bfccd5" icon={IconNames.MULTI_SELECT}/> Datasources</H5>
           <p>{dataCountLoading.datasourceCountLoading ? `Loading...` : `${dataCount.datasourceCount} datasources`}</p>
         </Card>
       </a>
       <a href="#segments">
         <Card interactive={true}>
-          <H5>Segments</H5>
+          <H5><Icon color="#bfccd5" icon={IconNames.FULL_STACKED_CHART}/> Segments</H5>
           <p>{dataCountLoading.segmentCountLoading ? `Loading...` : `${dataCount.segmentCount} segments`}</p>
         </Card>
       </a>
       <a href="#tasks">
         <Card interactive={true}>
-          <H5>Tasks</H5>
+          <H5><Icon color="#bfccd5" icon={IconNames.GANTT_CHART}/> Tasks</H5>
           {this.renderTaskCounts()}
         </Card>
       </a>
       <a href="#servers">
         <Card interactive={true}>
-          <H5>Data servers</H5>
+          <H5><Icon color="#bfccd5" icon={IconNames.DATABASE}/> Data servers</H5>
           <p>{dataCountLoading.dataServerCountLoading ? `Loading...` : `${dataCount.dataServerCount} Historicals`}</p>
           <p>{dataCountLoading.middleManagerCountLoading ? `Loading...` : `${dataCount.middleManagerCount} MiddleManagers`}</p>
         </Card>

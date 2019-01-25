@@ -141,13 +141,24 @@ export class SnitchDialog extends React.Component<SnitchDialogProps, SnitchDialo
     </div>
   }
 
+  onOpening = (node: HTMLElement) => {
+    const { onOpening } = this.props;
+
+    this.setState({
+      author: '',
+      comment: ''
+    });
+
+    onOpening && onOpening(node);
+  }
+
   render() {
     const { isOpen, onClose, className, children, saveDisabled } = this.props;
     const { showFinalStep } = this.state;
 
     if (showFinalStep) return this.renderFinalStep();
 
-    return <Dialog {...this.props}>
+    return <Dialog {...this.props} onOpening={this.onOpening}>
       <div className={Classes.DIALOG_BODY}>
         {children}
       </div>
