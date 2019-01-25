@@ -23,7 +23,7 @@ import ReactTable from "react-table";
 import { Filter } from "react-table";
 import { sum } from "d3-array";
 import { Button, H1, Switch } from "@blueprintjs/core";
-import { addFilter, formatBytesCompact, QueryManager } from "../utils";
+import { addFilter, formatBytesCompact, QueryManager, reformatSqlError } from "../utils";
 import "./servers-view.scss";
 
 function formatQueues(segmentsToLoad: number, segmentsToLoadSize: number, segmentsToDrop: number, segmentsToDropSize: number): string {
@@ -78,7 +78,12 @@ export class ServersView extends React.Component<ServersViewProps, ServersViewSt
   componentDidMount(): void {
     this.serverQueryManager = new QueryManager({
       processQuery: async (query: string) => {
-        let serversResponse = await axios.post("/druid/v2/sql", { query });
+        let serversResponse: any;
+        try {
+          serversResponse = await axios.post("/druid/v2/sql", { query });
+        } catch (e) {
+          throw reformatSqlError(e);
+        }
         let loadQueueResponse = await axios.get("/druid/coordinator/v1/loadqueue?simple");
 
         const servers = serversResponse.data;
@@ -136,7 +141,7 @@ WHERE "server_type" = 'historical'`);
         <div className="bar" style={{ width: `${value * 100}%` }}/>
         <div className="label">{(value * 100).toFixed(1) + '%'}</div>
       </div>;
-    }
+    };
 
     return <ReactTable
       data={servers || []}

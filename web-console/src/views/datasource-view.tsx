@@ -28,7 +28,7 @@ import {
   Intent, Checkbox
 } from "@blueprintjs/core";
 import { AsyncActionDialog } from '../dialogs/async-action-dialog';
-import { addFilter, formatNumber, formatBytes, countBy, lookupBy, QueryManager } from "../utils";
+import { addFilter, formatNumber, formatBytes, countBy, lookupBy, QueryManager, reformatSqlError } from "../utils";
 import { RetentionDialog } from '../dialogs/retention-dialog';
 import { Loader } from '../components/loader';
 
@@ -40,9 +40,10 @@ export interface DatasourcesViewProps extends React.Props<any> {
 }
 
 export interface DatasourcesViewState {
-  loadingDatasources: boolean;
-  dataSources: any[] | null;
-  dataSourceFilter: Filter[];
+  datasourcesLoading: boolean;
+  datasources: any[] | null;
+  datasourcesError: string | null;
+  datasourcesFilter: Filter[];
 
   showDisabled: boolean;
   retentionDialogOpenOn: string | null;
@@ -61,9 +62,10 @@ export class DatasourcesView extends React.Component<DatasourcesViewProps, Datas
   constructor(props: DatasourcesViewProps, context: any) {
     super(props, context);
     this.state = {
-      loadingDatasources: true,
-      dataSources: null,
-      dataSourceFilter: [],
+      datasourcesLoading: true,
+      datasources: null,
+      datasourcesError: null,
+      datasourcesFilter: [],
 
       showDisabled: false,
       retentionDialogOpenOn: null,
@@ -76,9 +78,14 @@ export class DatasourcesView extends React.Component<DatasourcesViewProps, Datas
   componentDidMount(): void {
     this.dataSourceQueryManager = new QueryManager({
       processQuery: async (query: string) => {
-        const dataSourcesResp = await axios.post("/druid/v2/sql", { query });
-        const dataSources: any = dataSourcesResp.data;
-        const seen = countBy(dataSources, (x: any) => x.datasource);
+        let datasourcesResp: any;
+        try {
+          datasourcesResp = await axios.post("/druid/v2/sql", { query });
+        } catch (e) {
+          throw reformatSqlError(e);
+        }
+        const datasources: any = datasourcesResp.data;
+        const seen = countBy(datasources, (x: any) => x.datasource);
 
         const disabledResp = await axios.get('/druid/coordinator/v1/metadata/datasources?includeDisabled');
         const disabled: string[] = disabledResp.data.filter((d: string) => !seen[d]);
@@ -90,7 +97,7 @@ export class DatasourcesView extends React.Component<DatasourcesViewProps, Datas
         const compactionResp = await axios.get('/druid/coordinator/v1/config/compaction');
         const compaction = lookupBy(compactionResp.data.compactionConfigs, (c: any) => c.dataSource);
 
-        const allDatasources = dataSources.concat(disabled.map(d => ({ datasource: d, disabled: true })));
+        const allDatasources = datasources.concat(disabled.map(d => ({ datasource: d, disabled: true })));
         allDatasources.forEach((ds: any) => {
           ds.rules = rules[ds.datasource] || [];
           ds.defaultRules = defaultRules;
@@ -101,8 +108,9 @@ export class DatasourcesView extends React.Component<DatasourcesViewProps, Datas
       },
       onStateChange: ({ result, loading, error }) => {
         this.setState({
-          dataSources: result,
-          loadingDatasources: loading
+          datasources: result,
+          datasourcesLoading: loading,
+          datasourcesError: error
         });
       }
     });
@@ -211,9 +219,9 @@ GROUP BY 1`);
 
   renderDatasourceTable() {
     const { goToSegments } = this.props;
-    const { dataSources, loadingDatasources, dataSourceFilter, showDisabled } = this.state;
+    const { datasources, datasourcesLoading, datasourcesError, datasourcesFilter, showDisabled } = this.state;
 
-    let data = dataSources || [];
+    let data = datasources || [];
     if (!showDisabled) {
       data = data.filter(d => !d.disabled)
     }
@@ -221,12 +229,12 @@ GROUP BY 1`);
     return <>
       <ReactTable
         data={data}
-        loading={loadingDatasources}
-        noDataText={!loadingDatasources && dataSources && !dataSources.length ? 'No datasources' : ''}
+        loading={datasourcesLoading}
+        noDataText={!datasourcesLoading && datasources && !datasources.length ? 'No datasources' : (datasourcesError || '')}
         filterable={true}
-        filtered={dataSourceFilter}
+        filtered={datasourcesFilter}
         onFilteredChange={(filtered, column) => {
-          this.setState({ dataSourceFilter: filtered });
+          this.setState({ datasourcesFilter: filtered });
         }}
         columns={[
           {
@@ -234,7 +242,7 @@ GROUP BY 1`);
             accessor: "datasource",
             Cell: row => {
               const value = row.value;
-              return <a onClick={() => { this.setState({ dataSourceFilter: addFilter(dataSourceFilter, 'datasource', value) }) }}>{value}</a>
+              return <a onClick={() => { this.setState({ datasourcesFilter: addFilter(datasourcesFilter, 'datasource', value) }) }}>{value}</a>
             }
           },
           {

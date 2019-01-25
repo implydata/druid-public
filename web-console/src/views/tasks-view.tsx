@@ -21,7 +21,7 @@ import * as React from 'react';
 import * as classNames from 'classnames';
 import ReactTable from "react-table";
 import { Filter } from "react-table";
-import {Button, H1, ButtonGroup, Intent, Label, Navbar} from "@blueprintjs/core";
+import { Button, H1, ButtonGroup, Intent, Label, Alert } from "@blueprintjs/core";
 import { addFilter, QueryManager } from "../utils";
 import { AsyncActionDialog } from "../dialogs/async-action-dialog";
 import { PostSpecDialog } from "../dialogs/post-spec-dialog";
@@ -52,6 +52,7 @@ export interface TasksViewState {
 
   supervisorPostSpecDialogOpen: boolean;
   taskPostSpecDialogOpen: boolean;
+  alertErrorMsg: string | null;
 }
 
 function statusToColor(status: string): string {
@@ -90,7 +91,8 @@ export class TasksView extends React.Component<TasksViewProps, TasksViewState> {
       killTaskId: null,
 
       supervisorPostSpecDialogOpen: false,
-      taskPostSpecDialogOpen: false
+      taskPostSpecDialogOpen: false,
+      alertErrorMsg: null
     };
   }
 
@@ -128,7 +130,7 @@ export class TasksView extends React.Component<TasksViewProps, TasksViewState> {
     this.taskQueryManager.runQuery(`SELECT
   "task_id", "type", "datasource", "created_time",
   CASE WHEN "status" = 'RUNNING' THEN "runner_status" ELSE "status" END AS "status",
-  "location"
+  "location", "duration", "error_msg"
 FROM sys.tasks`);
   }
 
@@ -409,14 +411,22 @@ FROM sys.tasks`);
               if (row.aggregated) return '';
               const value = row.value;
               const location = row.original.location;
+              const errorMsg = row.original.error_msg;
               return <span>
                 <span
                   style={{ color: statusToColor(value) }}
                 >&#x25cf;&nbsp;</span>
                 {value}
                 { location && <a onClick={() => alert('ToDo')} title={`Go to: ${location}`}>&nbsp;&#x279A;</a> }
+                { errorMsg && <a onClick={() => this.setState({ alertErrorMsg: errorMsg })} title={errorMsg}>&nbsp;&#x2718;</a> }
               </span>;
             }
+          },
+          {
+            Header: "Duration",
+            accessor: "duration",
+            filterable: false,
+            Cell: (row) => row.value < 0 ? '' : row.value
           },
           {
             Header: 'Actions',
@@ -448,7 +458,7 @@ FROM sys.tasks`);
 
   render() {
     const { goToSql } = this.props;
-    const { groupTasksBy, supervisorPostSpecDialogOpen, taskPostSpecDialogOpen } = this.state;
+    const { groupTasksBy, supervisorPostSpecDialogOpen, taskPostSpecDialogOpen, alertErrorMsg } = this.state;
 
     return <div className="tasks-view app-view">
       <div className="control-bar">
@@ -502,6 +512,15 @@ FROM sys.tasks`);
         onClose={() => this.setState({ taskPostSpecDialogOpen: false })}
         onSubmit={ (spec: string) => this.submitSpec('/druid/indexer/v1/task', spec) }
       />
+      <Alert
+        icon="error"
+        intent={Intent.PRIMARY}
+        isOpen={Boolean(alertErrorMsg)}
+        confirmButtonText="OK"
+        onConfirm={() => this.setState({ alertErrorMsg: null })}
+      >
+        <p>{alertErrorMsg}</p>
+      </Alert>
     </div>
   }
 }

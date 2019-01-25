@@ -101,6 +101,11 @@ export function parseList(list: string): string[] {
   return list.split(',');
 }
 
+export function reformatSqlError(e: any) {
+  const { error, errorMessage, errorClass } = e.response.data;
+  return new Error([error, errorMessage, errorClass].filter(Boolean).join(' / ') || e.message);
+}
+
 // ----------------------------------
 
 export interface QueryState<R> {

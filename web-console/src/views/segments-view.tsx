@@ -21,8 +21,8 @@ import * as React from 'react';
 import * as classNames from 'classnames';
 import ReactTable from "react-table";
 import { Filter } from "react-table";
-import { H1, H5, Button } from "@blueprintjs/core";
-import { addFilter, makeBooleanFilter, QueryManager, formatBytes, formatNumber, parseList } from "../utils";
+import { H5, Button } from "@blueprintjs/core";
+import { addFilter, makeBooleanFilter, QueryManager, formatBytes, formatNumber, parseList, reformatSqlError } from "../utils";
 import "./segments-view.scss";
 
 export interface SegmentsViewProps extends React.Props<any> {
@@ -62,7 +62,12 @@ export class SegmentsView extends React.Component<SegmentsViewProps, SegmentsVie
 
     this.segmentsQueryManager = new QueryManager({
       processQuery: async (query: QueryAndSkip) => {
-        const sqlResp = await axios.post("/druid/v2/sql", { query: query.query });
+        let sqlResp;
+        try {
+          sqlResp = await axios.post("/druid/v2/sql", { query: query.query });
+        } catch (e) {
+          throw reformatSqlError(e);
+        }
         const results: any[] = sqlResp.data.slice(query.skip);
         results.forEach(result => {
           try {
@@ -76,7 +81,8 @@ export class SegmentsView extends React.Component<SegmentsViewProps, SegmentsVie
       onStateChange: ({ result, loading, error }) => {
         this.setState({
           segments: result,
-          segmentsLoading: loading
+          segmentsLoading: loading,
+          segmentsError: error
         });
       }
     })
@@ -109,8 +115,7 @@ export class SegmentsView extends React.Component<SegmentsViewProps, SegmentsVie
     }
 
     if (sorted.length) {
-      const sort = sorted[0];
-      queryParts.push(`ORDER BY ${JSON.stringify(sort.id)} ${sort.desc ? 'DESC' : 'ASC'}`);
+      queryParts.push('ORDER BY ' + sorted.map((sort: any) => `${JSON.stringify(sort.id)} ${sort.desc ? 'DESC' : 'ASC'}`).join(', '));
     }
 
     queryParts.push(`LIMIT ${totalQuerySize}`);
@@ -157,6 +162,7 @@ export class SegmentsView extends React.Component<SegmentsViewProps, SegmentsVie
           Header: "Start",
           accessor: "start",
           width: 120,
+          defaultSortDesc: true,
           Cell: row => {
             const value = row.value;
             return <a onClick={() => { this.setState({ segmentFilter: addFilter(segmentFilter, 'start', value) }) }}>{value}</a>
@@ -165,6 +171,7 @@ export class SegmentsView extends React.Component<SegmentsViewProps, SegmentsVie
         {
           Header: "End",
           accessor: "end",
+          defaultSortDesc: true,
           width: 120,
           Cell: row => {
             const value = row.value;
@@ -174,6 +181,7 @@ export class SegmentsView extends React.Component<SegmentsViewProps, SegmentsVie
         {
           Header: "Version",
           accessor: "version",
+          defaultSortDesc: true,
           width: 120,
         },
         {
@@ -186,19 +194,22 @@ export class SegmentsView extends React.Component<SegmentsViewProps, SegmentsVie
           Header: "Size",
           accessor: "size",
           filterable: false,
+          defaultSortDesc: true,
           Cell: row => formatBytes(row.value)
         },
         {
           Header: "Num rows",
           accessor: "num_rows",
           filterable: false,
+          defaultSortDesc: true,
           Cell: row => formatNumber(row.value)
         },
         {
           Header: "Replicas",
           accessor: "num_replicas",
           width: 60,
-          filterable: false
+          filterable: false,
+          defaultSortDesc: true
         },
         {
           Header: "Is published",
@@ -222,12 +233,14 @@ export class SegmentsView extends React.Component<SegmentsViewProps, SegmentsVie
           Header: "Dimensions",
           id: "dimensions",
           filterable: false,
+          sortable: false,
           accessor: (row) => parseList(row.payload.dimensions).length
         },
         {
           Header: "Metrics",
           id: "metrics",
           filterable: false,
+          sortable: false,
           accessor: (row) => parseList(row.payload.metrics).length
         }
       ]}

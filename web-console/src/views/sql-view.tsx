@@ -21,7 +21,7 @@ import * as React from 'react';
 import * as classNames from 'classnames';
 import ReactTable from "react-table";
 import { SqlControl } from '../components/sql-control';
-import { QueryManager } from '../utils';
+import { QueryManager, reformatSqlError } from '../utils';
 import "./sql-view.scss";
 
 export interface HeaderRows {
@@ -97,8 +97,7 @@ export class SqlView extends React.Component<SqlViewProps, SqlViewState> {
               header: true
             });
           } catch (e) {
-            const { error, errorMessage, errorClass } = e.response.data;
-            throw new Error([error, errorMessage, errorClass].filter(Boolean).join(' / ') || e.message);
+            throw reformatSqlError(e);
           }
 
           const result = respSql.data;
