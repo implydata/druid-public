@@ -50,27 +50,32 @@ export class ConsoleApplication extends React.Component<ConsoleApplicationProps,
     };
   }
 
-  componentDidUpdate(prevProps: Readonly<ConsoleApplicationProps>, prevState: Readonly<ConsoleApplicationState>, snapshot?: any): void {
-    this.taskId = null;
-    this.dataSource = null;
-    this.onlyUnavailable = null;
-    this.initSql = null;
+  private resetInitialsDelay() {
+    setTimeout(() => {
+      this.taskId = null;
+      this.dataSource = null;
+      this.onlyUnavailable = null;
+      this.initSql = null;
+    }, 50);
   }
 
   private goToTask = (taskId: string) => {
     this.taskId = taskId;
     window.location.hash = 'tasks';
+    this.resetInitialsDelay();
   }
 
   private goToSegments = (dataSource: string, onlyUnavailable = false) => {
     this.dataSource = dataSource;
     this.onlyUnavailable = onlyUnavailable;
     window.location.hash = 'segments';
+    this.resetInitialsDelay();
   }
 
   private goToSql = (initSql: string) => {
     this.initSql = initSql;
-    window.location.hash = 'sql'
+    window.location.hash = 'sql';
+    this.resetInitialsDelay();
   }
 
   render() {

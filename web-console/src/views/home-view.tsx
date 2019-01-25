@@ -258,13 +258,13 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
     if (dataCountLoading.taskCountLoading) {
       renderedElement = <p>Loading...</p>
     } else {
-      renderedElement = <div>
+      renderedElement = <>
         { Boolean(dataCount.runningTaskCount) && <p>{`${dataCount.runningTaskCount} running tasks`}</p> }
         { Boolean(dataCount.pendingTaskCount) && <p>{`${dataCount.pendingTaskCount} pending tasks`}</p> }
         { Boolean(dataCount.successTaskCount) && <p>{`${dataCount.successTaskCount} success tasks`}</p> }
         { Boolean(dataCount.waitingTaskCount) && <p>{`${dataCount.waitingTaskCount} waiting tasks`}</p> }
         { Boolean(dataCount.failedTaskCount) && <p>{`${dataCount.failedTaskCount} failed tasks`}</p> }
-      </div>
+      </>
     }
     return renderedElement;
   }
@@ -299,7 +299,7 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
       </a>
       <a href="#servers">
         <Card interactive={true}>
-          <H5>Servers</H5>
+          <H5>Data servers</H5>
           <p>{dataCountLoading.dataServerCountLoading ? `Loading...` : `${dataCount.dataServerCount} Historicals`}</p>
           <p>{dataCountLoading.middleManagerCountLoading ? `Loading...` : `${dataCount.middleManagerCount} MiddleManagers`}</p>
         </Card>

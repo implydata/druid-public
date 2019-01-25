@@ -18,7 +18,7 @@
 
 
 import * as React from 'react';
-import { ReactTableDefaults } from "react-table";
+import { Filter, ReactTableDefaults } from "react-table";
 import { Button } from "@blueprintjs/core";
 import { makeTextFilter } from '../utils';
 
@@ -29,9 +29,10 @@ class FullButton extends React.Component {
 }
 
 Object.assign(ReactTableDefaults, {
-  //defaultPageSize: 10,
-  //minRows: 3
-  // etc...
+  defaultFilterMethod: (filter: Filter, row: any, column: any) => {
+    const id = filter.pivotId || filter.id;
+    return row[id] !== undefined ? String(row[id]).includes(filter.value) : true;
+  },
   FilterComponent: makeTextFilter(),
   PreviousComponent: FullButton,
   NextComponent: FullButton

@@ -52,6 +52,10 @@ export interface DataSourcesViewState {
 }
 
 export class DataSourcesView extends React.Component<DataSourcesViewProps, DataSourcesViewState> {
+  static DISABLED_COLOR = '#0a1500';
+  static FULLY_AVAILABLE_COLOR = '#57d500';
+  static PARTIALLY_AVAILABLE_COLOR = '#ffbf00';
+
   private dataSourceQueryManager: QueryManager<string, any[]>;
 
   constructor(props: DataSourcesViewProps, context: any) {
@@ -229,7 +233,7 @@ GROUP BY 1`);
         }}
         columns={[
           {
-            Header: "Data source",
+            Header: "Datasource",
             accessor: "datasource",
             Cell: row => {
               const value = row.value;
@@ -243,15 +247,30 @@ GROUP BY 1`);
             accessor: (row) => row.num_available_segments / row.num_segments,
             Cell: (row) => {
               const { datasource, num_available_segments, num_segments, disabled } = row.original;
-              if (disabled) return "Disabled";
+
+              if (disabled) {
+                return <span>
+                  <span style={{ color: DataSourcesView.DISABLED_COLOR }}>&#x25cf;&nbsp;</span>
+                  Disabled
+                </span>;
+              }
+
               const segmentsEl = <a onClick={() => goToSegments(datasource)}>{`${formatNumber(num_segments)} segments`}</a>;
               if (num_available_segments === num_segments) {
-                return <span>Fully available ({segmentsEl})</span>;
+                return <span>
+                  <span style={{ color: DataSourcesView.FULLY_AVAILABLE_COLOR }}>&#x25cf;&nbsp;</span>
+                  Fully available ({segmentsEl})
+                </span>;
+
               } else {
                 const percentAvailable = (Math.floor((num_available_segments / num_segments) * 1000) / 10).toFixed(1);
                 const missing = num_segments - num_available_segments;
                 const segmentsMissingEl = <a onClick={() => goToSegments(datasource, true)}>{`${formatNumber(missing)} segments unavailable`}</a>;
-                return <span>{percentAvailable}% available ({segmentsEl}, {segmentsMissingEl})</span>;
+                return <span>
+                  <span style={{ color: DataSourcesView.PARTIALLY_AVAILABLE_COLOR }}>&#x25cf;&nbsp;</span>
+                  {percentAvailable}% available ({segmentsEl}, {segmentsMissingEl})
+                </span>;
+
               }
             }
           },
@@ -271,7 +290,7 @@ GROUP BY 1`);
                 text = `${rules.length} rules`;
               }
 
-              return <span>{text} <a onClick={() => this.setState({retentionDialogOpenOn: row.original.datasource})}>&#9998;</a></span>;
+              return <span>{text} <a onClick={() => this.setState({retentionDialogOpenOn: row.original.datasource})}>&#x270E;</a></span>;
             }
           },
           {
@@ -287,7 +306,7 @@ GROUP BY 1`);
               } else {
                 text = 'None';
               }
-              return <span>{text} <a onClick={() => alert('ToDo')}>&#9998;</a></span>;
+              return <span>{text} <a onClick={() => alert('ToDo')}>&#x270E;</a></span>;
             }
           },
           {

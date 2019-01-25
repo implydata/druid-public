@@ -52,7 +52,7 @@ export class AboutDialog extends React.Component<AboutDialogProps, AboutDialogSt
     return <Dialog
       icon="info-sign"
       onClose={onClose}
-      title="Apache Druid console"
+      title="Apache Druid"
       isOpen={isOpen}
       usePortal={true}
       canEscapeKeyClose={true}
@@ -60,19 +60,17 @@ export class AboutDialog extends React.Component<AboutDialogProps, AboutDialogSt
       <div className={Classes.DIALOG_BODY}>
         <p>
           <strong>
-            Blah
+            Apache Druid (incubating) is a high performance real-time analytics database.
           </strong>
         </p>
         <p>
-          Hello
+          Druid is an open source distributed data store.
+          Druid’s core design combines ideas from OLAP/analytic databases, timeseries databases, and search systems to create a unified system for operational analytics. Druid merges key characteristics of each of the 3 systems into its ingestion layer, storage format, querying layer, and core architecture.
         </p>
-        <p>How are you.</p>
       </div>
       <div className={Classes.DIALOG_FOOTER}>
         <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-          <Tooltip content="This button is hooked up to close the dialog.">
-            <Button onClick={onClose}>Close</Button>
-          </Tooltip>
+          <Button onClick={onClose}>Close</Button>
           <AnchorButton
             intent={Intent.PRIMARY}
             href="http://druid.io"

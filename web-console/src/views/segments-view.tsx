@@ -22,7 +22,7 @@ import * as classNames from 'classnames';
 import ReactTable from "react-table";
 import { Filter } from "react-table";
 import { H1, H5, Button } from "@blueprintjs/core";
-import { addFilter, makeBooleanFilter, QueryManager, formatBytes, formatNumber } from "../utils";
+import { addFilter, makeBooleanFilter, QueryManager, formatBytes, formatNumber, parseList } from "../utils";
 import "./segments-view.scss";
 
 export interface SegmentsViewProps extends React.Props<any> {
@@ -61,7 +61,15 @@ export class SegmentsView extends React.Component<SegmentsViewProps, SegmentsVie
     this.segmentsQueryManager = new QueryManager({
       processQuery: async (query: QueryAndSkip) => {
         const sqlResp = await axios.post("/druid/v2/sql", { query: query.query });
-        return sqlResp.data.slice(query.skip);
+        const results: any[] = sqlResp.data.slice(query.skip);
+        results.forEach(result => {
+          try {
+            result.payload = JSON.parse(result.payload);
+          } catch {
+            result.payload = {};
+          }
+        });
+        return results;
       },
       onStateChange: ({ result, loading, error }) => {
         this.setState({
@@ -90,7 +98,7 @@ export class SegmentsView extends React.Component<SegmentsViewProps, SegmentsVie
         if (f.value === 'all') return null;
         return `${JSON.stringify(f.id)} = ${f.value === 'true' ? 1 : 0}`;
       } else {
-        return `${JSON.stringify(f.id)} LIKE '${f.value}%'`;
+        return `${JSON.stringify(f.id)} LIKE '%${f.value}%'`;
       }
     }).filter(Boolean);
 
@@ -135,7 +143,7 @@ export class SegmentsView extends React.Component<SegmentsViewProps, SegmentsVie
           width: 300
         },
         {
-          Header: "Data Source",
+          Header: "Datasource",
           accessor: "datasource",
           Cell: row => {
             const value = row.value;
@@ -145,6 +153,7 @@ export class SegmentsView extends React.Component<SegmentsViewProps, SegmentsVie
         {
           Header: "Start",
           accessor: "start",
+          width: 120,
           Cell: row => {
             const value = row.value;
             return <a onClick={() => { this.setState({ segmentFilter: addFilter(segmentFilter, 'start', value) }) }}>{value}</a>
@@ -153,10 +162,22 @@ export class SegmentsView extends React.Component<SegmentsViewProps, SegmentsVie
         {
           Header: "End",
           accessor: "end",
+          width: 120,
           Cell: row => {
             const value = row.value;
             return <a onClick={() => { this.setState({ segmentFilter: addFilter(segmentFilter, 'end', value) }) }}>{value}</a>
           }
+        },
+        {
+          Header: "Version",
+          accessor: "version",
+          width: 120,
+        },
+        {
+          Header: "Partition",
+          accessor: "partition_num",
+          width: 60,
+          filterable: false
         },
         {
           Header: "Size",
@@ -171,8 +192,9 @@ export class SegmentsView extends React.Component<SegmentsViewProps, SegmentsVie
           Cell: row => formatNumber(row.value)
         },
         {
-          Header: "Num replicas",
+          Header: "Replicas",
           accessor: "num_replicas",
+          width: 60,
           filterable: false
         },
         {
@@ -192,17 +214,32 @@ export class SegmentsView extends React.Component<SegmentsViewProps, SegmentsVie
           id: "is_available",
           accessor: (row) => String(Boolean(row.is_available)),
           Filter: makeBooleanFilter()
+        },
+        {
+          Header: "Dimensions",
+          id: "dimensions",
+          filterable: false,
+          accessor: (row) => parseList(row.payload.dimensions).length
+        },
+        {
+          Header: "Metrics",
+          id: "metrics",
+          filterable: false,
+          accessor: (row) => parseList(row.payload.metrics).length
         }
       ]}
       defaultPageSize={50}
       className="-striped -highlight"
       SubComponent={rowInfo => {
-        const payload = JSON.parse(rowInfo.original.payload);
+        const { original } = rowInfo;
+        const { payload } = rowInfo.original;
         return <div style={{ padding: "20px" }}>
+          <H5>Segment ID</H5>
+          <p>{original.segment_id}</p>
           <H5>Dimensions</H5>
-          <div>{payload.dimensions}</div>
+          <p>{parseList(payload.dimensions).join(', ')}</p>
           <H5>Metrics</H5>
-          <div>{payload.metrics}</div>
+          <p>{parseList(payload.metrics).join(', ')}</p>
         </div>;
       }}
     />;

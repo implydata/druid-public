@@ -118,6 +118,7 @@ export class SqlView extends React.Component<SqlViewProps, SqlViewState> {
     return <ReactTable
       data={result ? result.rows : []}
       loading={loading}
+      sortable={false}
       columns={(result ? result.header : []).map((h, i) => ({ Header: h, accessor: String(i) }))}
       defaultPageSize={10}
       className="-striped -highlight"

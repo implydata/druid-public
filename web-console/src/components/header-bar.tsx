@@ -84,7 +84,6 @@ export class HeaderBar extends React.Component<HeaderBarProps, HeaderBarState> {
     const legacyMenu = <Menu>
       <MenuItem icon="graph" text="Legacy coordinator console" href="/legacy-coordinator-console.html" target="_blank" />
       <MenuItem icon="map" text="Legacy overlord console" href="/legacy-overlord-console.html" target="_blank" />
-      <MenuItem icon="th" text="Legacy coordinator console (old)" href="/old-console/" target="_blank" />
     </Menu>;
 
     const helpMenu  = <Menu>

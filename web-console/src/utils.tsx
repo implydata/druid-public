@@ -96,6 +96,11 @@ export function formatBytesCompact(n: number): string {
   return numeral(n).format('0.00b');
 }
 
+export function parseList(list: string): string[] {
+  if (!list) return [];
+  return list.split(',');
+}
+
 // ----------------------------------
 
 export interface QueryState<R> {

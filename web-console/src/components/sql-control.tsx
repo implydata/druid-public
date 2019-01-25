@@ -61,7 +61,7 @@ export class SqlControl extends React.Component<SqlControlProps, SqlControlState
         value={query}
       />
       <div className="buttons">
-        <Button icon="caret-right" onClick={() => onRun(query)}>Run</Button>
+        <Button rightIcon="caret-right" onClick={() => onRun(query)}>Run</Button>
       </div>
     </div>
   }

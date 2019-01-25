@@ -121,7 +121,8 @@ export class TasksView extends React.Component<TasksViewProps, TasksViewState> {
 
     this.taskQueryManager.runQuery(`SELECT
   "task_id", "type", "datasource", "created_time",
-  CASE WHEN "status" = 'RUNNING' THEN "runner_status" ELSE "status" END AS "status"
+  CASE WHEN "status" = 'RUNNING' THEN "runner_status" ELSE "status" END AS "status",
+  "location"
 FROM sys.tasks`);
   }
 
@@ -243,7 +244,7 @@ FROM sys.tasks`);
         filterable={true}
         columns={[
           {
-            Header: "Data source",
+            Header: "Datasource",
             accessor: "id",
             id: 'datasource',
             width: 300
@@ -351,7 +352,7 @@ FROM sys.tasks`);
             }
           },
           {
-            Header: "Data source",
+            Header: "Datasource",
             accessor: "datasource",
             Cell: row => {
               const value = row.value;
@@ -367,13 +368,16 @@ FROM sys.tasks`);
             Header: "Status",
             accessor: "status",
             Cell: row => {
+              if (row.aggregated) return '';
               const value = row.value;
-              return <a onClick={() => { this.setState({ taskFilter: addFilter(taskFilter, 'status', value) }) }}>
+              const location = row.original.location;
+              return <span>
                 <span
                   style={{ color: statusToColor(value) }}
                 >&#x25cf;&nbsp;</span>
                 {value}
-              </a>;
+                { location && <a onClick={() => alert('ToDo')} title={`Go to: ${location}`}>&nbsp;&#x279A;</a> }
+              </span>;
             }
           },
           {
