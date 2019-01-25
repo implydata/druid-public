@@ -132,11 +132,8 @@ FROM sys.tasks`);
 
   private submitSpec(endpoint: string, spec: string):void {
     axios.post(endpoint, JSON.stringify(spec))
-      .then((response) => {
-        console.log(response);
-      })
       .catch( (error) => {
-        console.log(error);
+        console.error(error);
       });
   }
 
