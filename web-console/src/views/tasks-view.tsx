@@ -33,16 +33,18 @@ export interface TasksViewProps extends React.Props<any> {
 }
 
 export interface TasksViewState {
-  loadingSupervisors: boolean;
+  supervisorsLoading: boolean;
   supervisors: any[];
+  supervisorsError: string | null;
 
   resumeSupervisorId: string | null;
   suspendSupervisorId: string | null;
   resetSupervisorId: string | null;
   terminateSupervisorId: string | null;
 
-  loadingTasks: boolean;
+  tasksLoading: boolean;
   tasks: any[] | null;
+  tasksError: string | null;
   taskFilter: Filter[];
   groupTasksBy: null | 'type' | 'datasource' | 'status';
 
@@ -70,16 +72,18 @@ export class TasksView extends React.Component<TasksViewProps, TasksViewState> {
   constructor(props: TasksViewProps, context: any) {
     super(props, context);
     this.state = {
-      loadingSupervisors: true,
+      supervisorsLoading: true,
       supervisors: [],
+      supervisorsError: null,
 
       resumeSupervisorId: null,
       suspendSupervisorId: null,
       resetSupervisorId: null,
       terminateSupervisorId: null,
 
-      loadingTasks: true,
+      tasksLoading: true,
       tasks: null,
+      tasksError: null,
       taskFilter: props.taskId ? [{ id: 'task_id', value: props.taskId }] : [],
       groupTasksBy: null,
 
@@ -99,7 +103,8 @@ export class TasksView extends React.Component<TasksViewProps, TasksViewState> {
       onStateChange: ({ result, loading, error }) => {
         this.setState({
           supervisors: result,
-          loadingSupervisors: loading
+          supervisorsLoading: loading,
+          supervisorsError: error
         });
       }
     });
@@ -114,7 +119,8 @@ export class TasksView extends React.Component<TasksViewProps, TasksViewState> {
       onStateChange: ({ result, loading, error }) => {
         this.setState({
           tasks: result,
-          loadingTasks: loading
+          tasksLoading: loading,
+          tasksError: error
         });
       }
     });
@@ -242,12 +248,13 @@ FROM sys.tasks`);
   }
 
   renderSupervisorTable() {
-    const { supervisors, loadingSupervisors } = this.state;
+    const { supervisors, supervisorsLoading, supervisorsError } = this.state;
 
     return <>
       <ReactTable
         data={supervisors || []}
-        loading={loadingSupervisors}
+        loading={supervisorsLoading}
+        noDataText={!supervisorsLoading && supervisors && !supervisors.length ? 'No supervisors' : (supervisorsError || '')}
         filterable={true}
         columns={[
           {
@@ -353,12 +360,13 @@ FROM sys.tasks`);
   }
 
   renderTaskTable() {
-    const { tasks, loadingTasks, taskFilter, groupTasksBy } = this.state;
+    const { tasks, tasksLoading, tasksError, taskFilter, groupTasksBy } = this.state;
 
     return <>
       <ReactTable
         data={tasks || []}
-        loading={loadingTasks}
+        loading={tasksLoading}
+        noDataText={!tasksLoading && tasks && !tasks.length ? 'No tasks' : (tasksError || '')}
         filterable={true}
         filtered={taskFilter}
         onFilteredChange={(filtered, column) => {
@@ -396,6 +404,7 @@ FROM sys.tasks`);
           {
             Header: "Status",
             accessor: "status",
+            width: 110,
             Cell: row => {
               if (row.aggregated) return '';
               const value = row.value;

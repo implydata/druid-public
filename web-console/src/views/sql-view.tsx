@@ -36,11 +36,12 @@ export interface SqlViewProps extends React.Props<any> {
 export interface SqlViewState {
   loading: boolean;
   result: HeaderRows | null;
+  error: string | null;
 }
 
 export class SqlView extends React.Component<SqlViewProps, SqlViewState> {
   static processRune(queryType: string, rune: any[]): HeaderRows {
-    console.log(rune);
+    //console.log(rune);
     if (!rune.length) {
       return {
         header: [],
@@ -70,7 +71,8 @@ export class SqlView extends React.Component<SqlViewProps, SqlViewState> {
     super(props, context);
     this.state = {
       loading: false,
-      result: null
+      result: null,
+      error: null
     };
   }
 
@@ -86,11 +88,17 @@ export class SqlView extends React.Component<SqlViewProps, SqlViewState> {
           const runeResp = await axios.post("/druid/v2", queryJson);
           return SqlView.processRune(queryType, runeResp.data);
         } else {
-          const respSql = await axios.post("/druid/v2/sql", {
-            query,
-            resultFormat: "array",
-            header: true
-          });
+          let respSql: any;
+          try {
+            respSql = await axios.post("/druid/v2/sql", {
+              query,
+              resultFormat: "array",
+              header: true
+            });
+          } catch (e) {
+            const { error, errorMessage, errorClass } = e.response.data;
+            throw new Error([error, errorMessage, errorClass].filter(Boolean).join(' / ') || e.message);
+          }
 
           const result = respSql.data;
           return {
@@ -102,7 +110,8 @@ export class SqlView extends React.Component<SqlViewProps, SqlViewState> {
       onStateChange: ({ result, loading, error }) => {
         this.setState({
           result,
-          loading
+          loading,
+          error
         });
       }
     })
@@ -113,11 +122,12 @@ export class SqlView extends React.Component<SqlViewProps, SqlViewState> {
   }
 
   renderResultTable() {
-    const { result, loading } = this.state;
+    const { result, loading, error } = this.state;
 
     return <ReactTable
       data={result ? result.rows : []}
       loading={loading}
+      noDataText={!loading && result && !result.rows.length ? 'No results' : (error || '')}
       sortable={false}
       columns={(result ? result.header : []).map((h, i) => ({ Header: h, accessor: String(i) }))}
       defaultPageSize={10}

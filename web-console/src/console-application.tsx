@@ -23,7 +23,7 @@ import { HashRouter, Route, Switch } from "react-router-dom";
 import { HeaderBar, HeaderActiveTab } from './components/header-bar';
 import { HomeView } from './views/home-view';
 import { ServersView } from './views/servers-view';
-import { DataSourcesView } from './views/data-source-view';
+import { DatasourcesView } from './views/datasource-view';
 import { TasksView } from './views/tasks-view';
 import { SegmentsView } from './views/segments-view';
 import { SqlView } from './views/sql-view';
@@ -90,7 +90,7 @@ export class ConsoleApplication extends React.Component<ConsoleApplicationProps,
       <div className="console-application">
         <Switch>
           <Route path="/datasources" component={() => {
-            return wrapInViewContainer('datasources', <DataSourcesView goToSql={this.goToSql} goToSegments={this.goToSegments}/>);
+            return wrapInViewContainer('datasources', <DatasourcesView goToSql={this.goToSql} goToSegments={this.goToSegments}/>);
           }} />
           <Route path="/segments" component={() => {
             return wrapInViewContainer('segments', <SegmentsView goToSql={this.goToSql} dataSource={this.dataSource} onlyUnavailable={this.onlyUnavailable}/>);

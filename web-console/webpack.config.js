@@ -39,19 +39,19 @@ module.exports = env => ({
       {
         test: /\.s?css$/,
         use: [
-            {loader: 'style-loader'}, // creates style nodes from JS strings
-            {loader: 'css-loader'}, // translates CSS into CommonJS
-            { loader: 'postcss-loader',
-              options: {
-                ident: 'postcss',
-                plugins: () => [
-                  postcssPresetEnv({
-                    browsers: ['> 1%', 'last 3 versions', 'Firefox ESR', 'Opera 12.1']
-                  })
-                ]
-              }
-            },
-            {loader: 'sass-loader'} // compiles Sass to CSS, using Node Sass by default
+          {loader: 'style-loader'}, // creates style nodes from JS strings
+          {loader: 'css-loader'}, // translates CSS into CommonJS
+          { loader: 'postcss-loader',
+            options: {
+              ident: 'postcss',
+              plugins: () => [
+                postcssPresetEnv({
+                  browsers: ['> 1%', 'last 3 versions', 'Firefox ESR', 'Opera 12.1']
+                })
+              ]
+            }
+          },
+          {loader: 'sass-loader'} // compiles Sass to CSS, using Node Sass by default
         ]
       }
     ]

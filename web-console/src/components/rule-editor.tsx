@@ -32,8 +32,7 @@ import {
 } from "@blueprintjs/core";
 
 import { IconNames } from "@blueprintjs/icons";
-
-require('./rule-editor.scss');
+import './rule-editor.scss';
 
 type RuleType = 'drop' | 'load';
 type RuleTime = 'forever' | 'byPeriod' | 'byInterval';

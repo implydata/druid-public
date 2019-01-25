@@ -32,8 +32,9 @@ export interface SegmentsViewProps extends React.Props<any> {
 }
 
 export interface SegmentsViewState {
-  loading: boolean;
+  segmentsLoading: boolean;
   segments: any[] | null;
+  segmentsError: string | null;
   segmentFilter: Filter[];
 }
 
@@ -53,8 +54,9 @@ export class SegmentsView extends React.Component<SegmentsViewProps, SegmentsVie
     if (props.onlyUnavailable) segmentFilter.push({ id: 'is_available', value: 'false' });
 
     this.state = {
-      loading: true,
+      segmentsLoading: true,
       segments: null,
+      segmentsError: null,
       segmentFilter
     };
 
@@ -74,7 +76,7 @@ export class SegmentsView extends React.Component<SegmentsViewProps, SegmentsVie
       onStateChange: ({ result, loading, error }) => {
         this.setState({
           segments: result,
-          loading
+          segmentsLoading: loading
         });
       }
     })
@@ -122,12 +124,13 @@ export class SegmentsView extends React.Component<SegmentsViewProps, SegmentsVie
   }
 
   renderSegmentsTable() {
-    const { segments, loading, segmentFilter } = this.state;
+    const { segments, segmentsLoading, segmentsError, segmentFilter } = this.state;
 
     return <ReactTable
       data={segments || []}
       pages={10}
-      loading={loading}
+      loading={segmentsLoading}
+      noDataText={!segmentsLoading && segments && !segments.length ? 'No segments' : (segmentsError || '')}
       manual
       filterable
       filtered={segmentFilter}

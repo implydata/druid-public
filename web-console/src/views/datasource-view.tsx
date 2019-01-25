@@ -32,15 +32,15 @@ import { addFilter, formatNumber, formatBytes, countBy, lookupBy, QueryManager }
 import { RetentionDialog } from '../dialogs/retention-dialog';
 import { Loader } from '../components/loader';
 
-import "./data-source-view.scss";
+import "./datasource-view.scss";
 
-export interface DataSourcesViewProps extends React.Props<any> {
+export interface DatasourcesViewProps extends React.Props<any> {
   goToSql: (initSql: string) => void;
   goToSegments: (dataSource: string, onlyUnavailable?: boolean) => void;
 }
 
-export interface DataSourcesViewState {
-  loadingDataSources: boolean;
+export interface DatasourcesViewState {
+  loadingDatasources: boolean;
   dataSources: any[] | null;
   dataSourceFilter: Filter[];
 
@@ -51,17 +51,17 @@ export interface DataSourcesViewState {
   killDatasource: string | null;
 }
 
-export class DataSourcesView extends React.Component<DataSourcesViewProps, DataSourcesViewState> {
+export class DatasourcesView extends React.Component<DatasourcesViewProps, DatasourcesViewState> {
   static DISABLED_COLOR = '#0a1500';
   static FULLY_AVAILABLE_COLOR = '#57d500';
   static PARTIALLY_AVAILABLE_COLOR = '#ffbf00';
 
   private dataSourceQueryManager: QueryManager<string, any[]>;
 
-  constructor(props: DataSourcesViewProps, context: any) {
+  constructor(props: DatasourcesViewProps, context: any) {
     super(props, context);
     this.state = {
-      loadingDataSources: true,
+      loadingDatasources: true,
       dataSources: null,
       dataSourceFilter: [],
 
@@ -102,7 +102,7 @@ export class DataSourcesView extends React.Component<DataSourcesViewProps, DataS
       onStateChange: ({ result, loading, error }) => {
         this.setState({
           dataSources: result,
-          loadingDataSources: loading
+          loadingDatasources: loading
         });
       }
     });
@@ -209,13 +209,9 @@ GROUP BY 1`);
     />;
   }
 
-  renderDataSourceTable() {
+  renderDatasourceTable() {
     const { goToSegments } = this.props;
-    const { dataSources, loadingDataSources, dataSourceFilter, showDisabled } = this.state;
-
-    if (loadingDataSources) {
-      return <Loader/>;
-    }
+    const { dataSources, loadingDatasources, dataSourceFilter, showDisabled } = this.state;
 
     let data = dataSources || [];
     if (!showDisabled) {
@@ -225,7 +221,8 @@ GROUP BY 1`);
     return <>
       <ReactTable
         data={data}
-        loading={loadingDataSources}
+        loading={loadingDatasources}
+        noDataText={!loadingDatasources && dataSources && !dataSources.length ? 'No datasources' : ''}
         filterable={true}
         filtered={dataSourceFilter}
         onFilteredChange={(filtered, column) => {
@@ -250,7 +247,7 @@ GROUP BY 1`);
 
               if (disabled) {
                 return <span>
-                  <span style={{ color: DataSourcesView.DISABLED_COLOR }}>&#x25cf;&nbsp;</span>
+                  <span style={{ color: DatasourcesView.DISABLED_COLOR }}>&#x25cf;&nbsp;</span>
                   Disabled
                 </span>;
               }
@@ -258,7 +255,7 @@ GROUP BY 1`);
               const segmentsEl = <a onClick={() => goToSegments(datasource)}>{`${formatNumber(num_segments)} segments`}</a>;
               if (num_available_segments === num_segments) {
                 return <span>
-                  <span style={{ color: DataSourcesView.FULLY_AVAILABLE_COLOR }}>&#x25cf;&nbsp;</span>
+                  <span style={{ color: DatasourcesView.FULLY_AVAILABLE_COLOR }}>&#x25cf;&nbsp;</span>
                   Fully available ({segmentsEl})
                 </span>;
 
@@ -267,7 +264,7 @@ GROUP BY 1`);
                 const missing = num_segments - num_available_segments;
                 const segmentsMissingEl = <a onClick={() => goToSegments(datasource, true)}>{`${formatNumber(missing)} segments unavailable`}</a>;
                 return <span>
-                  <span style={{ color: DataSourcesView.PARTIALLY_AVAILABLE_COLOR }}>&#x25cf;&nbsp;</span>
+                  <span style={{ color: DatasourcesView.PARTIALLY_AVAILABLE_COLOR }}>&#x25cf;&nbsp;</span>
                   {percentAvailable}% available ({segmentsEl}, {segmentsMissingEl})
                 </span>;
 
@@ -374,7 +371,7 @@ GROUP BY 1`);
         />
         <Checkbox checked={showDisabled} onChange={() => this.setState({ showDisabled: !showDisabled })}>Show disabled</Checkbox>
       </div>
-      {this.renderDataSourceTable()}
+      {this.renderDatasourceTable()}
     </div>
   }
 }

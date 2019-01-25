@@ -45,11 +45,13 @@ export interface ServersViewProps extends React.Props<any> {
 export interface ServersViewState {
   serversLoading: boolean;
   servers: any[] | null;
+  serversError: string | null;
   serverFilter: Filter[];
   groupByTier: boolean;
 
   middleManagersLoading: boolean;
   middleManagers: any[] | null;
+  middleManagersError: string | null;
   middleManagerFilter: Filter[];
 }
 
@@ -62,11 +64,13 @@ export class ServersView extends React.Component<ServersViewProps, ServersViewSt
     this.state = {
       serversLoading: true,
       servers: null,
+      serversError: null,
       serverFilter: [],
       groupByTier: false,
 
       middleManagersLoading: true,
       middleManagers: null,
+      middleManagersError: null,
       middleManagerFilter: []
     };
   }
@@ -91,7 +95,8 @@ export class ServersView extends React.Component<ServersViewProps, ServersViewSt
       onStateChange: ({ result, loading, error }) => {
         this.setState({
           servers: result,
-          serversLoading: loading
+          serversLoading: loading,
+          serversError: error
         });
       }
     });
@@ -109,7 +114,8 @@ WHERE "server_type" = 'historical'`);
       onStateChange: ({ result, loading, error }) => {
         this.setState({
           middleManagers: result,
-          middleManagersLoading: loading
+          middleManagersLoading: loading,
+          middleManagersError: error
         });
       }
     });
@@ -123,7 +129,7 @@ WHERE "server_type" = 'historical'`);
   }
 
   renderServersTable() {
-    const { servers, serversLoading, serverFilter, groupByTier } = this.state;
+    const { servers, serversLoading, serversError, serverFilter, groupByTier } = this.state;
 
     const fillIndicator = (value: number) => {
       return <div className="fill-indicator">
@@ -135,6 +141,7 @@ WHERE "server_type" = 'historical'`);
     return <ReactTable
       data={servers || []}
       loading={serversLoading}
+      noDataText={!serversLoading && servers && !servers.length ? 'No historicals' : (serversError || '')}
       filterable={true}
       filtered={serverFilter}
       onFilteredChange={(filtered, column) => {
@@ -222,11 +229,12 @@ WHERE "server_type" = 'historical'`);
 
   renderMiddleManagerTable() {
     const { goToTask } = this.props;
-    const { middleManagers, middleManagersLoading, middleManagerFilter } = this.state;
+    const { middleManagers, middleManagersLoading, middleManagersError, middleManagerFilter } = this.state;
 
     return <ReactTable
       data={middleManagers || []}
       loading={middleManagersLoading}
+      noDataText={!middleManagersLoading && middleManagers && !middleManagers.length ? 'No MiddleManagers' : (middleManagersError || '')}
       filterable={true}
       filtered={middleManagerFilter}
       onFilteredChange={(filtered, column) => {

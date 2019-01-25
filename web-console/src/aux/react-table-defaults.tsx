@@ -20,6 +20,7 @@
 import * as React from 'react';
 import { Filter, ReactTableDefaults } from "react-table";
 import { Button } from "@blueprintjs/core";
+import { Loader } from '../components/loader';
 import { makeTextFilter } from '../utils';
 
 class FullButton extends React.Component {
@@ -28,11 +29,22 @@ class FullButton extends React.Component {
   }
 }
 
+class NoData extends React.Component {
+  render() {
+    const { children } = this.props;
+    if (!children) return null;
+    return <div className="rt-noData">{children}</div>;
+  }
+}
+
 Object.assign(ReactTableDefaults, {
   defaultFilterMethod: (filter: Filter, row: any, column: any) => {
     const id = filter.pivotId || filter.id;
     return row[id] !== undefined ? String(row[id]).includes(filter.value) : true;
   },
+  LoadingComponent: Loader,
+  loadingText: '',
+  NoDataComponent: NoData,
   FilterComponent: makeTextFilter(),
   PreviousComponent: FullButton,
   NextComponent: FullButton
