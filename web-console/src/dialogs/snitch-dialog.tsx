@@ -109,7 +109,7 @@ export class SnitchDialog extends React.Component<SnitchDialogProps, SnitchDialo
         <FormGroup className={"comment"}>
           <InputGroup
             value={comment}
-            placeholder={"Please comment"}
+            placeholder={"Why are you making this change?"}
             onChange={(e: any) => this.changeComment(e.target.value)}
             large={true}
           />
@@ -127,7 +127,6 @@ export class SnitchDialog extends React.Component<SnitchDialogProps, SnitchDialo
     const { showFinalStep } = this.state;
 
     return <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-
       <FormGroup>
         { showFinalStep
           ? <Button onClick={this.back} icon={IconNames.ARROW_LEFT}>Back</Button>
@@ -139,7 +138,6 @@ export class SnitchDialog extends React.Component<SnitchDialogProps, SnitchDialo
           : <Button disabled={saveDisabled} text="Next" onClick={this.goToFinalStep} intent={Intent.PRIMARY} rightIcon={IconNames.ARROW_RIGHT}/>
         }
       </FormGroup>
-
     </div>
   }
 

@@ -17,18 +17,15 @@
  */
 
 .retention-dialog {
-  width :750px;
+  width: 750px;
 
   .dialog-body {
     overflow: scroll;
     max-height: 70vh;
-    margin: 10px 15px;
 
     .bp3-form-group {
-      padding: 0 15px;
       margin: 0 0 5px;
     }
-  ;
 
     .small {
       width: 0px;
@@ -36,7 +33,6 @@
 
     .comment {
       margin-top: 10px;
-      padding: 0 15px;
 
       textarea {
         max-width: 200px;
