@@ -24,146 +24,96 @@ import {
 } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
 
+import { Rule } from '../models';
+
 import { RuleEditor } from '../components/rule-editor';
 import { SnitchDialog } from './snitch-dialog';
 
-import "./retention-dialog.scss"
+import './retention-dialog.scss';
 
-type RuleType = 'drop' | 'load';
-type RuleTime = 'forever' | 'byPeriod' | 'byInterval';
+export function reorderArray<T>(items: T[], oldIndex: number, newIndex: number): T[] {
+  let newItems = items.concat();
 
-interface Rule {
-  type: RuleType;
-  time: RuleTime;
-  value?: string;
-  tieredReplicants?: Record<string, number>;
-}
+  if (newIndex > oldIndex) newIndex--;
 
-function inflateRule(o: any) {
-  if (!o) return null;
+  newItems.splice(newIndex, 0, newItems.splice(oldIndex, 1)[0]);
 
-  const r: Rule = {
-    type: 'drop',
-    time: 'forever'
-  };
-
-  if (o.type.match(/^load/)) r.type = 'load';
-  r.time = o.type.replace(r.type, '');
-  r.time = r.time.charAt(0).toLowerCase() + r.time.slice(1) as RuleTime;
-
-  if (r.time !== 'forever') {
-    r.value = r.time === 'byInterval' ? o['interval'] : o['period'];
-  }
-
-  r.tieredReplicants = o.tieredReplicants;
-
-  return r;
-}
-
-function deflateRule(r: Rule) {
-  const o: any = {
-    type: r.type + r.time.charAt(0).toUpperCase() + r.time.slice(1) as RuleTime
-  };
-
-  switch (r.time) {
-    case 'byInterval':
-      o.interval = r.value;
-      o.tieredReplicants = r.tieredReplicants;
-      break;
-
-    case 'byPeriod':
-      o.period = r.value;
-      o.tieredReplicants = r.tieredReplicants;
-      break;
-  }
-
-  return o;
+  return newItems;
 }
 
 export interface RetentionDialogProps extends React.Props<any> {
-  datasource: string | null;
+  rules: Rule[];
   isOpen: boolean;
-  onClose: () => void;
+  onCancel: () => void;
+  onSave: (newRules: Rule[], author: string, comment: string) => void;
 }
 
 export interface RetentionDialogState {
-  rules: Rule[];
-  originalRules: Rule[];
-  tiers: any[];
+  currentRules?: Rule[];
+  tiers: string[];
 }
 
 export class RetentionDialog extends React.Component<RetentionDialogProps, RetentionDialogState> {
-  constructor(props: RetentionDialogProps) {
-    super(props);
-    this.state = {
-      originalRules: [],
-      rules: [],
-      tiers: []
-    }
+  static getDerivedStateFromProps(props: RetentionDialogProps, state: RetentionDialogState) {
+    if (state.currentRules) return null;
+
+    return {
+      currentRules: props.rules.concat()
+    };
   }
 
-  async getClusterConfig() {
-    const { datasource } = this.props;
+  constructor(props: RetentionDialogProps) {
+    super(props);
 
-    let resp: any;
-    try {
-      resp = await axios.get(`/druid/coordinator/v1/rules/${datasource}`);
-      resp = resp.data
-    } catch (error) {
-      console.error(error)
-    }
-
-    const tiers = await axios.get('/druid/coordinator/v1/tiers')
-
-    const rules = resp.map(inflateRule);
-    this.setState({
-      rules,
-      originalRules: rules,
-      tiers: tiers.data
-    });
+    this.state = {
+      tiers: []
+    };
   }
 
   save = (author: string, comment: string) => {
-    const { onClose, datasource } = this.props;
-    const { rules } = this.state;
+    const { onSave } = this.props;
+    const { currentRules } = this.state;
 
-    const deflatedRules = rules.map(deflateRule);
-
-    axios.post(`/druid/coordinator/v1/rules/${datasource}`, deflatedRules, {
-      headers:{
-        "X-Druid-Author": author,
-        "X-Druid-Comment": comment
-      }
-    });
-
-    onClose();
+    onSave(currentRules || [], author, comment);
   }
 
   changeRule = (newRule: Rule, index: number) => {
-    const { rules } = this.state;
+    const { currentRules } = this.state;
 
-    const newRules = rules.map((r, i) => {
+    const newRules = (currentRules || []).map((r, i) => {
       if (i === index) return newRule;
       return r;
     });
 
     this.setState({
-      rules: newRules
+      currentRules: newRules
     });
   }
 
   onDeleteRule = (index: number) => {
-    const { rules } = this.state;
+    const { currentRules } = this.state;
 
-    const newRules = rules.filter((r, i) => i !== index);
+    const newRules = (currentRules || []).filter((r, i) => i !== index);
 
     this.setState({
-      rules: newRules
+      currentRules: newRules
+    });
+  }
+
+  moveRule(index: number, offset: number) {
+    const { currentRules } = this.state;
+
+    if (!currentRules) return;
+
+    const newIndex = index + offset;
+
+    this.setState({
+      currentRules: reorderArray(currentRules, index, newIndex)
     });
   }
 
   renderRule = (rule: Rule, index: number) => {
-    const { tiers, rules } = this.state;
+    const { tiers, currentRules } = this.state;
 
     return <RuleEditor
       rule={rule}
@@ -171,46 +121,57 @@ export class RetentionDialog extends React.Component<RetentionDialogProps, Reten
       key={index}
       onChange={r => this.changeRule(r, index)}
       onDelete={() => this.onDeleteRule(index)}
+      moveUp={index > 0 ? () => this.moveRule(index, -1) : undefined}
+      moveDown={index < (currentRules || []).length - 1 ? () => this.moveRule(index, 2) : undefined}
     />
   }
 
   reset = () => {
-    const { originalRules } = this.state;
+    const { rules } = this.props;
 
     this.setState({
-      rules: originalRules
+      currentRules: rules.concat()
     });
   }
 
   addRule = () => {
-    const { rules } = this.state;
+    const { currentRules, tiers } = this.state;
 
-    rules.push({
+    const newRules = (currentRules || []).concat([new Rule({
       type: 'load',
-      time: 'forever'
-    });
+      time: 'forever',
+      tieredReplicants: {[tiers[0]]: '2'}
+    })]);
 
     this.setState({
-      rules
+      currentRules: newRules
+    });
+  }
+
+  loadTiers = async () => {
+    const tiers = await axios.get('/druid/coordinator/v1/tiers')
+
+    this.setState({
+      tiers: tiers.data
     });
   }
 
   render() {
-    const { isOpen, onClose } = this.props;
-    const { rules } = this.state;
+    const { isOpen, onCancel } = this.props;
+    const { currentRules } = this.state;
 
     return <SnitchDialog
       className="retention-dialog"
       saveDisabled={false}
       isOpen={ isOpen }
-      onOpening={ () => {this.getClusterConfig();}}
-      onClose={ onClose }
+      onClose={ onCancel }
       title="Edit retention rules"
       onReset={this.reset}
+      onOpening={this.loadTiers}
       onSave={this.save}
     >
       <FormGroup>
-        {rules.map(this.renderRule)}
+        {(currentRules || []).map(this.renderRule)}
       </FormGroup>
 
       <FormGroup className="right">

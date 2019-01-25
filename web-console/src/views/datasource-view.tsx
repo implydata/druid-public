@@ -30,7 +30,7 @@ import {
 import { AsyncActionDialog } from '../dialogs/async-action-dialog';
 import { addFilter, formatNumber, formatBytes, countBy, lookupBy, QueryManager, getErrorMessage } from "../utils";
 import { RetentionDialog } from '../dialogs/retention-dialog';
-import { Loader } from '../components/loader';
+import { Rule } from '../models';
 
 import "./datasource-view.scss";
 
@@ -39,9 +39,15 @@ export interface DatasourcesViewProps extends React.Props<any> {
   goToSegments: (datasource: string, onlyUnavailable?: boolean) => void;
 }
 
+interface Datasource {
+  datasource: string;
+  rules: Rule[]
+  [key: string]: any;
+}
+
 export interface DatasourcesViewState {
   datasourcesLoading: boolean;
-  datasources: any[] | null;
+  datasources: Datasource[] | null;
   datasourcesError: string | null;
   datasourcesFilter: Filter[];
 
@@ -99,7 +105,7 @@ export class DatasourcesView extends React.Component<DatasourcesViewProps, Datas
 
         const allDatasources = datasources.concat(disabled.map(d => ({ datasource: d, disabled: true })));
         allDatasources.forEach((ds: any) => {
-          ds.rules = rules[ds.datasource] || [];
+          ds.rules = (rules[ds.datasource] || []).map(Rule.fromJS);
           ds.defaultRules = defaultRules;
           ds.compaction = compaction[ds.datasource];
         });
@@ -207,13 +213,28 @@ GROUP BY 1`);
     </AsyncActionDialog>;
   }
 
+  saveRules(datasourceName: string, rules: Rule[], author: string, comment: string) {
+    axios.post(`/druid/coordinator/v1/rules/${datasourceName}`, rules.map(r => r.toJS()), {
+      headers:{
+        "X-Druid-Author": author,
+        "X-Druid-Comment": comment
+      }
+    });
+  }
+
   renderRetentionDialog() {
-    const { retentionDialogOpenOn } = this.state;
+    const { retentionDialogOpenOn, datasources } = this.state;
+
+    const ds = (datasources || []).find(d => d.datasource === retentionDialogOpenOn);
+    const close = () => this.setState({retentionDialogOpenOn: null});
+
+    if (!retentionDialogOpenOn || !ds) return null;
 
     return <RetentionDialog
-      datasource={retentionDialogOpenOn}
-      isOpen={retentionDialogOpenOn != null}
-      onClose={() => this.setState({retentionDialogOpenOn: null})}
+      isOpen
+      rules={ds.rules}
+      onSave={(rules: Rule[], author: string, comment: string) => this.saveRules(retentionDialogOpenOn, rules, author, comment)}
+      onCancel={close}
     />;
   }
 
