@@ -24,21 +24,11 @@ import {
   ControlGroup,
   Card,
   InputGroup,
-  Dialog,
-  NumericInput,
-  Classes,
-  Tooltip,
-  Label,
-  AnchorButton,
-  TagInput,
-  Intent,
-  ButtonGroup,
   HTMLSelect,
   Popover,
   Menu, MenuItem,
   Position,
   Collapse,
-  Icon
 } from "@blueprintjs/core";
 
 import { IconNames } from "@blueprintjs/icons";

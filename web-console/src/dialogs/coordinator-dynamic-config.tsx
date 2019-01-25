@@ -18,22 +18,13 @@
 
 import * as React from 'react';
 import axios from 'axios';
-import {
-  FormGroup,
-  Button,
-  InputGroup,
-  Dialog,
-  NumericInput,
-  Classes,
-  Tooltip,
-  AnchorButton,
-  TagInput,
-  Intent,
-  ButtonGroup,
-  HTMLSelect
-} from "@blueprintjs/core";
+
 import { AutoForm } from '../components/auto-form';
-import "./coordinator-dynamic-config.scss";
+
+import { SnitchDialog } from './snitch-dialog';
+
+import './coordinator-dynamic-config.scss';
+
 
 export interface CoordinatorDynamicConfigDialogProps extends React.Props<any> {
   isOpen: boolean,
@@ -42,17 +33,13 @@ export interface CoordinatorDynamicConfigDialogProps extends React.Props<any> {
 
 export interface CoordinatorDynamicConfigDialogState {
   config: Record<string, any> | null;
-  configAuthor: string;
-  configComment: string;
 }
 
 export class CoordinatorDynamicConfigDialog extends React.Component<CoordinatorDynamicConfigDialogProps, CoordinatorDynamicConfigDialogState> {
   constructor(props: CoordinatorDynamicConfigDialogProps) {
     super(props);
     this.state = {
-      config: null,
-      configComment: "",
-      configAuthor: ""
+      config: null
     }
   }
 
@@ -69,7 +56,7 @@ export class CoordinatorDynamicConfigDialog extends React.Component<CoordinatorD
     });
   }
 
-  private saveClusterConfig(): void {
+  saveClusterConfig = (author: string, comment: string) => {
     const { onClose } = this.props;
     let newState: any = this.state.config;
     const whiteList: any[] = newState["killDataSourceWhitelist"];
@@ -78,8 +65,8 @@ export class CoordinatorDynamicConfigDialog extends React.Component<CoordinatorD
     //newState["killPendingSegmentsSkipList"] = newState["killPendingSegmentsSkipList"].join(",");
     axios.post("/druid/coordinator/v1/config", newState, {
       headers:{
-        "X-Druid-Author": this.state.configAuthor,
-        "X-Druid-Comment": this.state.configComment
+        "X-Druid-Author": author,
+        "X-Druid-Comment": comment
       }
     });
     newState["killDataSourceWhitelist"] = whiteList;
@@ -91,91 +78,68 @@ export class CoordinatorDynamicConfigDialog extends React.Component<CoordinatorD
     const { isOpen, onClose } = this.props;
     const { config } = this.state;
 
-    return <Dialog
+    return <SnitchDialog
       className="coordinator-dynamic-config"
       isOpen={ isOpen }
+      onSave={this.saveClusterConfig}
       onOpening={() => {this.getClusterConfig()}}
       onClose={ onClose }
-      title={"Coordinator dynamic config"}
+      title="Coordinator dynamic config"
     >
-      <div className={`dialog-body ${Classes.DIALOG_BODY}`}>
-        <AutoForm
-          fields={[
-            {
-              name: "balancerComputeThreads",
-              type: "number"
-            },
-            {
-              name: "emitBalancingStats",
-              type: "boolean"
-            },
-            {
-              name: "killAllDataSources",
-              type: "boolean"
-            },
-            {
-              name: "killDataSourceWhitelist",
-              type: "string-array"
-            },
-            {
-              name: "killPendingSegmentsSkipList",
-              type: "string-array"
-            },
-            {
-              name: "maxSegmentsInNodeLoadingQueue",
-              type: "number"
-            },
-            {
-              name: "maxSegmentsToMove",
-              type: "number"
-            },
-            {
-              name: "mergeBytesLimit",
-              type: "size-bytes"
-            },
-            {
-              name: "mergeSegmentsLimit",
-              type: "number"
-            },
-            {
-              name: "millisToWaitBeforeDeleting",
-              type: "number"
-            },
-            {
-              name: "replicantLifetime",
-              type: "number"
-            },
-            {
-              name: "replicationThrottleLimit",
-              type: "number"
-            }
-          ]}
-          model={config}
-          onChange={m => this.setState({ config: m })}
-        />
-        <FormGroup label={"Who is making this change?"}>
-          <InputGroup
-            onChange={(e: any) => {this.setState({configAuthor: e.target.value})}}
-          />
-        </FormGroup>
-        <FormGroup className={"config-comment"}>
-          <InputGroup
-            placeholder={"Please comment"}
-            onChange={(e: any) => {this.setState({configComment: e.target.value})}}
-            large={true}
-          />
-        </FormGroup>
-      </div>
-      <div className={Classes.DIALOG_FOOTER}>
-        <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-          <Button onClick={onClose}>Close</Button>
-          <Button
-            text="Save"
-            onClick={() => this.saveClusterConfig()}
-            intent={Intent.PRIMARY}
-          />
-        </div>
-      </div>
-    </Dialog>
+      <AutoForm
+        fields={[
+          {
+            name: "balancerComputeThreads",
+            type: "number"
+          },
+          {
+            name: "emitBalancingStats",
+            type: "boolean"
+          },
+          {
+            name: "killAllDataSources",
+            type: "boolean"
+          },
+          {
+            name: "killDataSourceWhitelist",
+            type: "string-array"
+          },
+          {
+            name: "killPendingSegmentsSkipList",
+            type: "string-array"
+          },
+          {
+            name: "maxSegmentsInNodeLoadingQueue",
+            type: "number"
+          },
+          {
+            name: "maxSegmentsToMove",
+            type: "number"
+          },
+          {
+            name: "mergeBytesLimit",
+            type: "size-bytes"
+          },
+          {
+            name: "mergeSegmentsLimit",
+            type: "number"
+          },
+          {
+            name: "millisToWaitBeforeDeleting",
+            type: "number"
+          },
+          {
+            name: "replicantLifetime",
+            type: "number"
+          },
+          {
+            name: "replicationThrottleLimit",
+            type: "number"
+          }
+        ]}
+        model={config}
+        onChange={m => this.setState({ config: m })}
+      />
+    </SnitchDialog>
   }
 }
