@@ -22,9 +22,10 @@ import * as classNames from 'classnames';
 import ReactTable from "react-table";
 import { Filter } from "react-table";
 import { Button, H1, ButtonGroup, Intent, Label, Alert } from "@blueprintjs/core";
-import { addFilter, QueryManager } from "../utils";
+import { addFilter, QueryManager, getErrorMessage } from "../utils";
 import { AsyncActionDialog } from "../dialogs/async-action-dialog";
-import { PostSpecDialog } from "../dialogs/post-spec-dialog";
+import { SpecDialog } from "../dialogs/spec-dialog";
+import { AppToaster } from '../aux/toaster';
 import "./tasks-view.scss";
 
 export interface TasksViewProps extends React.Props<any> {
@@ -50,8 +51,8 @@ export interface TasksViewState {
 
   killTaskId: string | null;
 
-  supervisorPostSpecDialogOpen: boolean;
-  taskPostSpecDialogOpen: boolean;
+  supervisorSpecDialogOpen: boolean;
+  taskSpecDialogOpen: boolean;
   alertErrorMsg: string | null;
 }
 
@@ -90,8 +91,8 @@ export class TasksView extends React.Component<TasksViewProps, TasksViewState> {
 
       killTaskId: null,
 
-      supervisorPostSpecDialogOpen: false,
-      taskPostSpecDialogOpen: false,
+      supervisorSpecDialogOpen: false,
+      taskSpecDialogOpen: false,
       alertErrorMsg: null
     };
   }
@@ -139,11 +140,38 @@ FROM sys.tasks`);
     this.taskQueryManager.terminate();
   }
 
-  private submitSpec(endpoint: string, spec: string):void {
-    axios.post(endpoint, JSON.stringify(spec))
-      .catch( (error) => {
-        console.error(error);
+  private async submitSupervisor(spec: JSON) {
+    try {
+      await axios.post('/druid/indexer/v1/supervisor', spec);
+    } catch (e) {
+      AppToaster.show({
+        message: `Failed to submit supervisor: ${getErrorMessage(e)}`,
+        intent: Intent.DANGER
       });
+      return;
+    }
+
+    AppToaster.show({
+      message: 'Supervisor submitted successfully',
+      intent: Intent.SUCCESS
+    });
+  }
+
+  private async submitTask(spec: JSON) {
+    try {
+      await axios.post('/druid/indexer/v1/task', spec);
+    } catch (e) {
+      AppToaster.show({
+        message: `Failed to submit task: ${getErrorMessage(e)}`,
+        intent: Intent.DANGER
+      });
+      return;
+    }
+
+    AppToaster.show({
+      message: 'Task submitted successfully',
+      intent: Intent.SUCCESS
+    });
   }
 
   renderResumeSupervisorAction() {
@@ -426,7 +454,8 @@ FROM sys.tasks`);
             Header: "Duration",
             accessor: "duration",
             filterable: false,
-            Cell: (row) => row.value < 0 ? '' : row.value
+            Cell: (row) => row.value < 0 ? '' : row.value,
+            Aggregated: () => ''
           },
           {
             Header: 'Actions',
@@ -458,7 +487,7 @@ FROM sys.tasks`);
 
   render() {
     const { goToSql } = this.props;
-    const { groupTasksBy, supervisorPostSpecDialogOpen, taskPostSpecDialogOpen, alertErrorMsg } = this.state;
+    const { groupTasksBy, supervisorSpecDialogOpen, taskSpecDialogOpen, alertErrorMsg } = this.state;
 
     return <div className="tasks-view app-view">
       <div className="control-bar">
@@ -470,8 +499,8 @@ FROM sys.tasks`);
         />
         <Button
           icon="plus"
-          text="Post supervisor"
-          onClick={() => this.setState({ supervisorPostSpecDialogOpen: true })}
+          text="Create supervisor"
+          onClick={() => this.setState({ supervisorSpecDialogOpen: true })}
         />
       </div>
       {this.renderSupervisorTable()}
@@ -497,20 +526,22 @@ FROM sys.tasks`);
         </ButtonGroup>
         <Button
           icon="plus"
-          text="Post task"
-          onClick={() => this.setState({ taskPostSpecDialogOpen: true })}
+          text="Create task"
+          onClick={() => this.setState({ taskSpecDialogOpen: true })}
         />
       </div>
       {this.renderTaskTable()}
-      <PostSpecDialog
-        isOpen={ supervisorPostSpecDialogOpen }
-        onClose={() => this.setState({ supervisorPostSpecDialogOpen: false })}
-        onSubmit={ (spec: string) => this.submitSpec('/druid/indexer/v1/supervisor', spec) }
+      <SpecDialog
+        isOpen={ supervisorSpecDialogOpen }
+        onClose={() => this.setState({ supervisorSpecDialogOpen: false })}
+        onSubmit={this.submitSupervisor}
+        title="Submit supervisor"
       />
-      <PostSpecDialog
-        isOpen={ taskPostSpecDialogOpen }
-        onClose={() => this.setState({ taskPostSpecDialogOpen: false })}
-        onSubmit={ (spec: string) => this.submitSpec('/druid/indexer/v1/task', spec) }
+      <SpecDialog
+        isOpen={ taskSpecDialogOpen }
+        onClose={() => this.setState({ taskSpecDialogOpen: false })}
+        onSubmit={this.submitTask}
+        title="Submit task"
       />
       <Alert
         icon="error"

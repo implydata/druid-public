@@ -45,6 +45,8 @@
 
   .control-bar {
     height: 35px;
+    white-space: nowrap;
+    overflow: hidden;
 
     & > * {
       display: inline-block;

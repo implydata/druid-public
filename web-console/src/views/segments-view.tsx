@@ -22,7 +22,7 @@ import * as classNames from 'classnames';
 import ReactTable from "react-table";
 import { Filter } from "react-table";
 import { H5, Button } from "@blueprintjs/core";
-import { addFilter, makeBooleanFilter, QueryManager, formatBytes, formatNumber, parseList, reformatSqlError } from "../utils";
+import { addFilter, makeBooleanFilter, QueryManager, formatBytes, formatNumber, parseList, getErrorMessage } from "../utils";
 import "./segments-view.scss";
 
 export interface SegmentsViewProps extends React.Props<any> {
@@ -66,7 +66,7 @@ export class SegmentsView extends React.Component<SegmentsViewProps, SegmentsVie
         try {
           sqlResp = await axios.post("/druid/v2/sql", { query: query.query });
         } catch (e) {
-          throw reformatSqlError(e);
+          throw new Error(getErrorMessage(e));
         }
         const results: any[] = sqlResp.data.slice(query.skip);
         results.forEach(result => {

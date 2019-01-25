@@ -101,9 +101,9 @@ export function parseList(list: string): string[] {
   return list.split(',');
 }
 
-export function reformatSqlError(e: any) {
-  const { error, errorMessage, errorClass } = e.response.data;
-  return new Error([error, errorMessage, errorClass].filter(Boolean).join(' / ') || e.message);
+export function getErrorMessage(e: any) {
+  const data: any = ((e.response || {}).data || {});
+  return [data.error, data.errorMessage, data.errorClass].filter(Boolean).join(' / ') || e.message;
 }
 
 // ----------------------------------

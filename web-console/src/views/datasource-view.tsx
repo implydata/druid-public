@@ -28,7 +28,7 @@ import {
   Intent, Checkbox
 } from "@blueprintjs/core";
 import { AsyncActionDialog } from '../dialogs/async-action-dialog';
-import { addFilter, formatNumber, formatBytes, countBy, lookupBy, QueryManager, reformatSqlError } from "../utils";
+import { addFilter, formatNumber, formatBytes, countBy, lookupBy, QueryManager, getErrorMessage } from "../utils";
 import { RetentionDialog } from '../dialogs/retention-dialog';
 import { Loader } from '../components/loader';
 
@@ -82,7 +82,7 @@ export class DatasourcesView extends React.Component<DatasourcesViewProps, Datas
         try {
           datasourcesResp = await axios.post("/druid/v2/sql", { query });
         } catch (e) {
-          throw reformatSqlError(e);
+          throw new Error(getErrorMessage(e));
         }
         const datasources: any = datasourcesResp.data;
         const seen = countBy(datasources, (x: any) => x.datasource);

@@ -21,7 +21,7 @@ import * as React from 'react';
 import { Filter, ReactTableDefaults } from "react-table";
 import { Button } from "@blueprintjs/core";
 import { Loader } from '../components/loader';
-import { makeTextFilter } from '../utils';
+import { countBy, makeTextFilter } from '../utils';
 
 class FullButton extends React.Component {
   render() {
@@ -47,5 +47,11 @@ Object.assign(ReactTableDefaults, {
   NoDataComponent: NoData,
   FilterComponent: makeTextFilter(),
   PreviousComponent: FullButton,
-  NextComponent: FullButton
+  NextComponent: FullButton,
+  AggregatedComponent: (opt: any) => {
+    const { subRows, column } = opt;
+    const previewValues = subRows.filter((d: any) => typeof d[column.id] !== 'undefined').map((row: any) => row[column.id]);
+    const previewCount = countBy(previewValues);
+    return <span>{Object.keys(previewCount).sort().map(v => `${v} (${previewCount[v]})`).join(', ')}</span>;
+  }
 });

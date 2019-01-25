@@ -19,21 +19,31 @@
 import * as React from "react";
 import axios from 'axios';
 import {Button, Classes, Dialog, Intent, EditableText} from "@blueprintjs/core";
-import "./post-spec-dialog.scss"
+import "./spec-dialog.scss"
 import {QueryManager} from "../utils";
 
-export interface PostSpecDialogProps extends React.Props<any> {
-  isOpen: boolean,
-  onSubmit: (spec: string) => void,
-  onClose: () => void
+export interface SpecDialogProps extends React.Props<any> {
+  isOpen: boolean;
+  onSubmit: (spec: JSON) => void;
+  onClose: () => void;
+  title: string;
 }
 
-export interface PostSpecDialogState {
+export interface SpecDialogState {
   spec: string;
 }
 
-export class PostSpecDialog extends React.Component<PostSpecDialogProps, PostSpecDialogState> {
-  constructor(props: PostSpecDialogProps) {
+export class SpecDialog extends React.Component<SpecDialogProps, SpecDialogState> {
+  static validJson(json: string): boolean {
+    try {
+      JSON.parse(json);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  constructor(props: SpecDialogProps) {
     super(props);
     this.state = {
       spec: ""
@@ -43,25 +53,27 @@ export class PostSpecDialog extends React.Component<PostSpecDialogProps, PostSpe
   private postSpec(): void {
     const { onClose, onSubmit } = this.props;
     const { spec } = this.state;
-    onSubmit(spec);
+    if (!SpecDialog.validJson(spec)) return;
+    onSubmit(JSON.parse(spec));
     onClose();
   }
 
   render() {
-    const { isOpen, onClose } = this.props;
+    const { isOpen, onClose, title } = this.props;
+    const { spec } = this.state;
 
     return <Dialog
       className={"post-spec-dialog"}
-      isOpen={ isOpen }
-      onClose={ onClose }
-      title={"Post spec"}
+      isOpen={isOpen}
+      onClose={onClose}
+      title={title}
     >
       <EditableText
         className={"post-spec-dialog-textarea"}
         multiline={true}
         minLines={30}
         maxLines={30}
-        placeholder={"Enter the specifications to post"}
+        placeholder={"Enter the spec JSON to post"}
         onChange={ (e) => {this.setState({ spec: e })}}
       />
       <div className={Classes.DIALOG_FOOTER}>
@@ -74,6 +86,7 @@ export class PostSpecDialog extends React.Component<PostSpecDialogProps, PostSpe
             text="Submit"
             intent={Intent.PRIMARY}
             onClick={() => this.postSpec()}
+            disabled={!SpecDialog.validJson(spec)}
           />
         </div>
       </div>
