@@ -24,6 +24,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class AWSClientConfig
 {
   @JsonProperty
+  private String protocol = "https"; // The default of aws-java-sdk
+
+  @JsonProperty
   private boolean disableChunkedEncoding = S3ClientOptions.DEFAULT_CHUNKED_ENCODING_DISABLED;
 
   @JsonProperty
@@ -31,6 +34,11 @@ public class AWSClientConfig
 
   @JsonProperty
   protected boolean forceGlobalBucketAccessEnabled = S3ClientOptions.DEFAULT_FORCE_GLOBAL_BUCKET_ACCESS_ENABLED;
+
+  public String getProtocol()
+  {
+    return protocol;
+  }
 
   public boolean isDisableChunkedEncoding()
   {
