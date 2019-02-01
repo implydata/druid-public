@@ -97,6 +97,7 @@ import io.druid.server.http.SegmentListerResource;
 import io.druid.server.initialization.jetty.ChatHandlerServerModule;
 import io.druid.server.initialization.jetty.JettyServerInitializer;
 import io.druid.server.metrics.DataSourceTaskIdHolder;
+import io.netty.util.SuppressForbidden;
 import org.eclipse.jetty.server.Server;
 
 import javax.annotation.Nullable;
@@ -327,6 +328,7 @@ public class CliPeon extends GuiceRunnable
     );
   }
 
+  @SuppressForbidden(reason = "System#out, System#err")
   @Override
   public void run()
   {
@@ -335,14 +337,9 @@ public class CliPeon extends GuiceRunnable
       try {
         final Lifecycle lifecycle = initLifecycle(injector);
         final Thread hook = new Thread(
-            new Runnable()
-            {
-              @Override
-              public void run()
-              {
-                log.info("Running shutdown hook");
-                lifecycle.stop();
-              }
+            () -> {
+              log.info("Running shutdown hook");
+              lifecycle.stop();
             }
         );
         Runtime.getRuntime().addShutdownHook(hook);
@@ -362,14 +359,15 @@ public class CliPeon extends GuiceRunnable
           Runtime.getRuntime().removeShutdownHook(hook);
         }
         catch (IllegalStateException e) {
-          log.warn("Cannot remove shutdown hook, already shutting down");
+          System.err.println("Cannot remove shutdown hook, already shutting down!");
         }
       }
       catch (Throwable t) {
-        log.error(t, "Error when starting up.  Failing.");
+        System.err.println("Error!");
+        System.err.println(Throwables.getStackTraceAsString(t));
         System.exit(1);
       }
-      log.info("Finished peon task");
+      System.out.println("Finished peon task");
     }
     catch (Exception e) {
       throw Throwables.propagate(e);
