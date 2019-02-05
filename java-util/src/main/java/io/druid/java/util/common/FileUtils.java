@@ -24,7 +24,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.io.ByteSource;
 import com.google.common.io.Files;
-import org.apache.druid.java.util.common.logger.Logger;
+import io.druid.java.util.common.logger.Logger;
 
 import java.io.Closeable;
 import java.io.File;
