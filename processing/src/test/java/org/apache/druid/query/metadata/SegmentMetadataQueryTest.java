@@ -922,6 +922,12 @@ public class SegmentMetadataQueryTest
           {
             return Intervals.of("2012-01-01/P1D");
           }
+
+          @Override
+          public Interval getTrueInterval()
+          {
+            return getInterval();
+          }
         },
         new LogicalSegment()
         {
@@ -929,6 +935,12 @@ public class SegmentMetadataQueryTest
           public Interval getInterval()
           {
             return Intervals.of("2012-01-01T01/PT1H");
+          }
+
+          @Override
+          public Interval getTrueInterval()
+          {
+            return getInterval();
           }
         },
         new LogicalSegment()
@@ -938,6 +950,12 @@ public class SegmentMetadataQueryTest
           {
             return Intervals.of("2013-01-05/P1D");
           }
+
+          @Override
+          public Interval getTrueInterval()
+          {
+            return getInterval();
+          }
         },
         new LogicalSegment()
         {
@@ -945,6 +963,12 @@ public class SegmentMetadataQueryTest
           public Interval getInterval()
           {
             return Intervals.of("2013-05-20/P1D");
+          }
+
+          @Override
+          public Interval getTrueInterval()
+          {
+            return getInterval();
           }
         },
         new LogicalSegment()
@@ -954,6 +978,12 @@ public class SegmentMetadataQueryTest
           {
             return Intervals.of("2014-01-05/P1D");
           }
+
+          @Override
+          public Interval getTrueInterval()
+          {
+            return getInterval();
+          }
         },
         new LogicalSegment()
         {
@@ -961,6 +991,12 @@ public class SegmentMetadataQueryTest
           public Interval getInterval()
           {
             return Intervals.of("2014-02-05/P1D");
+          }
+
+          @Override
+          public Interval getTrueInterval()
+          {
+            return getInterval();
           }
         },
         new LogicalSegment()
@@ -970,6 +1006,12 @@ public class SegmentMetadataQueryTest
           {
             return Intervals.of("2015-01-19T01/PT1H");
           }
+
+          @Override
+          public Interval getTrueInterval()
+          {
+            return getInterval();
+          }
         },
         new LogicalSegment()
         {
@@ -977,6 +1019,12 @@ public class SegmentMetadataQueryTest
           public Interval getInterval()
           {
             return Intervals.of("2015-01-20T02/PT1H");
+          }
+
+          @Override
+          public Interval getTrueInterval()
+          {
+            return getInterval();
           }
         }
     );
@@ -997,6 +1045,12 @@ public class SegmentMetadataQueryTest
           {
             return Intervals.of("2015-01-19T01/PT1H");
           }
+
+          @Override
+          public Interval getTrueInterval()
+          {
+            return getInterval();
+          }
         },
         new LogicalSegment()
         {
@@ -1004,6 +1058,12 @@ public class SegmentMetadataQueryTest
           public Interval getInterval()
           {
             return Intervals.of("2015-01-20T02/PT1H");
+          }
+
+          @Override
+          public Interval getTrueInterval()
+          {
+            return getInterval();
           }
         }
     );
@@ -1030,6 +1090,12 @@ public class SegmentMetadataQueryTest
           {
             return Intervals.of("2013-05-20/P1D");
           }
+
+          @Override
+          public Interval getTrueInterval()
+          {
+            return getInterval();
+          }
         },
         new LogicalSegment()
         {
@@ -1037,6 +1103,12 @@ public class SegmentMetadataQueryTest
           public Interval getInterval()
           {
             return Intervals.of("2014-01-05/P1D");
+          }
+
+          @Override
+          public Interval getTrueInterval()
+          {
+            return getInterval();
           }
         },
         new LogicalSegment()
@@ -1046,6 +1118,12 @@ public class SegmentMetadataQueryTest
           {
             return Intervals.of("2014-02-05/P1D");
           }
+
+          @Override
+          public Interval getTrueInterval()
+          {
+            return getInterval();
+          }
         },
         new LogicalSegment()
         {
@@ -1054,6 +1132,12 @@ public class SegmentMetadataQueryTest
           {
             return Intervals.of("2015-01-19T01/PT1H");
           }
+
+          @Override
+          public Interval getTrueInterval()
+          {
+            return getInterval();
+          }
         },
         new LogicalSegment()
         {
@@ -1061,6 +1145,12 @@ public class SegmentMetadataQueryTest
           public Interval getInterval()
           {
             return Intervals.of("2015-01-20T02/PT1H");
+          }
+
+          @Override
+          public Interval getTrueInterval()
+          {
+            return getInterval();
           }
         }
     );
