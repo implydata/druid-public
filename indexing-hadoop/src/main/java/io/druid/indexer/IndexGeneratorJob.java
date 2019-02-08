@@ -19,6 +19,7 @@
 
 package io.druid.indexer;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
@@ -41,6 +42,7 @@ import io.druid.indexer.hadoop.SegmentInputRow;
 import io.druid.indexer.path.DatasourcePathSpec;
 import io.druid.java.util.common.IAE;
 import io.druid.java.util.common.ISE;
+import io.druid.java.util.common.RetryUtils;
 import io.druid.java.util.common.StringUtils;
 import io.druid.java.util.common.concurrent.Execs;
 import io.druid.java.util.common.logger.Logger;
@@ -73,6 +75,8 @@ import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
+import org.eclipse.jetty.client.HttpClient;
+import org.eclipse.jetty.client.api.ContentResponse;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
 
@@ -94,6 +98,7 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  */
@@ -212,21 +217,41 @@ public class IndexGeneratorJob implements Jobby
       job.submit();
       log.info("Job %s submitted, status available at %s", job.getJobName(), job.getTrackingURL());
 
-      boolean success = job.waitForCompletion(true);
+      try {
+        boolean success = job.waitForCompletion(true);
 
-      Counters counters = job.getCounters();
-      if (counters == null) {
-        log.info("No counters found for job [%s]", job.getJobName());
-      } else {
-        Counter invalidRowCount = counters.findCounter(HadoopDruidIndexerConfig.IndexJobCounters.INVALID_ROW_COUNTER);
-        if (invalidRowCount != null) {
-          jobStats.setInvalidRowCount(invalidRowCount.getValue());
+        Counters counters = job.getCounters();
+        if (counters == null) {
+          log.info("No counters found for job [%s]", job.getJobName());
         } else {
-          log.info("No invalid row counter found for job [%s]", job.getJobName());
+          Counter invalidRowCount = counters.findCounter(HadoopDruidIndexerConfig.IndexJobCounters.INVALID_ROW_COUNTER);
+          if (invalidRowCount != null) {
+            jobStats.setInvalidRowCount(invalidRowCount.getValue());
+          } else {
+            log.info("No invalid row counter found for job [%s]", job.getJobName());
+          }
+        }
+
+        return success;
+      }
+      catch (Exception e) {
+        AtomicBoolean succeeded = new AtomicBoolean(false);
+        RetryUtils.retry(
+            () -> {
+              tryYarnRMJobStatus(job, succeeded);
+              return null;
+            },
+            ex -> {
+              return !succeeded.get();
+            },
+            10
+        );
+        if (succeeded.get()) {
+          return true;
+        } else {
+          throw new RuntimeException(e);
         }
       }
-
-      return success;
     }
     catch (Exception e) {
       throw new RuntimeException(e);
@@ -301,6 +326,38 @@ public class IndexGeneratorJob implements Jobby
     }
 
     return newIndex;
+  }
+
+  public static void tryYarnRMJobStatus(Job job, AtomicBoolean succeeded) throws Exception
+  {
+    HttpClient client = new HttpClient();
+    try {
+      String appId = job.getJobID().toString().replace("job", "application");
+      String yarnRM = job.getConfiguration().get("yarn.resourcemanager.webapp.address");
+      log.info("YARN RM: " + yarnRM);
+      String yarnEndpoint = StringUtils.format("http://%s/ws/v1/cluster/apps/%s", yarnRM, appId);
+
+      client.start();
+
+      ContentResponse res = client.GET(yarnEndpoint);
+      log.info("REQ: " + res.getContentAsString());
+      Map<String, Object> respMap = HadoopDruidIndexerConfig.JSON_MAPPER.readValue(
+          res.getContentAsString(),
+          new TypeReference<Map<String, Object>>()
+          {
+          }
+      );
+
+      Map<String, Object> appMap = (Map<String, Object>) respMap.get("app");
+      String state = (String) appMap.get("state");
+      String finalStatus = (String) appMap.get("finalStatus");
+      if ("FINISHED".equals(state) && "SUCCEEDED".equals(finalStatus)) {
+        succeeded.set(true);
+      }
+    }
+    finally {
+      client.stop();
+    }
   }
 
   public static class IndexGeneratorMapper extends HadoopDruidIndexerMapper<BytesWritable, BytesWritable>

@@ -39,6 +39,7 @@ import io.druid.data.input.Rows;
 import io.druid.indexer.partitions.SingleDimensionPartitionsSpec;
 import io.druid.java.util.common.DateTimes;
 import io.druid.java.util.common.ISE;
+import io.druid.java.util.common.RetryUtils;
 import io.druid.java.util.common.StringUtils;
 import io.druid.java.util.common.granularity.Granularity;
 import io.druid.java.util.common.guava.nary.BinaryFn;
@@ -79,6 +80,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Determines appropriate ShardSpecs for a job by determining whether or not partitioning is necessary, and if so,
@@ -159,10 +161,28 @@ public class DeterminePartitionsJob implements Jobby
         groupByJob.submit();
         log.info("Job %s submitted, status available at: %s", groupByJob.getJobName(), groupByJob.getTrackingURL());
 
-        if (!groupByJob.waitForCompletion(true)) {
-          log.error("Job failed: %s", groupByJob.getJobID());
-          failureCause = Utils.getFailureMessage(groupByJob, config.JSON_MAPPER);
-          return false;
+        try {
+          if (!groupByJob.waitForCompletion(true)) {
+            log.error("Job failed: %s", groupByJob.getJobID());
+            failureCause = Utils.getFailureMessage(groupByJob, config.JSON_MAPPER);
+            return false;
+          }
+        }
+        catch (Exception e) {
+          AtomicBoolean succeeded = new AtomicBoolean(false);
+          RetryUtils.retry(
+              () -> {
+                IndexGeneratorJob.tryYarnRMJobStatus(groupByJob, succeeded);
+                return null;
+              },
+              ex -> {
+                return !succeeded.get();
+              },
+              5
+          );
+          if (!succeeded.get()) {
+            throw new RuntimeException(e);
+          }
         }
       } else {
         log.info("Skipping group-by job.");
@@ -217,10 +237,28 @@ public class DeterminePartitionsJob implements Jobby
           dimSelectionJob.getTrackingURL()
       );
 
-      if (!dimSelectionJob.waitForCompletion(true)) {
-        log.error("Job failed: %s", dimSelectionJob.getJobID().toString());
-        failureCause = Utils.getFailureMessage(dimSelectionJob, config.JSON_MAPPER);
-        return false;
+      try {
+        if (!dimSelectionJob.waitForCompletion(true)) {
+          log.error("Job failed: %s", dimSelectionJob.getJobID().toString());
+          failureCause = Utils.getFailureMessage(dimSelectionJob, config.JSON_MAPPER);
+          return false;
+        }
+      }
+      catch (Exception e) {
+        AtomicBoolean succeeded = new AtomicBoolean(false);
+        RetryUtils.retry(
+            () -> {
+              IndexGeneratorJob.tryYarnRMJobStatus(dimSelectionJob, succeeded);
+              return null;
+            },
+            ex -> {
+              return !succeeded.get();
+            },
+            5
+        );
+        if (!succeeded.get()) {
+          throw new RuntimeException(e);
+        }
       }
 
       /*
