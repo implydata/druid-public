@@ -20,7 +20,9 @@
 package org.apache.druid.sql.calcite.util;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import org.apache.druid.client.DruidServer;
+import org.apache.druid.client.ImmutableDruidDataSource;
 import org.apache.druid.client.ImmutableDruidServer;
 import org.apache.druid.client.TimelineServerView;
 import org.apache.druid.client.selector.ServerSelector;
@@ -33,6 +35,7 @@ import org.apache.druid.timeline.TimelineLookup;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Executor;
 // this class is used for testing and benchmark
@@ -80,7 +83,22 @@ public class TestServerInventoryView implements TimelineServerView
   @Override
   public List<ImmutableDruidServer> getDruidServers()
   {
-    throw new UnsupportedOperationException();
+    final ImmutableDruidDataSource dataSource = new ImmutableDruidDataSource("DUMMY", Collections.emptyMap(), segments);
+    // find segment with datasource "foo2"
+    final DataSegment dataSegment = segments.stream()
+                                            .filter(segment -> segment.getDataSource().equals("foo2"))
+                                            .findFirst()
+                                            .orElse(null);
+    final ImmutableDruidServer server = new ImmutableDruidServer(
+        DUMMY_SERVER,
+        0L,
+        ImmutableMap.of("src", dataSource),
+        ImmutableMap.of(
+            "foo2",
+            dataSegment
+        )
+    );
+    return ImmutableList.of(server);
   }
 
   @Override
