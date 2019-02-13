@@ -573,7 +573,8 @@ public class SystemSchemaTest extends CalciteTestBase
       long numRows,
       long isPublished,
       long isAvailable,
-      long isRealtime)
+      long isRealtime
+  )
   {
     Assert.assertEquals(segmentId, row[0].toString());
     Assert.assertEquals(dataSource, row[1]);
@@ -588,7 +589,8 @@ public class SystemSchemaTest extends CalciteTestBase
     Assert.assertEquals(isAvailable, row[10]);
     Assert.assertEquals(isRealtime, row[11]);
   }
-    @Test
+    
+  @Test
   public void testServersTable()
   {
 
