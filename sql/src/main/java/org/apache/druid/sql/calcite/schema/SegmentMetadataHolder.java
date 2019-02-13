@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.druid.sql.calcite.schema;
 
 import org.apache.druid.sql.calcite.table.RowSignature;
@@ -29,14 +30,29 @@ import java.util.Set;
  */
 public class SegmentMetadataHolder
 {
+  public static Builder builder(
+      String segmentId,
+      long isPublished,
+      long isAvailable,
+      long isRealtime,
+      Map<String, Set<String>> segmentServerMap
+  )
+  {
+    return new Builder(segmentId, isPublished, isAvailable, isRealtime, segmentServerMap);
+  }
 
+  public static Builder from(SegmentMetadataHolder h)
+  {
+    return new Builder(h.getSegmentId(), h.isPublished(), h.isAvailable(), h.isRealtime(), h.getReplicas());
+  }
+
+  private final String segmentId;
   // Booleans represented as long type, where 1 = true and 0 = false
   // to make it easy to count number of segments which are
   // published, available or realtime etc.
   private final long isPublished;
   private final long isAvailable;
   private final long isRealtime;
-  private final String segmentId;
   //segmentId -> set of servers that contain the segment
   private final Map<String, Set<String>> segmentServerMap;
   private final long numRows;
@@ -107,7 +123,7 @@ public class SegmentMetadataHolder
     private RowSignature rowSignature;
     private long numRows;
 
-    public Builder(
+    private Builder(
         String segmentId,
         long isPublished,
         long isAvailable,
