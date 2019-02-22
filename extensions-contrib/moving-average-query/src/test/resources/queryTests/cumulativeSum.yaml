@@ -1,0 +1,93 @@
+query:
+  queryType: movingAverage
+  dataSource:
+    type: table
+    name: slice_pf_us_pl_dt_os
+  context: {
+  }
+  granularity:
+    type: period
+    period: P1D
+  intervals:
+  - 2017-01-02T00:00Z/2017-01-04T00:00Z
+  dimensions:
+  - gender
+  averagers:
+  - name: cumulativeTimeSpent
+    fieldName: timeSpent
+    type: cuLongSum
+  aggregations:
+  - name: timespent_secs
+    fieldName: timeSpent
+    type: longSum
+  limitSpec:
+    type: default
+    columns:
+    - dimension: cumulativeTimeSpent
+expectedOutput:
+- version: v1
+  timestamp: 2017-01-02T00:00Z
+  event:
+    gender: m
+    timespent_secs: 240.0
+    timeSpent: 4
+    cumulativeTimeSpent: 6
+- version: v1
+  timestamp: 2017-01-02T00:00Z
+  event:
+    gender: f
+    timespent_secs: 480.0
+    timeSpent: 8
+    cumulativeTimeSpent: 12
+- version: v1
+  timestamp: 2017-01-03T00:00Z
+  event:
+    gender: m
+    timespent_secs: 60.0
+    timeSpent: -2
+    cumulativeTimeSpent: 4
+- version: v1
+  timestamp: 2017-01-03T00:00Z
+  event:
+    gender: f
+    timespent_secs: 50.0
+    timeSpent: 3
+    cumulativeTimeSpent: 15
+intermediateResults:
+  groupBy:
+  - version: v1
+    timestamp: 2017-01-01T00:00Z
+    event:
+      gender: m
+      timespent_secs: 120.0
+      timeSpent: 2
+  - version: v1
+    timestamp: 2017-01-01T00:00Z
+    event:
+      gender: f
+      timespent_secs: 240.0
+      timeSpent: 4
+  - version: v1
+    timestamp: 2017-01-02T00:00Z
+    event:
+      gender: m
+      timespent_secs: 240.0
+      timeSpent: 4
+  - version: v1
+    timestamp: 2017-01-02T00:00Z
+    event:
+      gender: f
+      timespent_secs: 480.0
+      timeSpent: 8
+  - version: v1
+    timestamp: 2017-01-03T00:00Z
+    event:
+      gender: m
+      timespent_secs: 60.0
+      timeSpent: -2
+  - version: v1
+    timestamp: 2017-01-03T00:00Z
+    event:
+      gender: f
+      timespent_secs: 50.0
+      timeSpent: 3
