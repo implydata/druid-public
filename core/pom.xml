@@ -31,7 +31,7 @@
   <parent>
     <artifactId>druid</artifactId>
     <groupId>org.apache.druid</groupId>
-    <version>0.14.0-iap-pre-SNAPSHOT</version>
+    <version>0.14.0-iap-pre-blookup-SNAPSHOT</version>
   </parent>
 
   <properties>
