@@ -30,7 +30,7 @@
 
     <groupId>org.apache.druid</groupId>
     <artifactId>druid</artifactId>
-    <version>0.14.0-iap-pre-SNAPSHOT</version>
+    <version>0.14.0-iap-pre-csum1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Druid</name>
@@ -168,6 +168,7 @@
         <module>extensions-contrib/opentsdb-emitter</module>
         <module>extensions-contrib/materialized-view-maintenance</module>
         <module>extensions-contrib/materialized-view-selection</module>
+        <module>extensions-contrib/moving-average-query</module>
         <!-- distribution packaging -->
         <module>distribution</module>
     </modules>
