@@ -145,6 +145,8 @@
                                         <argument>-c</argument>
                                         <argument>org.apache.druid.extensions:druid-lookups-cached-single</argument>
                                         <argument>-c</argument>
+                                        <argument>org.apache.druid.extensions:paldb-lookup</argument>
+                                        <argument>-c</argument>
                                         <argument>org.apache.druid.extensions:druid-protobuf-extensions</argument>
                                         <argument>-c</argument>
                                         <argument>org.apache.druid.extensions:mysql-metadata-storage</argument>
