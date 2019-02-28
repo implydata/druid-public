@@ -28,7 +28,7 @@ layout: doc_page
 
 These Aggregate Window Functions consume standard Druid Aggregators and outputs additional windowed aggregates called [Averagers](#averagers).
 
-#### High level algorithm 
+#### High level algorithm
 
 Moving Average encapsulates the [groupBy query](../../querying/groupbyquery.html) (Or [timeseries](../../querying/timeseriesquery.html) in case of no dimensions) in order to rely on the maturity of these query types.
 
@@ -47,19 +47,18 @@ It runs the query in two main phases:
 
 [Analytic Functions](https://cloud.google.com/bigquery/docs/reference/standard-sql/analytic-function-concepts)
 
-
 ## Operations
-To use this extension, make sure to [load](../../operations/including-extensions.html) `druid-moving-average-query` only to the Broker.
+To use this extension, make sure to [load](../../operations/including-extensions.html) `druid-moving-average-query` **_ONLY to the BROKER_**.
 
-##Configuration
+## Configuration
 There are currently no configuration properties specific to Moving Average.
 
-##Limitations
+## Limitations
 * movingAverage is missing support for the following groupBy properties: `subtotalsSpec`, `virtualColumns`.
 * movingAverage is missing support for the following timeseries properties: `descending`.
 * movingAverage is missing support for [SQL-compatible null handling](https://github.com/apache/incubator-druid/issues/4349) (So setting druid.generic.useDefaultValueForNull in configuration will give an error). 
 
-##Query spec:
+## Query spec:
 * Most properties in the For the query spec derived from  [groupBy query](../../querying/groupbyquery.html) / [timeseries](../../querying/timeseriesquery.html), see documentation for these query types.
 
 |property|description|required?|
@@ -78,7 +77,7 @@ There are currently no configuration properties specific to Moving Average.
 |averagers|Defines the moving average function; See [Aggregations](../../querying/aggregations.html)|yes|
 |postAveragers|Support input of both averagers and aggregations; Syntax is identical to postAggregations (See [Post Aggregations](../../querying/post-aggregations.html))|no|
 
-##Averagers
+## Averagers
 
 Averagers are used to define the Moving-Average function. Averagers are not limited to an average - they can also provide other types of window functions such as MAX()/MIN().
 
@@ -94,8 +93,7 @@ These are properties which are common to all Averagers:
 |buckets|Number of lookback buckets (time periods), including current one. Must be >0|yes|
 |cycleSize|Cycle size; Used to calculate day-of-week option; See [Cycle size (Day of Week)](#cycle-size-day-of-week)|no, defaults to 1|
 
-
-###Averager types:
+### Averager types:
 
 * [Standard averagers](#standard-averagers):
   * doubleMean
@@ -106,16 +104,17 @@ These are properties which are common to all Averagers:
   * longMeanNoNulls
   * longMax
   * longMin
-* [Sketch averagers](#sketch-averagers):
-  * sketchUnion
+  * longRunningTotal (cumulative sum)
+  * doubleRunningTotal (cumulative sum)
 
 #### Standard averagers
 
-These averagers offer four functions:
+These averagers offer five functions:
 * Mean (Average)
-* MeanNoNulls (Ignores empty buckets).
+* MeanNoNulls (Ignores empty buckets)
 * Max
 * Min
+* runningTotal (cumulative sum)
 
 **Ignoring nulls**:
 Using a MeanNoNulls averager is useful when the interval starts at the dataset beginning time. 
@@ -125,24 +124,6 @@ However, this also means that empty days in a sparse dataset will also be ignore
 Example of usage:
 ```json
 { "type" : "doubleMean", "name" : <output_name>, "fieldName": <input_name> }
-```
-
-#### Sketch averagers
-
-Sketch averager are meant to perform merge operations on [DataSketches](../extensions-core/datasketches-extension.html) (When using a Sketch averager, please include the [DataSketches](../extensions-core/datasketches-extension.html) extension as well).
-
-Extra properties for Sketch averagers:
-
-|property|description|required?|
-|--------|-----------|---------|
-|size|Sketch size; See [DataSketches aggregator](../extensions-core/datasketches-aggregators.html)|no, defaults to 4096|
-
-Available functions: 
-* sketchUnion
-
-Example of usage:
-```json
-{ "type" : "sketchUnion", "name" : <output_name>, "fieldName": <input_name> }
 ```
 
 ### Cycle size (Day of Week)
@@ -350,7 +331,6 @@ Result:
   }
 } ]
 ```
-
 
 ### Cycle size example
 
