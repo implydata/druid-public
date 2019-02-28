@@ -232,6 +232,37 @@ Result:
 }
 ```
 
+### Cumulative sum example
+
+```json
+{
+  "queryType": "movingAverage",
+  "dataSource": "wikiticker",
+  "granularity": {
+    "type": "period",
+    "period": "PT1H"
+  },
+  "dimensions": ["isRobot", "isAnonymous"],
+  "intervals": [
+    "2015-09-12T00:00:00Z/2015-09-13T00:00:00Z"
+  ],
+  "aggregations": [
+    {
+      "name": "delta1H",
+      "fieldName": "delta",
+      "type": "longSum"
+    }
+  ],
+  "averagers": [
+    {
+      "name": "cumulative sum",
+      "fieldName": "delta1H",
+      "type": "longRunningTotal"
+    }
+  ]
+}
+```
+
 ### Post averager example
 
 Calculating a 7-buckets moving average for Wikipedia edit deltas, plus a ratio between the current period and the moving average.
