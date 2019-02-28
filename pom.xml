@@ -30,7 +30,7 @@
 
     <groupId>org.apache.druid</groupId>
     <artifactId>druid</artifactId>
-    <version>0.14.0-iap-pre-csum1-SNAPSHOT</version>
+    <version>0.14.0-iap-pre-csum1</version>
     <packaging>pom</packaging>
 
     <name>Druid</name>
