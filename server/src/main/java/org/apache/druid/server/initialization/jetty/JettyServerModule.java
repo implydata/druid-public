@@ -434,7 +434,8 @@ public class JettyServerModule extends JerseyServletModule
               log.warn(e, "Unable to stop Jetty server.");
             }
           }
-        }
+        },
+        Lifecycle.Stage.LAST
     );
 
     return server;
