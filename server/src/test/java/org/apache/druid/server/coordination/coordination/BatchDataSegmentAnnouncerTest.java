@@ -35,6 +35,7 @@ import org.apache.curator.test.TestingCluster;
 import org.apache.druid.curator.PotentiallyGzippedCompressionProvider;
 import org.apache.druid.curator.announcement.Announcer;
 import org.apache.druid.java.util.common.DateTimes;
+import org.apache.druid.java.util.common.concurrent.Execs;
 import org.apache.druid.segment.TestHelper;
 import org.apache.druid.server.coordination.BatchDataSegmentAnnouncer;
 import org.apache.druid.server.coordination.ChangeRequestHistory;
@@ -51,9 +52,16 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -63,11 +71,12 @@ public class BatchDataSegmentAnnouncerTest
   private static final String testBasePath = "/test";
   private static final String testSegmentsPath = "/test/segments/id";
   private static final Joiner joiner = Joiner.on("/");
+  private static final int NUM_THREADS = 4;
 
   private TestingCluster testingCluster;
   private CuratorFramework cf;
   private ObjectMapper jsonMapper;
-  private Announcer announcer;
+  private TestAnnouncer announcer;
   private SegmentReader segmentReader;
   private BatchDataSegmentAnnouncer segmentAnnouncer;
   private Set<DataSegment> testSegments;
@@ -76,6 +85,7 @@ public class BatchDataSegmentAnnouncerTest
   private Boolean skipDimensionsAndMetrics;
   private Boolean skipLoadSpec;
 
+  private ExecutorService exec;
 
   @Before
   public void setUp() throws Exception
@@ -94,7 +104,7 @@ public class BatchDataSegmentAnnouncerTest
 
     jsonMapper = TestHelper.makeJsonMapper();
 
-    announcer = new Announcer(
+    announcer = new TestAnnouncer(
         cf,
         MoreExecutors.sameThreadExecutor()
     );
@@ -155,6 +165,8 @@ public class BatchDataSegmentAnnouncerTest
     for (int i = 0; i < 100; i++) {
       testSegments.add(makeSegment(i));
     }
+
+    exec = Execs.multiThreaded(NUM_THREADS, "BatchDataSegmentAnnouncerTest-%d");
   }
 
   @After
@@ -163,6 +175,7 @@ public class BatchDataSegmentAnnouncerTest
     announcer.stop();
     cf.close();
     testingCluster.stop();
+    exec.shutdownNow();
   }
 
   @Test
@@ -297,6 +310,14 @@ public class BatchDataSegmentAnnouncerTest
     testBatchAnnounce(true);
   }
 
+  @Test
+  public void testMultipleBatchAnnounce() throws Exception
+  {
+    for (int i = 0; i < 10; i++) {
+      testBatchAnnounce(false);
+    }
+  }
+
   private void testBatchAnnounce(boolean testHistory) throws Exception
   {
     segmentAnnouncer.announceSegments(testSegments);
@@ -340,11 +361,72 @@ public class BatchDataSegmentAnnouncerTest
     }
   }
 
-  @Test
-  public void testMultipleBatchAnnounce() throws Exception
+  @Test(timeout = 5000L)
+  public void testAnnounceSegmentsWithSameSegmentConcurrently() throws ExecutionException, InterruptedException
   {
-    for (int i = 0; i < 10; i++) {
-      testBatchAnnounce(false);
+    final List<Future> futures = new ArrayList<>(NUM_THREADS);
+
+    for (int i = 0; i < NUM_THREADS; i++) {
+      futures.add(
+          exec.submit(() -> {
+            try {
+              segmentAnnouncer.announceSegments(testSegments);
+            }
+            catch (IOException e) {
+              throw new RuntimeException(e);
+            }
+          })
+      );
+    }
+
+    for (Future future : futures) {
+      future.get();
+    }
+
+    // Announcing 100 segments requires 2 nodes because of maxBytesPerNode configuration.
+    Assert.assertEquals(2, announcer.numPathAnnounced.size());
+    for (ConcurrentHashMap<byte[], AtomicInteger> eachMap : announcer.numPathAnnounced.values()) {
+      for (Entry<byte[], AtomicInteger> entry : eachMap.entrySet()) {
+        Assert.assertEquals(1, entry.getValue().get());
+      }
+    }
+  }
+
+  @Test(timeout = 5000L)
+  public void testAnnounceSegmentWithSameSegmentConcurrently() throws ExecutionException, InterruptedException
+  {
+    final List<Future> futures = new ArrayList<>(NUM_THREADS);
+
+    final DataSegment segment1 = makeSegment(0);
+    final DataSegment segment2 = makeSegment(1);
+    final DataSegment segment3 = makeSegment(2);
+    final DataSegment segment4 = makeSegment(3);
+
+    for (int i = 0; i < NUM_THREADS; i++) {
+      futures.add(
+          exec.submit(() -> {
+            try {
+              segmentAnnouncer.announceSegment(segment1);
+              segmentAnnouncer.announceSegment(segment2);
+              segmentAnnouncer.announceSegment(segment3);
+              segmentAnnouncer.announceSegment(segment4);
+            }
+            catch (IOException e) {
+              throw new RuntimeException(e);
+            }
+          })
+      );
+    }
+
+    for (Future future : futures) {
+      future.get();
+    }
+
+    Assert.assertEquals(1, announcer.numPathAnnounced.size());
+    for (ConcurrentHashMap<byte[], AtomicInteger> eachMap : announcer.numPathAnnounced.values()) {
+      for (Entry<byte[], AtomicInteger> entry : eachMap.entrySet()) {
+        Assert.assertEquals(1, entry.getValue().get());
+      }
     }
   }
 
@@ -392,6 +474,23 @@ public class BatchDataSegmentAnnouncerTest
       }
 
       return Sets.newHashSet();
+    }
+  }
+
+  private static class TestAnnouncer extends Announcer
+  {
+    private final ConcurrentHashMap<String, ConcurrentHashMap<byte[], AtomicInteger>> numPathAnnounced = new ConcurrentHashMap<>();
+
+    private TestAnnouncer(CuratorFramework curator, ExecutorService exec)
+    {
+      super(curator, exec);
+    }
+
+    @Override
+    public void announce(String path, byte[] bytes, boolean removeParentIfCreated)
+    {
+      numPathAnnounced.computeIfAbsent(path, k -> new ConcurrentHashMap<>()).computeIfAbsent(bytes, k -> new AtomicInteger(0)).incrementAndGet();
+      super.announce(path, bytes, removeParentIfCreated);
     }
   }
 }

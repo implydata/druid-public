@@ -20,12 +20,9 @@
 package org.apache.druid.server.coordinator;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import org.apache.druid.discovery.DiscoveryDruidNode;
-import org.apache.druid.discovery.DruidNodeDiscovery;
 import org.apache.druid.java.util.common.Intervals;
 import org.apache.druid.java.util.common.RE;
 import org.apache.druid.java.util.common.concurrent.Execs;
@@ -46,12 +43,10 @@ import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  */
@@ -171,28 +166,8 @@ public class HttpLoadQueuePeonTest
 
   }
 
-  private static class TestDruidNodeDiscovery implements DruidNodeDiscovery
-  {
-    Listener listener;
-
-    @Override
-    public Collection<DiscoveryDruidNode> getAllNodes()
-    {
-      throw new UnsupportedOperationException("Not Implemented.");
-    }
-
-    @Override
-    public void registerListener(Listener listener)
-    {
-      listener.nodesAdded(ImmutableList.of());
-      this.listener = listener;
-    }
-  }
-
   private static class TestHttpClient implements HttpClient
   {
-    AtomicInteger requestNum = new AtomicInteger(0);
-
     @Override
     public <Intermediate, Final> ListenableFuture<Final> go(
         Request request, HttpResponseHandler<Intermediate, Final> httpResponseHandler
