@@ -435,7 +435,7 @@ public class JettyServerModule extends JerseyServletModule
             }
           }
         },
-        Lifecycle.Stage.LAST
+        Lifecycle.Stage.SERVER
     );
 
     return server;
