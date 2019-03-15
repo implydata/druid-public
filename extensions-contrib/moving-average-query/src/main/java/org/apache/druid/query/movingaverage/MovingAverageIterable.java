@@ -32,6 +32,7 @@ import org.apache.druid.query.movingaverage.averagers.AveragerFactory;
 import org.apache.druid.segment.ColumnSelectorFactory;
 import org.apache.druid.segment.ColumnValueSelector;
 import org.apache.druid.segment.DimensionSelector;
+import org.apache.druid.segment.NilColumnValueSelector;
 import org.apache.druid.segment.column.ColumnCapabilities;
 
 import java.util.Collection;
@@ -89,7 +90,7 @@ public class MovingAverageIterable implements Iterable<Row>
       @Override
       public ColumnValueSelector makeColumnValueSelector(String s)
       {
-        return null;
+        return NilColumnValueSelector.instance();
       }
 
       @Override
