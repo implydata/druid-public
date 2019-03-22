@@ -403,11 +403,7 @@ public class KafkaIndexTaskTest
   public void testRunAfterDataInserted() throws Exception
   {
     // Insert data
-    try (final KafkaProducer<byte[], byte[]> kafkaProducer = kafkaServer.newProducer()) {
-      for (ProducerRecord<byte[], byte[]> record : records) {
-        kafkaProducer.send(record).get();
-      }
-    }
+    insertData();
 
     final KafkaIndexTask task = createTask(
         null,
@@ -474,11 +470,7 @@ public class KafkaIndexTaskTest
     }
 
     // Insert data
-    try (final KafkaProducer<byte[], byte[]> kafkaProducer = kafkaServer.newProducer()) {
-      for (ProducerRecord<byte[], byte[]> record : records) {
-        kafkaProducer.send(record).get();
-      }
-    }
+    insertData();
 
     // Wait for task to exit
     Assert.assertEquals(TaskState.SUCCESS, future.get().getStatusCode());
@@ -513,11 +505,7 @@ public class KafkaIndexTaskTest
     maxRowsPerSegment = 2;
 
     // Insert data
-    try (final KafkaProducer<byte[], byte[]> kafkaProducer = kafkaServer.newProducer()) {
-      for (ProducerRecord<byte[], byte[]> record : records) {
-        kafkaProducer.send(record).get();
-      }
-    }
+    insertData();
     Map<String, Object> consumerProps = kafkaServer.consumerProperties();
     consumerProps.put("max.poll.records", "1");
 
@@ -885,7 +873,7 @@ public class KafkaIndexTaskTest
     final SeekableStreamEndSequenceNumbers<Integer, Long> checkpoint1 =
         new SeekableStreamEndSequenceNumbers<>(topic, ImmutableMap.of(0, 5L));
     final SeekableStreamEndSequenceNumbers<Integer, Long> checkpoint2 =
-        new SeekableStreamEndSequenceNumbers<>(topic, ImmutableMap.of(0, 9L));
+        new SeekableStreamEndSequenceNumbers<>(topic, ImmutableMap.of(0, 12L));
     final SeekableStreamEndSequenceNumbers<Integer, Long> endPartitions =
         new SeekableStreamEndSequenceNumbers<>(topic, ImmutableMap.of(0, Long.MAX_VALUE));
 
@@ -1749,7 +1737,7 @@ public class KafkaIndexTaskTest
             0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(topic, ImmutableMap.of(0, 2L), ImmutableSet.of()),
-            new SeekableStreamEndSequenceNumbers<>(topic, ImmutableMap.of(0, 5L)),
+            new SeekableStreamEndSequenceNumbers<>(topic, ImmutableMap.of(0, 6L)),
             kafkaServer.consumerProperties(),
             KafkaSupervisorIOConfig.DEFAULT_POLL_TIMEOUT_MILLIS,
             true,
@@ -1789,7 +1777,7 @@ public class KafkaIndexTaskTest
             0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(topic, ImmutableMap.of(0, 2L), ImmutableSet.of()),
-            new SeekableStreamEndSequenceNumbers<>(topic, ImmutableMap.of(0, 5L)),
+            new SeekableStreamEndSequenceNumbers<>(topic, ImmutableMap.of(0, 6L)),
             kafkaServer.consumerProperties(),
             KafkaSupervisorIOConfig.DEFAULT_POLL_TIMEOUT_MILLIS,
             true,
@@ -1827,7 +1815,7 @@ public class KafkaIndexTaskTest
     SegmentDescriptor desc2 = SD(task1, "2011/P1D", 0);
     Assert.assertEquals(ImmutableSet.of(desc1, desc2), publishedDescriptors());
     Assert.assertEquals(
-        new KafkaDataSourceMetadata(new SeekableStreamEndSequenceNumbers<>(topic, ImmutableMap.of(0, 5L))),
+        new KafkaDataSourceMetadata(new SeekableStreamEndSequenceNumbers<>(topic, ImmutableMap.of(0, 6L))),
         metadataStorageCoordinator.getDataSourceMetadata(DATA_SCHEMA.getDataSource())
     );
 
@@ -1854,7 +1842,7 @@ public class KafkaIndexTaskTest
             0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(topic, ImmutableMap.of(0, 0L), ImmutableSet.of()),
-            new SeekableStreamEndSequenceNumbers<>(topic, ImmutableMap.of(0, 9L)),
+            new SeekableStreamEndSequenceNumbers<>(topic, ImmutableMap.of(0, 10L)),
             consumerProps,
             KafkaSupervisorIOConfig.DEFAULT_POLL_TIMEOUT_MILLIS,
             true,
@@ -1902,7 +1890,7 @@ public class KafkaIndexTaskTest
             0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(topic, ImmutableMap.of(0, 0L), ImmutableSet.of()),
-            new SeekableStreamEndSequenceNumbers<>(topic, ImmutableMap.of(0, 9L)),
+            new SeekableStreamEndSequenceNumbers<>(topic, ImmutableMap.of(0, 10L)),
             consumerProps,
             KafkaSupervisorIOConfig.DEFAULT_POLL_TIMEOUT_MILLIS,
             true,
@@ -1945,7 +1933,7 @@ public class KafkaIndexTaskTest
     SegmentDescriptor desc7 = SD(task1, "2012/P1D", 0);
     Assert.assertEquals(ImmutableSet.of(desc1, desc2, desc3, desc4, desc5, desc6, desc7), publishedDescriptors());
     Assert.assertEquals(
-        new KafkaDataSourceMetadata(new SeekableStreamEndSequenceNumbers<>(topic, ImmutableMap.of(0, 9L))),
+        new KafkaDataSourceMetadata(new SeekableStreamEndSequenceNumbers<>(topic, ImmutableMap.of(0, 10L))),
         metadataStorageCoordinator.getDataSourceMetadata(DATA_SCHEMA.getDataSource())
     );
   }
@@ -1959,7 +1947,7 @@ public class KafkaIndexTaskTest
             0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(topic, ImmutableMap.of(0, 2L), ImmutableSet.of()),
-            new SeekableStreamEndSequenceNumbers<>(topic, ImmutableMap.of(0, 5L)),
+            new SeekableStreamEndSequenceNumbers<>(topic, ImmutableMap.of(0, 6L)),
             kafkaServer.consumerProperties(),
             KafkaSupervisorIOConfig.DEFAULT_POLL_TIMEOUT_MILLIS,
             true,
@@ -2030,7 +2018,7 @@ public class KafkaIndexTaskTest
     SegmentDescriptor desc2 = SD(task, "2011/P1D", 0);
     Assert.assertEquals(ImmutableSet.of(desc1, desc2), publishedDescriptors());
     Assert.assertEquals(
-        new KafkaDataSourceMetadata(new SeekableStreamEndSequenceNumbers<>(topic, ImmutableMap.of(0, 5L))),
+        new KafkaDataSourceMetadata(new SeekableStreamEndSequenceNumbers<>(topic, ImmutableMap.of(0, 6L))),
         metadataStorageCoordinator.getDataSourceMetadata(DATA_SCHEMA.getDataSource())
     );
 
