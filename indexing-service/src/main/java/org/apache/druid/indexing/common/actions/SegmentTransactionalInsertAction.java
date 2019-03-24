@@ -154,7 +154,7 @@ public class SegmentTransactionalInsertAction implements TaskAction<SegmentPubli
   @Override
   public String toString()
   {
-    return "SegmentInsertAction{" +
+    return "SegmentTransactionalInsertAction{" +
            "segments=" + Iterables.transform(segments, DataSegment::getId) +
            ", startMetadata=" + startMetadata +
            ", endMetadata=" + endMetadata +

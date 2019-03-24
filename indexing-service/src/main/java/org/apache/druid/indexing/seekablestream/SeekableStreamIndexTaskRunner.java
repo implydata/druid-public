@@ -59,6 +59,7 @@ import org.apache.druid.indexing.seekablestream.common.OrderedPartitionableRecor
 import org.apache.druid.indexing.seekablestream.common.OrderedSequenceNumber;
 import org.apache.druid.indexing.seekablestream.common.RecordSupplier;
 import org.apache.druid.indexing.seekablestream.common.StreamPartition;
+import org.apache.druid.indexing.seekablestream.supervisor.SeekableStreamSupervisor;
 import org.apache.druid.java.util.common.DateTimes;
 import org.apache.druid.java.util.common.ISE;
 import org.apache.druid.java.util.common.StringUtils;
@@ -267,7 +268,7 @@ public abstract class SeekableStreamIndexTaskRunner<PartitionIdType, SequenceOff
     if (!restoreSequences()) {
       final TreeMap<Integer, Map<PartitionIdType, SequenceOffsetType>> checkpoints = getCheckPointsFromContext(
           toolbox,
-          task.getContextValue("checkpoints")
+          task.getContextValue(SeekableStreamSupervisor.CHECKPOINTS_CTX_KEY)
       );
       if (checkpoints != null) {
         boolean exclusive = false;
@@ -650,7 +651,7 @@ public abstract class SeekableStreamIndexTaskRunner<PartitionIdType, SequenceOff
                     new SeekableStreamStartSequenceNumbers<>(
                         stream,
                         sequenceToCheckpoint.getStartOffsets(),
-                        ioConfig.getStartSequenceNumbers().getExclusivePartitions()
+                        sequenceToCheckpoint.getExclusiveStartPartitions()
                     )
                 ),
                 createDataSourceMetadata(
@@ -1540,6 +1541,12 @@ public abstract class SeekableStreamIndexTaskRunner<PartitionIdType, SequenceOff
                                       SequenceMetadata::getSequenceId,
                                       SequenceMetadata::getStartOffsets
                                   )));
+  }
+
+  @VisibleForTesting
+  public CopyOnWriteArrayList<SequenceMetadata<PartitionIdType, SequenceOffsetType>> getSequences()
+  {
+    return sequences;
   }
 
   /**
