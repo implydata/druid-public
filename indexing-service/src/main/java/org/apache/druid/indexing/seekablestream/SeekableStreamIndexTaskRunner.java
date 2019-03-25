@@ -59,6 +59,7 @@ import org.apache.druid.indexing.seekablestream.common.OrderedPartitionableRecor
 import org.apache.druid.indexing.seekablestream.common.OrderedSequenceNumber;
 import org.apache.druid.indexing.seekablestream.common.RecordSupplier;
 import org.apache.druid.indexing.seekablestream.common.StreamPartition;
+import org.apache.druid.indexing.seekablestream.supervisor.SeekableStreamSupervisor;
 import org.apache.druid.java.util.common.DateTimes;
 import org.apache.druid.java.util.common.ISE;
 import org.apache.druid.java.util.common.StringUtils;
@@ -240,7 +241,6 @@ public abstract class SeekableStreamIndexTaskRunner<PartitionIdType, SequenceOff
     resetNextCheckpointTime();
   }
 
-
   public TaskStatus run(TaskToolbox toolbox)
   {
     try {
@@ -257,57 +257,90 @@ public abstract class SeekableStreamIndexTaskRunner<PartitionIdType, SequenceOff
     }
   }
 
-  private TaskStatus runInternal(TaskToolbox toolbox) throws Exception
+  private Set<PartitionIdType> computeExclusiveStartPartitionsForSequence(
+      Map<PartitionIdType, SequenceOffsetType> sequenceStartOffsets
+  )
   {
-    log.info("SeekableStream indexing task starting up!");
-    startTime = DateTimes.nowUtc();
-    status = Status.STARTING;
-    this.toolbox = toolbox;
+    if (sequenceStartOffsets.equals(ioConfig.getStartSequenceNumbers().getPartitionSequenceNumberMap())) {
+      return ioConfig.getStartSequenceNumbers().getExclusivePartitions();
+    } else {
+      return isEndOffsetExclusive() ? Collections.emptySet() : sequenceStartOffsets.keySet();
+    }
+  }
 
+  @VisibleForTesting
+  public void setToolbox(TaskToolbox toolbox)
+  {
+    this.toolbox = toolbox;
+  }
+
+  @VisibleForTesting
+  public void initializeSequences() throws IOException
+  {
     if (!restoreSequences()) {
       final TreeMap<Integer, Map<PartitionIdType, SequenceOffsetType>> checkpoints = getCheckPointsFromContext(
           toolbox,
-          task.getContextValue("checkpoints")
+          task.getContextValue(SeekableStreamSupervisor.CHECKPOINTS_CTX_KEY)
       );
       if (checkpoints != null) {
-        boolean exclusive = false;
         Iterator<Map.Entry<Integer, Map<PartitionIdType, SequenceOffsetType>>> sequenceOffsets = checkpoints.entrySet()
                                                                                                             .iterator();
         Map.Entry<Integer, Map<PartitionIdType, SequenceOffsetType>> previous = sequenceOffsets.next();
         while (sequenceOffsets.hasNext()) {
           Map.Entry<Integer, Map<PartitionIdType, SequenceOffsetType>> current = sequenceOffsets.next();
-          sequences.add(new SequenceMetadata<>(
-              previous.getKey(),
-              StringUtils.format("%s_%s", ioConfig.getBaseSequenceName(), previous.getKey()),
-              previous.getValue(),
-              current.getValue(),
-              true,
-              exclusive ? previous.getValue().keySet() : null
-          ));
+          final Set<PartitionIdType> exclusiveStartPartitions = computeExclusiveStartPartitionsForSequence(
+              previous.getValue()
+          );
+          addSequence(
+              new SequenceMetadata<>(
+                  previous.getKey(),
+                  StringUtils.format("%s_%s", ioConfig.getBaseSequenceName(), previous.getKey()),
+                  previous.getValue(),
+                  current.getValue(),
+                  true,
+                  exclusiveStartPartitions
+              )
+          );
           previous = current;
-          exclusive = true;
         }
-        sequences.add(new SequenceMetadata<>(
-            previous.getKey(),
-            StringUtils.format("%s_%s", ioConfig.getBaseSequenceName(), previous.getKey()),
-            previous.getValue(),
-            endOffsets,
-            false,
-            exclusive ? previous.getValue().keySet() : null
-        ));
+        final Set<PartitionIdType> exclusiveStartPartitions = computeExclusiveStartPartitionsForSequence(
+            previous.getValue()
+        );
+        addSequence(
+            new SequenceMetadata<>(
+                previous.getKey(),
+                StringUtils.format("%s_%s", ioConfig.getBaseSequenceName(), previous.getKey()),
+                previous.getValue(),
+                endOffsets,
+                false,
+                exclusiveStartPartitions
+            )
+        );
       } else {
-        sequences.add(new SequenceMetadata<>(
-            0,
-            StringUtils.format("%s_%s", ioConfig.getBaseSequenceName(), 0),
-            ioConfig.getStartSequenceNumbers().getPartitionSequenceNumberMap(),
-            endOffsets,
-            false,
-            null
-        ));
+        addSequence(
+            new SequenceMetadata<>(
+                0,
+                StringUtils.format("%s_%s", ioConfig.getBaseSequenceName(), 0),
+                ioConfig.getStartSequenceNumbers().getPartitionSequenceNumberMap(),
+                endOffsets,
+                false,
+                ioConfig.getStartSequenceNumbers().getExclusivePartitions()
+            )
+        );
       }
     }
 
     log.info("Starting with sequences:  %s", sequences);
+  }
+
+  private TaskStatus runInternal(TaskToolbox toolbox) throws Exception
+  {
+    log.info("SeekableStream indexing task starting up!");
+    startTime = DateTimes.nowUtc();
+    status = Status.STARTING;
+
+    setToolbox(toolbox);
+    initializeSequences();
 
     if (chatHandlerProvider.isPresent()) {
       log.info("Found chat handler of class[%s]", chatHandlerProvider.get().getClass().getName());
@@ -393,10 +426,10 @@ public abstract class SeekableStreamIndexTaskRunner<PartitionIdType, SequenceOff
         }
         // sequences size can be 0 only when all sequences got published and task stopped before it could finish
         // which is super rare
-        if (sequences.size() == 0 || sequences.get(sequences.size() - 1).isCheckpointed()) {
+        if (sequences.size() == 0 || getLastSequenceMetadata().isCheckpointed()) {
           this.endOffsets.putAll(sequences.size() == 0
                                  ? currOffsets
-                                 : sequences.get(sequences.size() - 1).getEndOffsets());
+                                 : getLastSequenceMetadata().getEndOffsets());
           log.info("End sequences changed to [%s]", endOffsets);
         }
       }
@@ -480,7 +513,7 @@ public abstract class SeekableStreamIndexTaskRunner<PartitionIdType, SequenceOff
           }
 
           // if stop is requested or task's end sequence is set by call to setEndOffsets method with finish set to true
-          if (stopRequested.get() || sequences.size() == 0 || sequences.get(sequences.size() - 1).isCheckpointed()) {
+          if (stopRequested.get() || sequences.size() == 0 || getLastSequenceMetadata().isCheckpointed()) {
             status = Status.PUBLISHING;
           }
 
@@ -629,12 +662,12 @@ public abstract class SeekableStreamIndexTaskRunner<PartitionIdType, SequenceOff
           }
 
           if (System.currentTimeMillis() > nextCheckpointTime) {
-            sequenceToCheckpoint = sequences.get(sequences.size() - 1);
+            sequenceToCheckpoint = getLastSequenceMetadata();
           }
 
           if (sequenceToCheckpoint != null && stillReading) {
             Preconditions.checkArgument(
-                sequences.get(sequences.size() - 1)
+                getLastSequenceMetadata()
                          .getSequenceName()
                          .equals(sequenceToCheckpoint.getSequenceName()),
                 "Cannot checkpoint a sequence [%s] which is not the latest one, sequences %s",
@@ -650,7 +683,7 @@ public abstract class SeekableStreamIndexTaskRunner<PartitionIdType, SequenceOff
                     new SeekableStreamStartSequenceNumbers<>(
                         stream,
                         sequenceToCheckpoint.getStartOffsets(),
-                        ioConfig.getStartSequenceNumbers().getExclusivePartitions()
+                        sequenceToCheckpoint.getExclusiveStartPartitions()
                     )
                 ),
                 createDataSourceMetadata(
@@ -1053,6 +1086,47 @@ public abstract class SeekableStreamIndexTaskRunner<PartitionIdType, SequenceOff
     return assignment;
   }
 
+  private void addSequence(final SequenceMetadata<PartitionIdType, SequenceOffsetType> sequenceMetadata)
+  {
+    // Sanity check that the start of the new sequence matches up with the end of the prior sequence.
+    for (Map.Entry<PartitionIdType, SequenceOffsetType> entry : sequenceMetadata.getStartOffsets().entrySet()) {
+      final PartitionIdType partition = entry.getKey();
+      final SequenceOffsetType startOffset = entry.getValue();
+
+      if (!sequences.isEmpty()) {
+        final SequenceOffsetType priorOffset = getLastSequenceMetadata().endOffsets.get(partition);
+
+        if (!startOffset.equals(priorOffset)) {
+          throw new ISE(
+              "New sequence startOffset[%s] does not equal expected prior offset[%s]",
+              startOffset,
+              priorOffset
+          );
+        }
+      }
+    }
+
+    if (!isEndOffsetExclusive()) {
+      final SequenceMetadata<PartitionIdType, SequenceOffsetType> lastMetadata = getLastSequenceMetadata();
+      if (!lastMetadata.endOffsets.keySet().equals(sequenceMetadata.getExclusiveStartPartitions())) {
+        throw new ISE(
+            "Exclusive start partitions[%s] for new sequence don't match to the prior offset[%s]",
+            sequenceMetadata.getExclusiveStartPartitions(),
+            lastMetadata
+        );
+      }
+    }
+
+    // Actually do the add.
+    sequences.add(sequenceMetadata);
+  }
+
+  private SequenceMetadata<PartitionIdType, SequenceOffsetType> getLastSequenceMetadata()
+  {
+    Preconditions.checkState(!sequences.isEmpty(), "Empty sequences");
+    return sequences.get(sequences.size() - 1);
+  }
+
   /**
    * Returns true if the given record has already been read, based on lastReadOffsets.
    */
@@ -1430,7 +1504,7 @@ public abstract class SeekableStreamIndexTaskRunner<PartitionIdType, SequenceOff
         // and after acquiring pauseLock to correctly guard against duplicate requests
         Preconditions.checkState(sequenceNumbers.size() > 0, "WTH?! No Sequences found to set end sequences");
 
-        final SequenceMetadata<PartitionIdType, SequenceOffsetType> latestSequence = sequences.get(sequences.size() - 1);
+        final SequenceMetadata<PartitionIdType, SequenceOffsetType> latestSequence = getLastSequenceMetadata();
         final Set<PartitionIdType> exclusiveStartPartitions;
 
         if (isEndOffsetExclusive()) {
@@ -1520,6 +1594,12 @@ public abstract class SeekableStreamIndexTaskRunner<PartitionIdType, SequenceOff
   private void resetNextCheckpointTime()
   {
     nextCheckpointTime = DateTimes.nowUtc().plus(tuningConfig.getIntermediateHandoffPeriod()).getMillis();
+  }
+
+  @VisibleForTesting
+  public CopyOnWriteArrayList<SequenceMetadata<PartitionIdType, SequenceOffsetType>> getSequences()
+  {
+    return sequences;
   }
 
   @GET
