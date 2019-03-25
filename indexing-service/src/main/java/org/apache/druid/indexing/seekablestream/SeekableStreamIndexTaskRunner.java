@@ -1106,7 +1106,7 @@ public abstract class SeekableStreamIndexTaskRunner<PartitionIdType, SequenceOff
       }
     }
 
-    if (!isEndOffsetExclusive()) {
+    if (!isEndOffsetExclusive() && !sequences.isEmpty()) {
       final SequenceMetadata<PartitionIdType, SequenceOffsetType> lastMetadata = getLastSequenceMetadata();
       if (!lastMetadata.endOffsets.keySet().equals(sequenceMetadata.getExclusiveStartPartitions())) {
         throw new ISE(
