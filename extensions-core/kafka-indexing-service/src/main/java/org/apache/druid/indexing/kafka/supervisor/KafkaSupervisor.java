@@ -79,11 +79,11 @@ import java.util.stream.Collectors;
  */
 public class KafkaSupervisor extends SeekableStreamSupervisor<Integer, Long>
 {
-  private static final EmittingLogger log = new EmittingLogger(KafkaSupervisor.class);
-  private static final TypeReference<TreeMap<Integer, Map<Integer, Long>>> CHECKPOINTS_TYPE_REF =
+  public static final TypeReference<TreeMap<Integer, Map<Integer, Long>>> CHECKPOINTS_TYPE_REF =
       new TypeReference<TreeMap<Integer, Map<Integer, Long>>>()
       {
       };
+  private static final EmittingLogger log = new EmittingLogger(KafkaSupervisor.class);
   private static final long MINIMUM_GET_OFFSET_PERIOD_MILLIS = 5000;
   private static final long INITIAL_GET_OFFSET_DELAY_MILLIS = 15000;
   private static final long INITIAL_EMIT_LAG_METRIC_DELAY_MILLIS = 25000;

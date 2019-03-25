@@ -23,6 +23,7 @@ import com.fasterxml.jackson.annotation.JacksonInject;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.InjectableValues;
 import com.fasterxml.jackson.databind.Module;
@@ -74,6 +75,7 @@ import org.apache.druid.indexing.common.stats.RowIngestionMetersFactory;
 import org.apache.druid.indexing.common.task.IndexTaskTest;
 import org.apache.druid.indexing.common.task.Task;
 import org.apache.druid.indexing.common.task.TaskResource;
+import org.apache.druid.indexing.kinesis.supervisor.KinesisSupervisor;
 import org.apache.druid.indexing.overlord.DataSourceMetadata;
 import org.apache.druid.indexing.overlord.IndexerMetadataStorageCoordinator;
 import org.apache.druid.indexing.overlord.MetadataTaskStorage;
@@ -2273,9 +2275,8 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     // and this task should start reading from offset 2 for partition 0 (not offset 1, because end is inclusive)
     sequences.put(1, ImmutableMap.of(shardId1, "1"));
     final Map<String, Object> context = new HashMap<>();
-    context.put("checkpoints", objectMapper.writerWithType(new TypeReference<TreeMap<Integer, Map<String, String>>>()
-    {
-    }).writeValueAsString(sequences));
+    context.put("checkpoints", objectMapper.writerFor(KinesisSupervisor.CHECKPOINTS_TYPE_REF)
+                                           .writeValueAsString(sequences));
 
 
     final KinesisIndexTask task = createTask(
@@ -2608,7 +2609,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
   private KinesisIndexTask createTask(
       final String taskId,
       final KinesisIndexTaskIOConfig ioConfig
-  )
+  ) throws JsonProcessingException
   {
     return createTask(taskId, DATA_SCHEMA, ioConfig, null);
   }
@@ -2617,7 +2618,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
       final String taskId,
       final DataSchema dataSchema,
       final KinesisIndexTaskIOConfig ioConfig
-  )
+  ) throws JsonProcessingException
   {
     return createTask(taskId, dataSchema, ioConfig, null);
   }
@@ -2627,7 +2628,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
       final DataSchema dataSchema,
       final KinesisIndexTaskIOConfig ioConfig,
       @Nullable final Map<String, Object> context
-  )
+  ) throws JsonProcessingException
   {
     final KinesisIndexTaskTuningConfig tuningConfig = new KinesisIndexTaskTuningConfig(
         maxRowsInMemory,
@@ -2664,10 +2665,19 @@ public class KinesisIndexTaskTest extends EasyMockSupport
       final KinesisIndexTaskIOConfig ioConfig,
       final KinesisIndexTaskTuningConfig tuningConfig,
       @Nullable final Map<String, Object> context
-  )
+  ) throws JsonProcessingException
   {
     if (context != null) {
       context.put(SeekableStreamSupervisor.IS_INCREMENTAL_HANDOFF_SUPPORTED, true);
+
+      if (!context.containsKey(SeekableStreamSupervisor.CHECKPOINTS_CTX_KEY)) {
+        final TreeMap<Integer, Map<String, String>> checkpoints = new TreeMap<>();
+        checkpoints.put(0, ioConfig.getStartSequenceNumbers().getPartitionSequenceNumberMap());
+        final String checkpointsJson = objectMapper
+            .writerFor(KinesisSupervisor.CHECKPOINTS_TYPE_REF)
+            .writeValueAsString(checkpoints);
+        context.put(SeekableStreamSupervisor.CHECKPOINTS_CTX_KEY, checkpointsJson);
+      }
     }
 
     final KinesisIndexTask task = new TestableKinesisIndexTask(

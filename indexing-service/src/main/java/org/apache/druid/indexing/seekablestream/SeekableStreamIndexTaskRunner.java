@@ -241,7 +241,6 @@ public abstract class SeekableStreamIndexTaskRunner<PartitionIdType, SequenceOff
     resetNextCheckpointTime();
   }
 
-
   public TaskStatus run(TaskToolbox toolbox)
   {
     try {
@@ -258,6 +257,17 @@ public abstract class SeekableStreamIndexTaskRunner<PartitionIdType, SequenceOff
     }
   }
 
+  private Set<PartitionIdType> computeExclusiveStartPartitionsForSequence(
+      Map<PartitionIdType, SequenceOffsetType> sequenceStartOffsets
+  )
+  {
+    if (sequenceStartOffsets.equals(ioConfig.getStartSequenceNumbers().getPartitionSequenceNumberMap())) {
+      return ioConfig.getStartSequenceNumbers().getExclusivePartitions();
+    } else {
+      return isEndOffsetExclusive() ? Collections.emptySet() : sequenceStartOffsets.keySet();
+    }
+  }
+
   private TaskStatus runInternal(TaskToolbox toolbox) throws Exception
   {
     log.info("SeekableStream indexing task starting up!");
@@ -271,40 +281,52 @@ public abstract class SeekableStreamIndexTaskRunner<PartitionIdType, SequenceOff
           task.getContextValue(SeekableStreamSupervisor.CHECKPOINTS_CTX_KEY)
       );
       if (checkpoints != null) {
-        boolean exclusive = false;
         Iterator<Map.Entry<Integer, Map<PartitionIdType, SequenceOffsetType>>> sequenceOffsets = checkpoints.entrySet()
                                                                                                             .iterator();
         Map.Entry<Integer, Map<PartitionIdType, SequenceOffsetType>> previous = sequenceOffsets.next();
         while (sequenceOffsets.hasNext()) {
           Map.Entry<Integer, Map<PartitionIdType, SequenceOffsetType>> current = sequenceOffsets.next();
-          sequences.add(new SequenceMetadata<>(
-              previous.getKey(),
-              StringUtils.format("%s_%s", ioConfig.getBaseSequenceName(), previous.getKey()),
-              previous.getValue(),
-              current.getValue(),
-              true,
-              exclusive ? previous.getValue().keySet() : null
-          ));
+          final Set<PartitionIdType> exclusiveStartPartitions = computeExclusiveStartPartitionsForSequence(
+              previous.getValue()
+          );
+
+          sequences.add(
+              new SequenceMetadata<>(
+                  previous.getKey(),
+                  StringUtils.format("%s_%s", ioConfig.getBaseSequenceName(), previous.getKey()),
+                  previous.getValue(),
+                  current.getValue(),
+                  true,
+                  exclusiveStartPartitions
+              )
+          );
           previous = current;
-          exclusive = true;
         }
-        sequences.add(new SequenceMetadata<>(
-            previous.getKey(),
-            StringUtils.format("%s_%s", ioConfig.getBaseSequenceName(), previous.getKey()),
-            previous.getValue(),
-            endOffsets,
-            false,
-            exclusive ? previous.getValue().keySet() : null
-        ));
+
+        final Set<PartitionIdType> exclusiveStartPartitions = computeExclusiveStartPartitionsForSequence(
+            previous.getValue()
+        );
+        sequences.add(
+            new SequenceMetadata<>(
+                previous.getKey(),
+                StringUtils.format("%s_%s", ioConfig.getBaseSequenceName(), previous.getKey()),
+                previous.getValue(),
+                endOffsets,
+                false,
+                exclusiveStartPartitions
+            )
+        );
       } else {
-        sequences.add(new SequenceMetadata<>(
-            0,
-            StringUtils.format("%s_%s", ioConfig.getBaseSequenceName(), 0),
-            ioConfig.getStartSequenceNumbers().getPartitionSequenceNumberMap(),
-            endOffsets,
-            false,
-            null
-        ));
+        sequences.add(
+            new SequenceMetadata<>(
+                0,
+                StringUtils.format("%s_%s", ioConfig.getBaseSequenceName(), 0),
+                ioConfig.getStartSequenceNumbers().getPartitionSequenceNumberMap(),
+                endOffsets,
+                false,
+                ioConfig.getStartSequenceNumbers().getExclusivePartitions()
+            )
+        );
       }
     }
 
