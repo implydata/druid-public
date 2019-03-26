@@ -30,7 +30,6 @@ import javax.annotation.Nullable;
 public abstract class SeekableStreamIndexTaskIOConfig<PartitionIdType, SequenceOffsetType> implements IOConfig
 {
   private static final boolean DEFAULT_USE_TRANSACTION = true;
-  private static final boolean DEFAULT_SKIP_OFFSET_GAPS = false;
 
   @Nullable
   private final Integer taskGroupId;

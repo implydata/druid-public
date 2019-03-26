@@ -402,7 +402,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     final KinesisIndexTask task = createTask(
         null,
         new KinesisIndexTaskIOConfig(
-            null,
+            0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "2"), ImmutableSet.of()),
             new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4")),
@@ -472,7 +472,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     final KinesisIndexTask task = createTask(
         null,
         new KinesisIndexTaskIOConfig(
-            null,
+            0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId0, "0"), ImmutableSet.of()),
             new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId0, "1")),
@@ -560,7 +560,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     final KinesisIndexTask task = createTask(
         null,
         new KinesisIndexTaskIOConfig(
-            null,
+            0,
             baseSequenceName,
             startPartitions,
             endPartitions,
@@ -686,7 +686,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     final KinesisIndexTask task = createTask(
         null,
         new KinesisIndexTaskIOConfig(
-            null,
+            0,
             baseSequenceName,
             startPartitions,
             endPartitions,
@@ -798,7 +798,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     final KinesisIndexTask task = createTask(
         null,
         new KinesisIndexTaskIOConfig(
-            null,
+            0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "0"), ImmutableSet.of()),
             new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4")),
@@ -867,7 +867,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     final KinesisIndexTask task = createTask(
         null,
         new KinesisIndexTaskIOConfig(
-            null,
+            0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "0"), ImmutableSet.of()),
             new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4")),
@@ -947,7 +947,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
             )
         ),
         new KinesisIndexTaskIOConfig(
-            null,
+            0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "0"), ImmutableSet.of()),
             new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4")),
@@ -1018,7 +1018,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     final KinesisIndexTask task = createTask(
         null,
         new KinesisIndexTaskIOConfig(
-            null,
+            0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "2"), ImmutableSet.of()),
             new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "2")),
@@ -1074,7 +1074,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     final KinesisIndexTask task = createTask(
         null,
         new KinesisIndexTaskIOConfig(
-            null,
+            0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "2"), ImmutableSet.of()),
             new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4")),
@@ -1143,7 +1143,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     final KinesisIndexTask task = createTask(
         null,
         new KinesisIndexTaskIOConfig(
-            null,
+            0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "2"), ImmutableSet.of()),
             new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4")),
@@ -1212,7 +1212,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     final KinesisIndexTask task = createTask(
         null,
         new KinesisIndexTaskIOConfig(
-            null,
+            0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "2"), ImmutableSet.of()),
             new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "5")),
@@ -1271,7 +1271,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     final KinesisIndexTask task = createTask(
         null,
         new KinesisIndexTaskIOConfig(
-            null,
+            0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "2"), ImmutableSet.of()),
             new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "12")),
@@ -1369,7 +1369,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     final KinesisIndexTask task = createTask(
         null,
         new KinesisIndexTaskIOConfig(
-            null,
+            0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "2"), ImmutableSet.of()),
             new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "9")),
@@ -1451,7 +1451,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     final KinesisIndexTask task1 = createTask(
         null,
         new KinesisIndexTaskIOConfig(
-            null,
+            0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "2"), ImmutableSet.of()),
             new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4")),
@@ -1469,7 +1469,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     final KinesisIndexTask task2 = createTask(
         null,
         new KinesisIndexTaskIOConfig(
-            null,
+            0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "2"), ImmutableSet.of()),
             new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4")),
@@ -1543,7 +1543,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     final KinesisIndexTask task1 = createTask(
         null,
         new KinesisIndexTaskIOConfig(
-            null,
+            0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "2"), ImmutableSet.of()),
             new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4")),
@@ -1561,7 +1561,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     final KinesisIndexTask task2 = createTask(
         null,
         new KinesisIndexTaskIOConfig(
-            null,
+            1,
             "sequence1",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "3"), ImmutableSet.of()),
             new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "9")),
@@ -1633,7 +1633,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     final KinesisIndexTask task1 = createTask(
         null,
         new KinesisIndexTaskIOConfig(
-            null,
+            0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "2"), ImmutableSet.of()),
             new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4")),
@@ -1651,7 +1651,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     final KinesisIndexTask task2 = createTask(
         null,
         new KinesisIndexTaskIOConfig(
-            null,
+            1,
             "sequence1",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "3"), ImmutableSet.of()),
             new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "9")),
@@ -1727,7 +1727,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     final KinesisIndexTask task = createTask(
         null,
         new KinesisIndexTaskIOConfig(
-            null,
+            0,
             "sequence1",
             new SeekableStreamStartSequenceNumbers<>(
                 stream,
@@ -1811,7 +1811,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     final KinesisIndexTask task1 = createTask(
         null,
         new KinesisIndexTaskIOConfig(
-            null,
+            0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "2"), ImmutableSet.of()),
             new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4")),
@@ -1829,7 +1829,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     final KinesisIndexTask task2 = createTask(
         null,
         new KinesisIndexTaskIOConfig(
-            null,
+            1,
             "sequence1",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId0, "0"), ImmutableSet.of()),
             new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId0, "1")),
@@ -1904,7 +1904,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     final KinesisIndexTask task1 = createTask(
         "task1",
         new KinesisIndexTaskIOConfig(
-            null,
+            0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "2"), ImmutableSet.of()),
             new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "5")),
@@ -1953,7 +1953,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     final KinesisIndexTask task2 = createTask(
         task1.getId(),
         new KinesisIndexTaskIOConfig(
-            null,
+            0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "2"), ImmutableSet.of()),
             new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "5")),
@@ -2037,7 +2037,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     final KinesisIndexTask task1 = createTask(
         "task1",
         new KinesisIndexTaskIOConfig(
-            null,
+            0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "0"), ImmutableSet.of()),
             new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "6")),
@@ -2098,7 +2098,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     final KinesisIndexTask task2 = createTask(
         task1.getId(),
         new KinesisIndexTaskIOConfig(
-            null,
+            0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "0"), ImmutableSet.of()),
             new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "6")),
@@ -2163,7 +2163,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     final KinesisIndexTask task = createTask(
         "task1",
         new KinesisIndexTaskIOConfig(
-            null,
+            0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "2"), ImmutableSet.of()),
             new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "13")),
@@ -2286,7 +2286,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
         "task1",
         DATA_SCHEMA,
         new KinesisIndexTaskIOConfig(
-            null,
+            0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "0"), ImmutableSet.of()),
             new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4")),
@@ -2383,7 +2383,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
         ImmutableMap.of(shardId1, "100") // simulating unlimited
     );
     final KinesisIndexTaskIOConfig ioConfig = new KinesisIndexTaskIOConfig(
-        null,
+        0,
         baseSequenceName,
         startPartitions,
         endPartitions,
@@ -2496,7 +2496,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
         "task1",
         DATA_SCHEMA,
         new KinesisIndexTaskIOConfig(
-            null,
+            0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(
                 stream,
