@@ -24,7 +24,7 @@
   <parent>
     <groupId>org.apache.druid</groupId>
     <artifactId>druid</artifactId>
-    <version>0.13.0-incubating-iap12-SNAPSHOT</version>
+    <version>0.13.0-iap11-hdp264</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
