@@ -75,8 +75,10 @@ import org.apache.druid.timeline.SegmentId;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -89,6 +91,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.stream.Collectors;
 
 /**
+ *
  */
 @ManageLifecycle
 public class DruidCoordinator
@@ -243,7 +246,9 @@ public class DruidCoordinator
     return loadManagementPeons;
   }
 
-  /** @return tier -> { dataSource -> underReplicationCount } map */
+  /**
+   * @return tier -> { dataSource -> underReplicationCount } map
+   */
   public Map<String, Object2LongMap<String>> computeUnderReplicationCountsPerDataSourcePerTier()
   {
     final Map<String, Object2LongMap<String>> underReplicationCountsPerDataSourcePerTier = new HashMap<>();
@@ -252,9 +257,15 @@ public class DruidCoordinator
       return underReplicationCountsPerDataSourcePerTier;
     }
 
+    final Iterable<DataSegment> dataSegments = iterateAvailableDataSegments();
+
+    if (dataSegments == null) {
+      return underReplicationCountsPerDataSourcePerTier;
+    }
+
     final DateTime now = DateTimes.nowUtc();
 
-    for (final DataSegment segment : iterateAvailableDataSegments()) {
+    for (final DataSegment segment : dataSegments) {
       final List<Rule> rules = metadataRuleManager.getRulesWithDefault(segment.getDataSource());
 
       for (final Rule rule : rules) {
@@ -286,7 +297,13 @@ public class DruidCoordinator
       return retVal;
     }
 
-    for (DataSegment segment : iterateAvailableDataSegments()) {
+    final Iterable<DataSegment> dataSegments = iterateAvailableDataSegments();
+
+    if (dataSegments == null) {
+      return retVal;
+    }
+
+    for (DataSegment segment : dataSegments) {
       if (segmentReplicantLookup.getLoadedReplicants(segment.getId()) == 0) {
         retVal.addTo(segment.getDataSource(), 1);
       } else {
@@ -299,8 +316,14 @@ public class DruidCoordinator
 
   public Map<String, Double> getLoadStatus()
   {
-    Map<String, Double> loadStatus = new HashMap<>();
-    for (ImmutableDruidDataSource dataSource : metadataSegmentManager.getDataSources()) {
+    final Map<String, Double> loadStatus = new HashMap<>();
+    final Collection<ImmutableDruidDataSource> dataSources = metadataSegmentManager.getDataSources();
+
+    if (dataSources == null) {
+      return loadStatus;
+    }
+
+    for (ImmutableDruidDataSource dataSource : dataSources) {
       final Set<DataSegment> segments = Sets.newHashSet(dataSource.getSegments());
       final int availableSegmentSize = segments.size();
 
@@ -454,7 +477,11 @@ public class DruidCoordinator
    * is unspecified. Note: the iteration may not be as trivially cheap as, for example, iteration over an ArrayList. Try
    * (to some reasonable extent) to organize the code so that it iterates the returned iterable only once rather than
    * several times.
+   *
+   * Will return null if we do not have a valid snapshot of segments yet (perhaps the underlying metadata store has
+   * not yet been polled.)
    */
+  @Nullable
   public Iterable<DataSegment> iterateAvailableDataSegments()
   {
     return metadataSegmentManager.iterateAllSegments();
@@ -644,10 +671,16 @@ public class DruidCoordinator
         BalancerStrategy balancerStrategy = factory.createBalancerStrategy(balancerExec);
 
         // Do coordinator stuff.
+        final Collection<ImmutableDruidDataSource> dataSources = metadataSegmentManager.getDataSources();
+        if (dataSources == null) {
+          log.info("Metadata store not polled yet, skipping this run.");
+          return;
+        }
+
         DruidCoordinatorRuntimeParams params =
             DruidCoordinatorRuntimeParams.newBuilder()
                                          .withStartTime(startTime)
-                                         .withDataSources(metadataSegmentManager.getDataSources())
+                                         .withDataSources(dataSources)
                                          .withDynamicConfigs(getDynamicConfigs())
                                          .withCompactionConfig(getCompactionConfig())
                                          .withEmitter(emitter)
@@ -657,6 +690,11 @@ public class DruidCoordinator
           // Don't read state and run state in the same helper otherwise racy conditions may exist
           if (coordLeaderSelector.isLeader() && startingLeaderCounter == coordLeaderSelector.localTerm()) {
             params = helper.run(params);
+
+            if (params == null) {
+              // This helper wanted to cancel the run. No log message, since the helper should have logged a reason.
+              return;
+            }
           }
         }
       }
