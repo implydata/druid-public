@@ -107,7 +107,7 @@ public class HllSketchBuildBufferAggregator implements BufferAggregator
     final Lock lock = stripedLock.getAt(lockIndex(position)).readLock();
     lock.lock();
     try {
-      return sketchCache.get(buf).get(position);
+      return sketchCache.get(buf).get(position).copy();
     }
     finally {
       lock.unlock();
