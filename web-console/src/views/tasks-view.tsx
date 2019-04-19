@@ -31,6 +31,7 @@ import { SpecDialog } from '../dialogs/spec-dialog';
 import { AppToaster } from '../singletons/toaster';
 import {
   addFilter,
+  booleanCustomTableFilter,
   countBy,
   formatDuration,
   getDruidErrorMessage, LocalStorageKeys,
@@ -524,6 +525,9 @@ ORDER BY "rank" DESC, "created_time" DESC`);
             sortMethod: (status1: string, status2: string) => {
               const statusRanking: any = this.statusRanking;
               return statusRanking[status1] - statusRanking[status2];
+            },
+            filterMethod: (filter: Filter, row: any) => {
+              return booleanCustomTableFilter(filter, row.status.status);
             },
             show: taskTableColumnSelectionHandler.showColumn('Status')
           },
