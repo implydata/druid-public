@@ -101,6 +101,7 @@ export class UsersView extends React.Component<UsersViewProps, UsersViewState> {
             lookupEntries.push({tier, id, version: lookupIds[id].version, spec: lookupIds[id].lookupExtractorFactory});
           });
         });
+        const otherResp = await axios.get('/proxy/coordinator/druid-ext/basic-security/authentication/db/basic/users');
 
         return {
           lookupEntries,

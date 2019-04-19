@@ -23,7 +23,7 @@ const postcssPresetEnv = require('postcss-preset-env');
 const { version } = require('./package.json');
 
 module.exports = (env) => {
-  const druidUrl = 'http://' + ((env || {}).druid_host || process.env.druid_host || 'localhost:8888');
+  const druidUrl = 'https://' + ((env || {}).druid_host || process.env.druid_host || 'localhost:8888');
   return {
     mode: process.env.NODE_ENV || 'development',
     entry: {
@@ -44,8 +44,9 @@ module.exports = (env) => {
       index: './index.html',
       port: 18081,
       proxy: {
-        '/status': druidUrl,
-        '/druid': druidUrl
+        '/status': { target: druidUrl, secure: false },
+        '/druid': { target: druidUrl, secure: false },
+        '/proxy/coordinator/druid-ext': { target: druidUrl, secure: false }
       }
     },
     module: {
