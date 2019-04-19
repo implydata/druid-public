@@ -34,7 +34,7 @@ import {
 
 import './header-bar.scss';
 
-export type HeaderActiveTab = null | 'datasources' | 'segments' | 'tasks' | 'servers' | 'sql' | 'lookups';
+export type HeaderActiveTab = null | 'datasources' | 'segments' | 'tasks' | 'servers' | 'sql' | 'lookups' | 'users';
 
 export interface HeaderBarProps extends React.Props<any> {
   active: HeaderActiveTab;
@@ -126,6 +126,7 @@ export class HeaderBar extends React.Component<HeaderBarProps, HeaderBarState> {
       <MenuItem icon={IconNames.COG} text="Coordinator dynamic config" onClick={() => this.setState({ coordinatorDynamicConfigDialogOpen: true })}/>
       <MenuItem icon={IconNames.WRENCH} text="Overlord dynamic config" onClick={() => this.setState({ overlordDynamicConfigDialogOpen: true })}/>
       <MenuItem icon={IconNames.PROPERTIES} active={active === 'lookups'} text="Lookups" href="#lookups"/>
+      <MenuItem icon={IconNames.USER} active={active === 'users'} text="Users" href="#users"/>
     </Menu>;
 
     return <Navbar className="header-bar">

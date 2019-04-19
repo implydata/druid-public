@@ -33,6 +33,7 @@ import { SegmentsView } from './views/segments-view';
 import { ServersView } from './views/servers-view';
 import { SqlView } from './views/sql-view';
 import { TasksView } from './views/tasks-view';
+import { UsersView } from './views/users-view';
 
 import './console-application.scss';
 
@@ -192,6 +193,12 @@ export class ConsoleApplication extends React.Component<ConsoleApplicationProps,
             path="/lookups"
             component={() => {
               return wrapInViewContainer('lookups', <LookupsView />);
+            }}
+          />
+          <Route
+            path="/users"
+            component={() => {
+              return wrapInViewContainer('users', <UsersView />);
             }}
           />
           <Route
