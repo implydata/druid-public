@@ -34,7 +34,7 @@ import {
 
 import './header-bar.scss';
 
-export type HeaderActiveTab = null | 'datasources' | 'segments' | 'tasks' | 'servers' | 'sql' | 'lookups';
+export type HeaderActiveTab = null | 'datasources' | 'segments' | 'tasks' | 'servers' | 'sql' | 'lookups' | 'datasource-bar-chart';
 
 export interface HeaderBarProps extends React.Props<any> {
   active: HeaderActiveTab;

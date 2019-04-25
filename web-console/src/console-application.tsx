@@ -28,6 +28,7 @@ import {Loader} from './components/loader';
 import { AppToaster } from './singletons/toaster';
 import {QueryManager} from './utils';
 import {DRUID_DOCS_API, DRUID_DOCS_SQL, LEGACY_COORDINATOR_CONSOLE, LEGACY_OVERLORD_CONSOLE} from './variables';
+import { DatasourceBarChartView } from './views/datasource-bar-chart-view';
 import { DatasourcesView } from './views/datasource-view';
 import { HomeView } from './views/home-view';
 import { LookupsView } from './views/lookups-view';
@@ -178,6 +179,11 @@ export class ConsoleApplication extends React.Component<ConsoleApplicationProps,
     this.resetInitialsDelay();
   }
 
+  private goToChart = () => {
+    window.location.hash = 'datasource-bar-chart';
+    this.resetInitialsDelay();
+  }
+
   render() {
     const { hideLegacy } = this.props;
     const { noSqlMode, capabilitiesLoading } = this.state;
@@ -204,7 +210,7 @@ export class ConsoleApplication extends React.Component<ConsoleApplicationProps,
           <Route
             path="/datasources"
             component={() => {
-              return wrapInViewContainer('datasources', <DatasourcesView goToSql={this.goToSql} goToSegments={this.goToSegments} noSqlMode={noSqlMode}/>);
+              return wrapInViewContainer('datasources', <DatasourcesView goToSql={this.goToSql} goToSegments={this.goToSegments} goToChart={this.goToChart} noSqlMode={noSqlMode}/>);
             }}
           />
           <Route
@@ -235,6 +241,12 @@ export class ConsoleApplication extends React.Component<ConsoleApplicationProps,
             path="/lookups"
             component={() => {
               return wrapInViewContainer('lookups', <LookupsView />);
+            }}
+          />
+          <Route
+            path="/datasource-bar-chart"
+            component={() => {
+              return wrapInViewContainer('datasource-bar-chart', <DatasourceBarChartView />);
             }}
           />
           <Route

@@ -50,6 +50,7 @@ export interface DatasourcesViewProps extends React.Props<any> {
   goToSql: (initSql: string) => void;
   goToSegments: (datasource: string, onlyUnavailable?: boolean) => void;
   noSqlMode: boolean;
+  goToChart: () => void;
 }
 
 interface Datasource {
@@ -558,7 +559,7 @@ GROUP BY 1`);
   }
 
   render() {
-    const { goToSql, noSqlMode } = this.props;
+    const { goToSql, noSqlMode, goToChart } = this.props;
     const { showDisabled } = this.state;
     const { tableColumnSelectionHandler } = this;
 
@@ -577,6 +578,11 @@ GROUP BY 1`);
             onClick={() => goToSql(this.datasourceQueryManager.getLastQuery())}
           />
         }
+        <Button
+          icon={IconNames.STACKED_CHART}
+          text="Go to chart"
+          onClick={() => goToChart()}
+        />
         <Switch
           checked={showDisabled}
           label="Show disabled"
