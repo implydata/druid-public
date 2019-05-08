@@ -1,0 +1,386 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`describe sql view sql view snapshot 1`] = `
+<div
+  class="sql-view app-view"
+>
+  <div
+    class="sql-control"
+  >
+    <div
+      class=" ace_editor ace-solarized-dark ace_dark ace_focus"
+      id="ace-editor"
+      style="width: 100%; height: 30vh; font-size: 14px;"
+    >
+      <textarea
+        autocapitalize="off"
+        autocorrect="off"
+        class="ace_text-input"
+        spellcheck="false"
+        style="opacity: 0; position: fixed; top: 0px;"
+        wrap="off"
+      />
+      <div
+        aria-hidden="true"
+        class="ace_gutter"
+      >
+        <div
+          class="ace_layer ace_gutter-layer ace_folding-enabled"
+        />
+        <div
+          class="ace_gutter-active-line"
+        />
+      </div>
+      <div
+        class="ace_scroller"
+      >
+        <div
+          class="ace_content"
+        >
+          <div
+            class="ace_layer ace_print-margin-layer"
+          >
+            <div
+              class="ace_print-margin"
+              style="left: 4px; visibility: hidden;"
+            />
+          </div>
+          <div
+            class="ace_layer ace_marker-layer"
+          />
+          <div
+            class="ace_layer ace_text-layer"
+            style="padding: 0px 4px;"
+          />
+          <div
+            class="ace_layer ace_marker-layer"
+          />
+          <div
+            class="ace_layer ace_cursor-layer"
+          >
+            <div
+              class="ace_cursor"
+            />
+          </div>
+        </div>
+      </div>
+      <div
+        class="ace_scrollbar ace_scrollbar-v"
+        style="display: none; width: 20px;"
+      >
+        <div
+          class="ace_scrollbar-inner"
+          style="width: 20px;"
+        />
+      </div>
+      <div
+        class="ace_scrollbar ace_scrollbar-h"
+        style="display: none; height: 20px;"
+      >
+        <div
+          class="ace_scrollbar-inner"
+          style="height: 20px;"
+        />
+      </div>
+      <div
+        style="height: auto; width: auto; top: 0px; left: 0px; visibility: hidden; position: absolute; white-space: pre; overflow: hidden;"
+      >
+        <div
+          style="height: auto; width: auto; top: 0px; left: 0px; visibility: hidden; position: absolute; white-space: pre; overflow: visible;"
+        />
+        <div
+          style="height: auto; width: auto; top: 0px; left: 0px; visibility: hidden; position: absolute; white-space: pre; overflow: visible;"
+        >
+          XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+        </div>
+      </div>
+    </div>
+    <div
+      class="buttons"
+    >
+      <div
+        class="bp3-button-group"
+      >
+        <button
+          class="bp3-button"
+          type="button"
+        >
+          <span
+            class="bp3-icon bp3-icon-caret-right"
+            icon="caret-right"
+          >
+            <svg
+              data-icon="caret-right"
+              height="16"
+              viewBox="0 0 16 16"
+              width="16"
+            >
+              <desc>
+                caret-right
+              </desc>
+              <path
+                d="M11 8c0-.15-.07-.28-.17-.37l-4-3.5A.495.495 0 0 0 6 4.5v7a.495.495 0 0 0 .83.37l4-3.5c.1-.09.17-.22.17-.37z"
+                fill-rule="evenodd"
+              />
+            </svg>
+          </span>
+          <span
+            class="bp3-button-text"
+          >
+            Run with limit
+          </span>
+        </button>
+        <span
+          class="bp3-popover-wrapper"
+        >
+          <span
+            class="bp3-popover-target"
+          >
+            <button
+              class="bp3-button"
+              type="button"
+            >
+              <span
+                class="bp3-icon bp3-icon-more"
+                icon="more"
+              >
+                <svg
+                  data-icon="more"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  width="16"
+                >
+                  <desc>
+                    more
+                  </desc>
+                  <path
+                    d="M2 6.03a2 2 0 1 0 0 4 2 2 0 1 0 0-4zM14 6.03a2 2 0 1 0 0 4 2 2 0 1 0 0-4zM8 6.03a2 2 0 1 0 0 4 2 2 0 1 0 0-4z"
+                    fill-rule="evenodd"
+                  />
+                </svg>
+              </span>
+            </button>
+          </span>
+        </span>
+      </div>
+    </div>
+  </div>
+  <div
+    class="ReactTable -striped -highlight"
+  >
+    <div
+      class="rt-table"
+      role="grid"
+    >
+      <div
+        class="rt-thead -header"
+        style="min-width: 0px;"
+      >
+        <div
+          class="rt-tr"
+          role="row"
+        />
+      </div>
+      <div
+        class="rt-tbody"
+        style="min-width: 0px;"
+      >
+        <div
+          class="rt-tr-group"
+          role="rowgroup"
+        >
+          <div
+            class="rt-tr -padRow -odd"
+            role="row"
+          />
+        </div>
+        <div
+          class="rt-tr-group"
+          role="rowgroup"
+        >
+          <div
+            class="rt-tr -padRow -even"
+            role="row"
+          />
+        </div>
+        <div
+          class="rt-tr-group"
+          role="rowgroup"
+        >
+          <div
+            class="rt-tr -padRow -odd"
+            role="row"
+          />
+        </div>
+        <div
+          class="rt-tr-group"
+          role="rowgroup"
+        >
+          <div
+            class="rt-tr -padRow -even"
+            role="row"
+          />
+        </div>
+        <div
+          class="rt-tr-group"
+          role="rowgroup"
+        >
+          <div
+            class="rt-tr -padRow -odd"
+            role="row"
+          />
+        </div>
+        <div
+          class="rt-tr-group"
+          role="rowgroup"
+        >
+          <div
+            class="rt-tr -padRow -even"
+            role="row"
+          />
+        </div>
+        <div
+          class="rt-tr-group"
+          role="rowgroup"
+        >
+          <div
+            class="rt-tr -padRow -odd"
+            role="row"
+          />
+        </div>
+        <div
+          class="rt-tr-group"
+          role="rowgroup"
+        >
+          <div
+            class="rt-tr -padRow -even"
+            role="row"
+          />
+        </div>
+        <div
+          class="rt-tr-group"
+          role="rowgroup"
+        >
+          <div
+            class="rt-tr -padRow -odd"
+            role="row"
+          />
+        </div>
+        <div
+          class="rt-tr-group"
+          role="rowgroup"
+        >
+          <div
+            class="rt-tr -padRow -even"
+            role="row"
+          />
+        </div>
+      </div>
+    </div>
+    <div
+      class="pagination-bottom"
+    >
+      <div
+        class="-pagination"
+      >
+        <div
+          class="-previous"
+        >
+          <button
+            class="-btn"
+            disabled=""
+            type="button"
+          >
+            Previous
+          </button>
+        </div>
+        <div
+          class="-center"
+        >
+          <span
+            class="-pageInfo"
+          >
+            Page
+             
+            <div
+              class="-pageJump"
+            >
+              <input
+                type="number"
+                value="1"
+              />
+            </div>
+             
+            of
+             
+            <span
+              class="-totalPages"
+            >
+              1
+            </span>
+          </span>
+          <span
+            class="select-wrap -pageSizeOptions"
+          >
+            <select>
+              <option
+                value="5"
+              >
+                5 rows
+              </option>
+              <option
+                value="10"
+              >
+                10 rows
+              </option>
+              <option
+                value="20"
+              >
+                20 rows
+              </option>
+              <option
+                value="25"
+              >
+                25 rows
+              </option>
+              <option
+                value="50"
+              >
+                50 rows
+              </option>
+              <option
+                value="100"
+              >
+                100 rows
+              </option>
+            </select>
+          </span>
+        </div>
+        <div
+          class="-next"
+        >
+          <button
+            class="-btn"
+            disabled=""
+            type="button"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    </div>
+    <div
+      class="rt-noData"
+    />
+    <div
+      class="-loading"
+    >
+      <div
+        class="-loading-inner"
+      >
+        Loading...
+      </div>
+    </div>
+  </div>
+</div>
+`;

@@ -1,0 +1,15 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`describe array input array input snapshot 1`] = `
+<div
+  class="bp3-input-group test"
+>
+  <input
+    class="bp3-input"
+    placeholder="test"
+    style="padding-right: 10px;"
+    type="text"
+    value="[object Object], [object Object], [object Object]"
+  />
+</div>
+`;

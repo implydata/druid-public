@@ -1,0 +1,70 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`describe load data view load data view snapshot 1`] = `
+<div
+  class="load-data-view app-view init"
+>
+  <div
+    class="intro"
+  >
+    Please specify where your raw data is located
+  </div>
+  <div
+    class="bp3-callout bp3-intent-success bp3-callout-icon"
+  >
+    <span
+      class="bp3-icon bp3-icon-info-sign"
+      icon="info-sign"
+    >
+      <svg
+        data-icon="info-sign"
+        height="20"
+        viewBox="0 0 20 20"
+        width="20"
+      >
+        <desc>
+          info-sign
+        </desc>
+        <path
+          d="M10 0C4.48 0 0 4.48 0 10s4.48 10 10 10 10-4.48 10-10S15.52 0 10 0zM9 4h2v2H9V4zm4 12H7v-1h2V8H8V7h3v8h2v1z"
+          fill-rule="evenodd"
+        />
+      </svg>
+    </span>
+    Welcome to the Druid data loader. This project is under active development and we plan to support many other sources of raw data, including stream hubs such as Apache Kafka and AWS Kinesis, in the next few releases.
+  </div>
+  <div
+    class="section"
+  >
+    <div
+      class="section-title"
+    >
+      Batch load
+    </div>
+    <div
+      class="cards"
+    >
+      <div
+        class="bp3-card bp3-interactive bp3-elevation-0"
+      >
+        HTTP(s)
+      </div>
+      <div
+        class="bp3-card bp3-interactive bp3-elevation-0"
+      >
+        AWS S3
+      </div>
+      <div
+        class="bp3-card bp3-interactive bp3-elevation-0"
+      >
+        Google Blobstore
+      </div>
+      <div
+        class="bp3-card bp3-interactive bp3-elevation-0"
+      >
+        Local disk
+      </div>
+    </div>
+  </div>
+</div>
+`;
