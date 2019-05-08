@@ -38,7 +38,7 @@ import * as React from 'react';
 import AceEditor from 'react-ace';
 import * as ReactDOMServer from 'react-dom/server';
 
-import { SQLFunctionDoc } from '../../../lib/sql-function-doc';
+ import { SQLFunctionDoc } from '../../../lib/sql-function-doc';
 import { AppToaster } from '../../singletons/toaster';
 import { DRUID_DOCS_RUNE, DRUID_DOCS_SQL } from '../../variables';
 
