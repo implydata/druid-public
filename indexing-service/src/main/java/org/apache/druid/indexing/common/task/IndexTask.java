@@ -1524,6 +1524,7 @@ public class IndexTask extends AbstractTask implements ChatHandler
           partitionDimensions,
           indexSpec,
           maxPendingPersists,
+          forceExtendableShardSpecs,
           forceGuaranteedRollup,
           reportParseExceptions,
           pushTimeout,

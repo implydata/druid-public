@@ -72,6 +72,7 @@ public class ParallelIndexTuningConfigTest
             LongEncodingStrategy.LONGS
         ),
         1,
+        true,
         false,
         true,
         10000L,
