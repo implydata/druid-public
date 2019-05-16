@@ -29,7 +29,7 @@
   <parent>
     <artifactId>druid</artifactId>
     <groupId>org.apache.druid</groupId>
-    <version>druid-0.14.0-incubating-iap7-hdp263</version>
+    <version>0.14.0-incubating-iap7-hdp263-2-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
