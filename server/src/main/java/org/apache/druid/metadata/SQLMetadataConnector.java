@@ -453,6 +453,7 @@ public abstract class SQLMetadataConnector implements MetadataStorageConnector
   )
   {
     return getDBI().inTransaction(
+        TransactionIsolationLevel.REPEATABLE_READ,
         new TransactionCallback<Boolean>()
         {
           @Override
@@ -465,7 +466,7 @@ public abstract class SQLMetadataConnector implements MetadataStorageConnector
               byte[] currentValue = handle
                   .createQuery(
                       StringUtils.format(
-                          "SELECT %1$s FROM %2$s WHERE %3$s = :key",
+                          "SELECT %1$s FROM %2$s WHERE %3$s = :key FOR UPDATE",
                           update.getValueColumn(),
                           update.getTableName(),
                           update.getKeyColumn()
