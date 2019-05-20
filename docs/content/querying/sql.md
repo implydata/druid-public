@@ -106,6 +106,10 @@ query will run separately, back to back (not in parallel). Druid does not curren
 Add "EXPLAIN PLAN FOR" to the beginning of any query to see how it would be run as a native Druid query. In this case,
 the query will not actually be executed.
 
+<a name="functions />
+
+## Built-in functions
+
 ### Aggregation functions
 
 Aggregation functions can appear in the SELECT clause of any query. Any aggregator can be filtered using syntax like
@@ -272,6 +276,7 @@ simplest way to write literal timestamps in other time zones is to use TIME_PARS
 |`NULLIF(value1, value2)`|Returns NULL if value1 and value2 match, else returns value1.|
 |`COALESCE(value1, value2, ...)`|Returns the first value that is neither NULL nor empty string.|
 |`BLOOM_FILTER_TEST(<expr>, <serialized-filter>)`|Returns true if the value is contained in the base64 serialized bloom filter. See [bloom filter extension](../development/extensions-core/bloom-filter.html) documentation for additional details.
+
 ### Unsupported features
 
 Druid does not support all SQL features, including:
@@ -287,6 +292,8 @@ Additionally, some Druid features are not supported by the SQL language. Some un
 - [DataSketches aggregators](../development/extensions-core/datasketches-extension.html).
 - [Spatial filters](../development/geo.html).
 - [Query cancellation](querying.html#query-cancellation).
+
+<a name="types" />
 
 ## Data types and casts
 
@@ -392,6 +399,8 @@ approximate algorithm. Druid SQL will switch to an exact grouping algorithm if y
 either through query context or through Broker configuration.
 - The APPROX_COUNT_DISTINCT and APPROX_QUANTILE aggregation functions always use approximate algorithms, regardless
 of configuration.
+
+<a name="client" />
 
 ## Client APIs
 
@@ -530,7 +539,9 @@ Connection context can be specified as JDBC connection properties or as a "conte
 |`useApproximateCountDistinct`|Whether to use an approximate cardinalty algorithm for `COUNT(DISTINCT foo)`.|druid.sql.planner.useApproximateCountDistinct on the Broker (default: true)|
 |`useApproximateTopN`|Whether to use approximate [TopN queries](topnquery.html) when a SQL query could be expressed as such. If false, exact [GroupBy queries](groupbyquery.html) will be used instead.|druid.sql.planner.useApproximateTopN on the Broker (default: true)|
 
-### Retrieving metadata
+<a name="metadata" />
+
+## Metadata tables
 
 Druid Brokers infer table and column metadata for each dataSource from segments loaded in the cluster, and use this to
 plan SQL queries. This metadata is cached on Broker startup and also updated periodically in the background through
@@ -540,7 +551,7 @@ segments entering and exiting the cluster, and can also be throttled through con
 Druid exposes system information through special system tables. There are two such schemas available: Information Schema and Sys Schema.
 Information schema provides details about table and column types. The "sys" schema provides information about Druid internals like segments/tasks/servers.
 
-## INFORMATION SCHEMA
+### INFORMATION SCHEMA
 
 You can access table and column metadata through JDBC using `connection.getMetaData()`, or through the
 INFORMATION_SCHEMA tables described below. For example, to retrieve metadata for the Druid
@@ -550,7 +561,7 @@ datasource "foo", use the query:
 SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'druid' AND TABLE_NAME = 'foo'
 ```
 
-### SCHEMATA table
+#### SCHEMATA table
 
 |Column|Notes|
 |------|-----|
@@ -562,7 +573,7 @@ SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'druid' AND TABLE_
 |DEFAULT_CHARACTER_SET_NAME|Unused|
 |SQL_PATH|Unused|
 
-### TABLES table
+#### TABLES table
 
 |Column|Notes|
 |------|-----|
@@ -571,7 +582,7 @@ SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'druid' AND TABLE_
 |TABLE_NAME||
 |TABLE_TYPE|"TABLE" or "SYSTEM_TABLE"|
 
-### COLUMNS table
+#### COLUMNS table
 
 |Column|Notes|
 |------|-----|
@@ -593,15 +604,15 @@ SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'druid' AND TABLE_
 |COLLATION_NAME||
 |JDBC_TYPE|Type code from java.sql.Types (Druid extension)|
 
-## SYSTEM SCHEMA
+### SYSTEM SCHEMA
 
 The "sys" schema provides visibility into Druid segments, servers and tasks.
 
-### SEGMENTS table
+#### SEGMENTS table
+
 Segments table provides details on all Druid segments, whether they are published yet or not.
 
-#### CAVEAT
-Note that a segment can be served by more than one stream ingestion tasks or Historical processes, in that case it would have multiple replicas. These replicas are weakly consistent with each other when served by multiple ingestion tasks, until a segment is eventually served by a Historical, at that point the segment is immutable. Broker prefers to query a segment from Historical over an ingestion task. But if a segment has multiple realtime replicas, for eg. kafka index tasks, and one task is slower than other, then the sys.segments query results can vary for the duration of the tasks because only one of the ingestion tasks is queried by the Broker and it is not gauranteed that the same task gets picked everytime. The `num_rows` column of segments table can have inconsistent values during this period. There is an open [issue](https://github.com/apache/incubator-druid/issues/5915) about this inconsistency with stream ingestion tasks.
+*Caveat:* Note that a segment can be served by more than one stream ingestion tasks or Historical processes, in that case it would have multiple replicas. These replicas are weakly consistent with each other when served by multiple ingestion tasks, until a segment is eventually served by a Historical, at that point the segment is immutable. Broker prefers to query a segment from Historical over an ingestion task. But if a segment has multiple realtime replicas, for eg. kafka index tasks, and one task is slower than other, then the sys.segments query results can vary for the duration of the tasks because only one of the ingestion tasks is queried by the Broker and it is not gauranteed that the same task gets picked everytime. The `num_rows` column of segments table can have inconsistent values during this period. There is an open [issue](https://github.com/apache/incubator-druid/issues/5915) about this inconsistency with stream ingestion tasks.
 
 |Column|Type|Notes|
 |------|-----|-----|
@@ -640,7 +651,8 @@ GROUP BY 1
 ORDER BY 2 DESC
 ```
 
-### SERVERS table
+#### SERVERS table
+
 Servers table lists all discovered servers in the cluster.
 
 |Column|Type|Notes|
@@ -660,7 +672,7 @@ To retrieve information about all servers, use the query:
 SELECT * FROM sys.servers;
 ```
 
-### SERVER_SEGMENTS table
+#### SERVER_SEGMENTS table
 
 SERVER_SEGMENTS is used to join servers with segments table
 
@@ -682,7 +694,7 @@ WHERE segments.datasource = 'wikipedia'
 GROUP BY servers.server;
 ```
 
-### TASKS table
+#### TASKS table
 
 The tasks table provides information about active and recently-completed indexing tasks. For more information 
 check out [ingestion tasks](#../ingestion/tasks.html)
@@ -743,7 +755,6 @@ Broker will emit the following metrics for SQL.
 |------|-----------|----------|------------|
 |`sqlQuery/time`|Milliseconds taken to complete a SQL.|id, nativeQueryIds, dataSource, remoteAddress, success.|< 1s|
 |`sqlQuery/bytes`|number of bytes returned in SQL response.|id, nativeQueryIds, dataSource, remoteAddress, success.| |
-
 
 ## Authorization Permissions
 
