@@ -56,6 +56,7 @@ import org.apache.druid.metadata.MetadataSegmentManagerConfig;
 import org.apache.druid.metadata.MetadataSegmentManagerProvider;
 import org.apache.druid.metadata.MetadataStorage;
 import org.apache.druid.metadata.MetadataStorageProvider;
+import org.apache.druid.query.lookup.LookupSerdeModule;
 import org.apache.druid.server.audit.AuditManagerProvider;
 import org.apache.druid.server.coordinator.BalancerStrategyFactory;
 import org.apache.druid.server.coordinator.DruidCoordinator;
@@ -245,6 +246,8 @@ public class CliCoordinator extends ServerRunnable
           }
         }
     );
+
+    modules.add(new LookupSerdeModule());
 
     if (beOverlord) {
       modules.addAll(new CliOverlord().getModules(false));
