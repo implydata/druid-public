@@ -471,7 +471,9 @@ public class DruidCoordinatorSegmentMergerTest
     );
     final DruidCoordinatorRuntimeParams params =
         DruidCoordinatorRuntimeParams.newBuilder()
-                                     .withAvailableSegments(ImmutableSet.copyOf(segments))
+                                     .setAvailableSegments(
+                                         DruidCoordinatorRuntimeParams.createAvailableSegmentsSet(segments)
+                                     )
                                      .withDynamicConfigs(CoordinatorDynamicConfig.builder().withMergeBytesLimit(
                                          mergeBytesLimit).withMergeSegmentsLimit(mergeSegmentsLimit).build())
                                      .withEmitter(EasyMock.createMock(ServiceEmitter.class))
