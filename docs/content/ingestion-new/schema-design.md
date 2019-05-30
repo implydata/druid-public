@@ -177,24 +177,8 @@ For more details about how rollup works and how to configure it, see the [ingest
 
 ### Partitioning and sorting
 
-Druid always partitions your data by time, but the segments within a particular time chunk may be
-[partitioned further](index.html#partitioning) using options that vary based on the ingestion method you have chosen.
-
-In general, partitioning using a particular dimension will improve locality, meaning that rows with the same value
-for that dimension are stored together and can be accessed quickly. This gives you better performance when querying that
-dimension, including both filtering and grouping on it. Partitioning on a dimension that "naturally" partitions your
-data (such as a customer ID) will also tend to improve compression and give you a smaller storage footprint. These
-effects will be maximized by putting the partition dimension first in the "dimensions" list of your "dimensionsSpec",
-which also tells Druid to sort data segments by that column.
-
-Note that Druid always sorts rows within a segment by timestamp first, even before the first dimension listed in your
-dimensionsSpec. This can affect storage footprint and data locality. If you want to truly sort by a dimension, you can
-work around this by setting `queryGranularity` equal to `segmentGranularity` in your ingestion spec, and then if you
-need finer-granularity timestamps, ingesting your timestamp as a separate long-typed dimension. See
-[Secondary timestamps](#secondary-timestamps) below for more information. This limitation may be removed in future
-versions of Druid.
-
-For details about how partitioning works and how to configure it, see the [ingestion overview](index.html#partitioning).
+Optimally partitioning and sorting your data can have substantial impact on footprint and performance. For more details,
+see the [Partitioning](index.html#partitioning) section of the data loading documentation.
 
 <a name="sketches" />
 

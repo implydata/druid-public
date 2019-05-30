@@ -26,6 +26,8 @@ title: "Ingestion"
 
 ## Schema changes
 
+## Adding new data
+
 ## Compaction and reindexing
 
 ## Updating existing data

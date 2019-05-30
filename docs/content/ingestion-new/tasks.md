@@ -28,4 +28,11 @@ title: "Tasks Overview"
 
 ## Task locking and priority
 
+All Druid datasources are partitioned by time. Each data ingestion method must acquire a write lock on a particular
+time range when loading data, so no two methods can operate on the same time range of the same datasource at the same
+time. However, two data ingestion methods _can_ operate on different time ranges of the same datasource at the same
+time. For example, you can do a batch backfill from Hadoop while also doing a real-time load from Kafka, so long as
+the backfill data and the real-time data do not need to be written to the same time partitions. (If they do, the
+real-time load will take priority.)
+
 ## Task reports
