@@ -26,7 +26,7 @@ title: "Ingestion"
 
 ## Overview
 
-<a name="datasources" />
+<a name="datasources"></a>
 
 ### Datasources and segments
 
@@ -54,32 +54,7 @@ MOVED to ingestion-new/index.html
 
 ## Partitioning
 
-Druid is a distributed data store, and it partitions your data in order to process it in parallel. Druid
-[datasources](../design/index.html) are always partitioned first by time based on the
-[segmentGranularity](../ingestion/index.html#granularityspec) parameter of your ingestion spec. Each of these time partitions is called
-a _time chunk_, and each time chunk contains one or more [segments](../design/segments.html). The segments within a
-particular time chunk may be partitioned further using options that vary based on the ingestion method you have chosen.
-
- * With [Hadoop](hadoop.html) you can do hash- or range-based partitioning on one or more columns.
- * With [Native batch](native_tasks.html) you can partition on a hash of dimension columns. This is useful when
- rollup is enabled, since it maximizes your space savings.
- * With [Kafka indexing](../development/extensions-core/kafka-ingestion.html), partitioning is based on Kafka
- partitions, and is not configurable through Druid. You can configure it on the Kafka side by using the partitioning
- functionality of the Kafka producer.
- * With [Tranquility](stream-push.html), partitioning is done by default on a hash of all dimension columns in order
- to maximize rollup. You can also provide a custom Partitioner class; see the
- [Tranquility documentation](https://github.com/druid-io/tranquility/blob/master/docs/overview.md#partitioning-and-replication)
- for details.
-
-All Druid datasources are partitioned by time. Each data ingestion method must acquire a write lock on a particular
-time range when loading data, so no two methods can operate on the same time range of the same datasource at the same
-time. However, two data ingestion methods _can_ operate on different time ranges of the same datasource at the same
-time. For example, you can do a batch backfill from Hadoop while also doing a real-time load from Kafka, so long as
-the backfill data and the real-time data do not need to be written to the same time partitions. (If they do, the
-real-time load will take priority.)
-
-For tips on how partitioning can affect performance and storage footprint, see the
-[schema design](schema-design.html#partitioning) page.
+MOVED to ingestion-new/index.html
 
 ## Rollup
 

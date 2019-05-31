@@ -1,6 +1,6 @@
 ---
 layout: doc_page
-title: "Native Index Tasks"
+title: "Native batch"
 ---
 
 <!--
@@ -22,7 +22,7 @@ title: "Native Index Tasks"
   ~ under the License.
   -->
 
-# Native Index Tasks
+# Native batch
 
 Apache Druid (incubating) currently has two types of native batch indexing tasks, `index_parallel` which runs tasks
 in parallel on multiple MiddleManager processes, and `index` which will run a single indexing task locally on a single

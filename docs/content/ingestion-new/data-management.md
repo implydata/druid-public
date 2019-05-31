@@ -24,12 +24,26 @@ title: "Ingestion"
 
 # Data management
 
+<a name="schema-changes"></a>
+
 ## Schema changes
 
-## Adding new data
+<a name="reindexing"></a>
 
 ## Compaction and reindexing
 
+<a name="append"></a>
+
+## Adding new data
+
+<a name="updating"></a>
+
 ## Updating existing data
 
+<a name="deleting"></a>
+
 ## Deleting data
+
+<a name="retention"></a>
+
+## Retention

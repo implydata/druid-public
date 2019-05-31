@@ -132,7 +132,7 @@ query performance boosts.
 
 ## General tips and best practices
 
-<a name="rollup" />
+<a name="rollup"></a>
 
 ### Rollup
 
@@ -173,7 +173,7 @@ footprint, since abbreviated datasources tend to be substantially smaller.
 
 For more details about how rollup works and how to configure it, see the [ingestion overview](index.html#rollup).
 
-<a name="partitioning" />
+<a name="partitioning"></a>
 
 ### Partitioning and sorting
 
@@ -196,7 +196,7 @@ versions of Druid.
 
 For details about how partitioning works and how to configure it, see the [ingestion overview](index.html#partitioning).
 
-<a name="sketches" />
+<a name="sketches"></a>
 
 ### Sketches for high cardinality columns
 
@@ -226,7 +226,7 @@ For details about the sketches available in Druid, see the
 If you prefer videos, take a look at [Not exactly!](https://www.youtube.com/watch?v=Hpd3f_MLdXo), a conference talk
 about sketches in Druid.
 
-<a name="numeric-dimensions" />
+<a name="numeric-dimensions"></a>
 
 ### String vs numeric dimensions
 
@@ -239,7 +239,7 @@ You may want to experiment to find the optimal choice for your use case.
 For details about how to configure numeric dimensions, see the
 [Dimension Schema](../ingestion/ingestion-spec.html#dimension-schema) page.
 
-<a name="secondary-timestamps" />
+<a name="secondary-timestamps"></a>
 
 ### Secondary timestamps
 
@@ -274,7 +274,7 @@ then before indexing it, you should transform it to:
 Druid is capable of flattening JSON, Avro, or Parquet input data.
 Please read about [flattenSpecs](../ingestion/flatten-json.html) for more details.
 
-<a name="counting" />
+<a name="counting"></a>
 
 ### Counting the number of ingested events
 
@@ -307,7 +307,7 @@ You should query for the number of ingested rows with:
 ...
 ```
 
-<a name="schemaless" />
+<a name="schemaless"></a>
 
 ### Schema-less dimensions
 

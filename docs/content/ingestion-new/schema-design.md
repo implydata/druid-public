@@ -90,7 +90,7 @@ it is a natural choice for storing timeseries data. Its flexible data model allo
 non-timeseries data, even in the same datasource.
 
 To achieve best-case compression and query performance in Druid for timeseries data, it is important to partition and
-sort by metric name, like timeseries databases often do. See [Partitioning and sorting](#partitioning) for more details.
+sort by metric name, like timeseries databases often do. See [Partitioning and sorting](index.html#partitioning) for more details.
 
 Tips for modeling timeseries data in Druid:
 
@@ -99,7 +99,7 @@ for ingestion and aggregation.
 - Create a dimension that indicates the name of the series that a data point belongs to. This dimension is often called
 "metric" or "name". Do not get the dimension named "metric" confused with the concept of Druid metrics. Place this
 first in the list of dimensions in your "dimensionsSpec" for best performance (this helps because it improves locality;
-see [partitioning and sorting](#partitioning) below for details).
+see [partitioning and sorting](index.html#partitioning) below for details).
 - Create other dimensions for attributes attached to your data points. These are often called "tags" in timeseries
 database systems.
 - Create [metrics](../querying/aggregations.html) corresponding to the types of aggregations that you want to be able
@@ -132,7 +132,7 @@ query performance boosts.
 
 ## General tips and best practices
 
-<a name="rollup" />
+<a name="rollup"></a>
 
 ### Rollup
 
@@ -173,14 +173,14 @@ footprint, since abbreviated datasources tend to be substantially smaller.
 
 For more details about how rollup works and how to configure it, see the [ingestion overview](index.html#rollup).
 
-<a name="partitioning" />
+<a name="partitioning"></a>
 
 ### Partitioning and sorting
 
 Optimally partitioning and sorting your data can have substantial impact on footprint and performance. For more details,
 see the [Partitioning](index.html#partitioning) section of the data loading documentation.
 
-<a name="sketches" />
+<a name="sketches"></a>
 
 ### Sketches for high cardinality columns
 
@@ -210,7 +210,7 @@ For details about the sketches available in Druid, see the
 If you prefer videos, take a look at [Not exactly!](https://www.youtube.com/watch?v=Hpd3f_MLdXo), a conference talk
 about sketches in Druid.
 
-<a name="numeric-dimensions" />
+<a name="numeric-dimensions"></a>
 
 ### String vs numeric dimensions
 
@@ -223,12 +223,12 @@ You may want to experiment to find the optimal choice for your use case.
 For details about how to configure numeric dimensions, see the
 [Dimension Schema](../ingestion/ingestion-spec.html#dimension-schema) page.
 
-<a name="secondary-timestamps" />
+<a name="secondary-timestamps"></a>
 
 ### Secondary timestamps
 
 Druid schemas must always include a primary timestamp. The primary timestamp is used for
-[partitioning and sorting](#partitioning) your data, so it should be the timestamp that you will most often filter on.
+[partitioning and sorting](index.html#partitioning) your data, so it should be the timestamp that you will most often filter on.
 Druid is able to rapidly identify and retrieve data corresponding to time ranges of the primary timestamp column.
 
 If your data has more than one timestamp, you can ingest the others as secondary timestamps. The best way to do this
@@ -258,7 +258,7 @@ then before indexing it, you should transform it to:
 Druid is capable of flattening JSON, Avro, or Parquet input data.
 Please read about [flattenSpecs](../ingestion/flatten-json.html) for more details.
 
-<a name="counting" />
+<a name="counting"></a>
 
 ### Counting the number of ingested events
 
@@ -291,7 +291,7 @@ You should query for the number of ingested rows with:
 ...
 ```
 
-<a name="schemaless" />
+<a name="schemaless"></a>
 
 ### Schema-less dimensions
 
