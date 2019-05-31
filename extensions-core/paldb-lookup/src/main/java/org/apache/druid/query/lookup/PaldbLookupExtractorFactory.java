@@ -44,7 +44,7 @@ public class PaldbLookupExtractorFactory implements LookupExtractorFactory
   @JsonProperty
   private final int index;
   private final LookupIntrospectHandler lookupIntrospectHandler;
-  private final StoreReader reader;
+  private StoreReader reader;
   private static final byte[] CLASS_CACHE_KEY;
 
   static {
@@ -58,13 +58,13 @@ public class PaldbLookupExtractorFactory implements LookupExtractorFactory
       @JsonProperty("index") int index
   )
   {
-    this.filepath = Preconditions.checkNotNull(filepath, "filepath cannot be null");
+    this.filepath = Preconditions.checkNotNull(filepath);
     this.index = index;
     this.extractorID = StringUtils.format("paldb-factory-%s", UUID.randomUUID().toString());
     this.lookupIntrospectHandler = new PaldbLookupIntrospectHandler(this);
     //Configuration c = PalDB.newConfiguration();
     //c.set(Configuration.CACHE_ENABLED, "true");
-    reader = PalDB.createReader(new File(filepath));
+
   }
 
 
@@ -109,6 +109,14 @@ public class PaldbLookupExtractorFactory implements LookupExtractorFactory
   @Override
   public LookupExtractor get()
   {
+    final File file = new File(filepath);
+    if (!file.exists()) {
+      throw new RuntimeException("File " + file + " not found");
+    }
+    if (file.isDirectory()) {
+      throw new RuntimeException(("Expected paldb file, but found a directory at " + filepath));
+    }
+    reader = PalDB.createReader(file);
     return new PaldbLookupExtractor(reader, index)
     {
       @Override
