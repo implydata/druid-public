@@ -23,6 +23,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Throwables;
 import com.linkedin.paldb.api.PalDB;
 import com.linkedin.paldb.api.StoreReader;
 import org.apache.druid.java.util.common.StringUtils;
@@ -32,6 +33,10 @@ import javax.annotation.Nullable;
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 @JsonTypeName("paldb")
 public class PaldbLookupExtractorFactory implements LookupExtractorFactory
@@ -45,6 +50,9 @@ public class PaldbLookupExtractorFactory implements LookupExtractorFactory
   private final int index;
   private final LookupIntrospectHandler lookupIntrospectHandler;
   private StoreReader reader;
+  private final ReadWriteLock startStopSync = new ReentrantReadWriteLock();
+  private final AtomicBoolean started = new AtomicBoolean(false);
+
   private static final byte[] CLASS_CACHE_KEY;
 
   static {
@@ -64,7 +72,6 @@ public class PaldbLookupExtractorFactory implements LookupExtractorFactory
     this.lookupIntrospectHandler = new PaldbLookupIntrospectHandler(this);
     //Configuration c = PalDB.newConfiguration();
     //c.set(Configuration.CACHE_ENABLED, "true");
-
   }
 
 
@@ -82,14 +89,47 @@ public class PaldbLookupExtractorFactory implements LookupExtractorFactory
   @Override
   public boolean start()
   {
-    return true;
+    final Lock writeLock = startStopSync.writeLock();
+    try {
+      writeLock.lockInterruptibly();
+      try {
+        if (!started.get()) {
+          LOG.info("starting paldb lookup");
+          started.set(true);
+        }
+        return started.get();
+      }
+      finally {
+        writeLock.unlock();
+      }
+    }
+    catch (InterruptedException e) {
+      throw Throwables.propagate(e);
+    }
   }
 
   @Override
   public boolean close()
   {
-    reader.close();
-    return true;
+    final Lock writeLock = startStopSync.writeLock();
+    try {
+      writeLock.lockInterruptibly();
+      try {
+        if (started.getAndSet(false)) {
+          LOG.info("closing paldb lookup");
+          if (reader != null) {
+            reader.close();
+          }
+        }
+        return !started.get();
+      }
+      finally {
+        writeLock.unlock();
+      }
+    }
+    catch (InterruptedException e) {
+      throw Throwables.propagate(e);
+    }
   }
 
   @Override
@@ -109,27 +149,39 @@ public class PaldbLookupExtractorFactory implements LookupExtractorFactory
   @Override
   public LookupExtractor get()
   {
-    final File file = new File(filepath);
-    if (!file.exists()) {
-      throw new RuntimeException("File " + file + " not found");
+    final Lock readLock = startStopSync.readLock();
+    try {
+      readLock.lockInterruptibly();
     }
-    if (file.isDirectory()) {
-      throw new RuntimeException(("Expected paldb file, but found a directory at " + filepath));
+    catch (InterruptedException e) {
+      throw Throwables.propagate(e);
     }
-    reader = PalDB.createReader(file);
-    return new PaldbLookupExtractor(reader, index)
-    {
-      @Override
-      public byte[] getCacheKey()
-      {
-        final byte[] id = StringUtils.toUtf8(extractorID);
-        return ByteBuffer
-            .allocate(CLASS_CACHE_KEY.length + id.length + 1)
-            .put(CLASS_CACHE_KEY)
-            .put(id).put((byte) 0xFF)
-            .array();
+    try {
+      final File file = new File(filepath);
+      if (!file.exists()) {
+        throw new RuntimeException("File " + file + " not found");
       }
-    };
+      if (file.isDirectory()) {
+        throw new RuntimeException(("Expected paldb file, but found a directory at " + filepath));
+      }
+      reader = PalDB.createReader(file);
+      return new PaldbLookupExtractor(reader, index)
+      {
+        @Override
+        public byte[] getCacheKey()
+        {
+          final byte[] id = StringUtils.toUtf8(extractorID);
+          return ByteBuffer
+              .allocate(CLASS_CACHE_KEY.length + id.length + 1)
+              .put(CLASS_CACHE_KEY)
+              .put(id).put((byte) 0xFF)
+              .array();
+        }
+      };
+    }
+    finally {
+      readLock.unlock();
+    }
   }
 }
 
