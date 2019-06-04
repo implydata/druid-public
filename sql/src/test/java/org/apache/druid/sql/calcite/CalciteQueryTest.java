@@ -72,6 +72,7 @@ import org.apache.druid.query.topn.TopNQueryBuilder;
 import org.apache.druid.segment.column.ValueType;
 import org.apache.druid.sql.calcite.expression.DruidExpression;
 import org.apache.druid.sql.calcite.filtration.Filtration;
+import org.apache.druid.sql.calcite.planner.Calcites;
 import org.apache.druid.sql.calcite.rel.CannotBuildQueryException;
 import org.apache.druid.sql.calcite.util.CalciteTests;
 import org.hamcrest.CoreMatchers;
@@ -7616,6 +7617,159 @@ public class CalciteQueryTest extends BaseCalciteQueryTest
         ),
         ImmutableList.of(
             new Object[]{""}
+        )
+    );
+  }
+
+  @Test
+  public void testTrigonometricFunction() throws Exception
+  {
+    testQuery(
+        PLANNER_CONFIG_DEFAULT,
+        QUERY_CONTEXT_DONT_SKIP_EMPTY_BUCKETS,
+        "SELECT exp(count(*)) + 10, sin(pi / 6), cos(pi / 6), tan(pi / 6), cot(pi / 6)," +
+        "asin(exp(count(*)) / 2), acos(exp(count(*)) / 2), atan(exp(count(*)) / 2), atan2(exp(count(*)), 1) " +
+        "FROM druid.foo WHERE  dim2 = 0",
+        CalciteTests.REGULAR_USER_AUTH_RESULT,
+        ImmutableList.of(Druids.newTimeseriesQueryBuilder()
+                               .dataSource(CalciteTests.DATASOURCE1)
+                               .intervals(QSS(Filtration.eternity()))
+                               .filters(SELECTOR("dim2", "0", null))
+                               .granularity(Granularities.ALL)
+                               .aggregators(AGGS(
+                                   new CountAggregatorFactory("a0")
+                               ))
+                               .postAggregators(
+                                   EXPRESSION_POST_AGG("p0", "(exp(\"a0\") + 10)"),
+                                   EXPRESSION_POST_AGG("p1", "sin((pi() / 6))"),
+                                   EXPRESSION_POST_AGG("p2", "cos((pi() / 6))"),
+                                   EXPRESSION_POST_AGG("p3", "tan((pi() / 6))"),
+                                   EXPRESSION_POST_AGG("p4", "cot((pi() / 6))"),
+                                   EXPRESSION_POST_AGG("p5", "asin((exp(\"a0\") / 2))"),
+                                   EXPRESSION_POST_AGG("p6", "acos((exp(\"a0\") / 2))"),
+                                   EXPRESSION_POST_AGG("p7", "atan((exp(\"a0\") / 2))"),
+                                   EXPRESSION_POST_AGG("p8", "atan2(exp(\"a0\"),1)")
+                               )
+                               .context(QUERY_CONTEXT_DONT_SKIP_EMPTY_BUCKETS)
+                               .build()),
+        ImmutableList.of(
+            new Object[]{
+                11.0,
+                Math.sin(Math.PI / 6),
+                Math.cos(Math.PI / 6),
+                Math.tan(Math.PI / 6),
+                Math.cos(Math.PI / 6) / Math.sin(Math.PI / 6),
+                Math.asin(0.5),
+                Math.acos(0.5),
+                Math.atan(0.5),
+                Math.atan2(1, 1)
+            }
+        )
+    );
+  }
+
+  @Test
+  public void testRadiansAndDegrees() throws Exception
+  {
+    testQuery(
+        "SELECT RADIANS(m1 * 15)/DEGREES(m2) FROM numfoo WHERE dim1 = '1'",
+        ImmutableList.of(
+            newScanQueryBuilder()
+                .dataSource(CalciteTests.DATASOURCE3)
+                .intervals(QSS(Filtration.eternity()))
+                .virtualColumns(
+                    EXPRESSION_VIRTUAL_COLUMN("v0", "(toRadians((\"m1\" * 15)) / toDegrees(\"m2\"))", ValueType.DOUBLE)
+                )
+                .columns("v0")
+                .filters(SELECTOR("dim1", "1", null))
+                .resultFormat(ScanQuery.RESULT_FORMAT_COMPACTED_LIST)
+                .context(QUERY_CONTEXT_DEFAULT)
+                .build()
+        ),
+        ImmutableList.of(
+            new Object[]{Math.toRadians(60) / Math.toDegrees(4)}
+        )
+    );
+  }
+
+  @Test
+  public void testTimestampDiff() throws Exception
+  {
+    testQuery(
+        "SELECT TIMESTAMPDIFF(DAY, TIMESTAMP '1999-01-01 00:00:00', __time), \n"
+        + "TIMESTAMPDIFF(DAY, __time, DATE '2001-01-01'), \n"
+        + "TIMESTAMPDIFF(HOUR, TIMESTAMP '1999-12-31 01:00:00', __time), \n"
+        + "TIMESTAMPDIFF(MINUTE, TIMESTAMP '1999-12-31 23:58:03', __time), \n"
+        + "TIMESTAMPDIFF(SECOND, TIMESTAMP '1999-12-31 23:59:03', __time), \n"
+        + "TIMESTAMPDIFF(MONTH, TIMESTAMP '1999-11-01 00:00:00', __time), \n"
+        + "TIMESTAMPDIFF(YEAR, TIMESTAMP '1996-11-01 00:00:00', __time), \n"
+        + "TIMESTAMPDIFF(QUARTER, TIMESTAMP '1996-10-01 00:00:00', __time), \n"
+        + "TIMESTAMPDIFF(WEEK, TIMESTAMP '1998-10-01 00:00:00', __time) \n"
+        + "FROM druid.foo\n"
+        + "LIMIT 2",
+        ImmutableList.of(
+            newScanQueryBuilder()
+                .dataSource(CalciteTests.DATASOURCE1)
+                .intervals(QSS(Filtration.eternity()))
+                .virtualColumns(
+                    EXPRESSION_VIRTUAL_COLUMN("v0", "div((\"__time\" - 915148800000),86400000)", ValueType.LONG),
+                    EXPRESSION_VIRTUAL_COLUMN("v1", "div((978307200000 - \"__time\"),86400000)", ValueType.LONG),
+                    EXPRESSION_VIRTUAL_COLUMN("v2", "div((\"__time\" - 946602000000),3600000)", ValueType.LONG),
+                    EXPRESSION_VIRTUAL_COLUMN("v3", "div((\"__time\" - 946684683000),60000)", ValueType.LONG),
+                    EXPRESSION_VIRTUAL_COLUMN("v4", "div((\"__time\" - 946684743000),1000)", ValueType.LONG),
+                    EXPRESSION_VIRTUAL_COLUMN("v5", "subtract_months(\"__time\",941414400000,'UTC')", ValueType.LONG),
+                    EXPRESSION_VIRTUAL_COLUMN("v6", "div(subtract_months(\"__time\",846806400000,'UTC'),12)", ValueType.LONG),
+                    EXPRESSION_VIRTUAL_COLUMN("v7", "div(subtract_months(\"__time\",844128000000,'UTC'),3)", ValueType.LONG),
+                    EXPRESSION_VIRTUAL_COLUMN("v8", "div(div((\"__time\" - 907200000000),1000),604800)", ValueType.LONG)
+                )
+                .columns("v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8")
+                .limit(2)
+                .resultFormat(ScanQuery.RESULT_FORMAT_COMPACTED_LIST)
+                .context(QUERY_CONTEXT_DEFAULT)
+                .build()
+
+        ),
+        ImmutableList.of(
+            new Object[]{365, 366, 23, 1, 57, 2, 3, 13, 65},
+            new Object[]{366, 365, 47, 1441, 86457, 2, 3, 13, 65}
+        )
+    );
+  }
+
+  @Test
+  public void testTimestampCeil() throws Exception
+  {
+    testQuery(
+        "SELECT CEIL(TIMESTAMP '2000-01-01 00:00:00' TO DAY), \n"
+        + "CEIL(TIMESTAMP '2000-01-01 01:00:00' TO DAY) \n"
+        + "FROM druid.foo\n"
+        + "LIMIT 1",
+        ImmutableList.of(
+            newScanQueryBuilder()
+                .dataSource(CalciteTests.DATASOURCE1)
+                .intervals(QSS(Filtration.eternity()))
+                .virtualColumns(
+                    EXPRESSION_VIRTUAL_COLUMN("v0", "946684800000", ValueType.LONG),
+                    EXPRESSION_VIRTUAL_COLUMN("v1", "946771200000", ValueType.LONG)
+                )
+                .columns("v0", "v1")
+                .limit(1)
+                .resultFormat(ScanQuery.RESULT_FORMAT_COMPACTED_LIST)
+                .context(QUERY_CONTEXT_DEFAULT)
+                .build()
+
+        ),
+        ImmutableList.of(
+            new Object[]{
+                Calcites.jodaToCalciteTimestamp(
+                    DateTimes.of("2000-01-01"),
+                    DateTimeZone.UTC
+                ),
+                Calcites.jodaToCalciteTimestamp(
+                    DateTimes.of("2000-01-02"),
+                    DateTimeZone.UTC
+                )
+            }
         )
     );
   }
