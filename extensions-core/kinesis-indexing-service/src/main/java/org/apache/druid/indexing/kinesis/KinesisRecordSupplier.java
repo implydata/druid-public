@@ -26,6 +26,8 @@ import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider;
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.kinesis.AmazonKinesis;
 import com.amazonaws.services.kinesis.AmazonKinesisClientBuilder;
+import com.amazonaws.services.kinesis.model.DescribeStreamRequest;
+import com.amazonaws.services.kinesis.model.DescribeStreamResult;
 import com.amazonaws.services.kinesis.model.ExpiredIteratorException;
 import com.amazonaws.services.kinesis.model.GetRecordsRequest;
 import com.amazonaws.services.kinesis.model.GetRecordsResult;
@@ -35,11 +37,13 @@ import com.amazonaws.services.kinesis.model.Record;
 import com.amazonaws.services.kinesis.model.ResourceNotFoundException;
 import com.amazonaws.services.kinesis.model.Shard;
 import com.amazonaws.services.kinesis.model.ShardIteratorType;
+import com.amazonaws.services.kinesis.model.StreamDescription;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import com.amazonaws.util.AwsHostNameUtils;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Queues;
 import org.apache.druid.common.aws.AWSCredentialsConfig;
 import org.apache.druid.common.aws.AWSCredentialsUtils;
@@ -61,6 +65,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -580,11 +585,27 @@ public class KinesisRecordSupplier implements RecordSupplier<String, String>
   public Set<String> getPartitionIds(String stream)
   {
     checkIfClosed();
-    return kinesis.describeStream(stream)
-                  .getStreamDescription()
-                  .getShards()
-                  .stream()
-                  .map(Shard::getShardId).collect(Collectors.toSet());
+    final Set<String> retVal = new HashSet<>();
+    DescribeStreamRequest request = new DescribeStreamRequest();
+    request.setStreamName(stream);
+
+    while (request != null) {
+      final DescribeStreamResult result = kinesis.describeStream(request);
+      final StreamDescription streamDescription = result.getStreamDescription();
+      final List<Shard> shards = streamDescription.getShards();
+
+      for (Shard shard : shards) {
+        retVal.add(shard.getShardId());
+      }
+
+      if (streamDescription.isHasMoreShards()) {
+        request.setExclusiveStartShardId(Iterables.getLast(shards).getShardId());
+      } else {
+        request = null;
+      }
+    }
+
+    return retVal;
   }
 
   @Override
