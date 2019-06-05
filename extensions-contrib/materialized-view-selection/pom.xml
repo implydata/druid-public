@@ -22,7 +22,7 @@
     <parent>
         <artifactId>druid</artifactId>
         <groupId>org.apache.druid</groupId>
-        <version>0.15.0-incubating-iap-pre2-SNAPSHOT</version>
+        <version>0.15.0-incubating-iap-pre2</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
