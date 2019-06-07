@@ -74,7 +74,7 @@ public class ParquetAvroHadoopInputRowParser implements InputRowParser<GenericRe
 
     this.recordFlattener = ObjectFlatteners.create(
         flattenSpec,
-        new AvroFlattenerMaker(false, this.binaryAsString)
+        new AvroFlattenerMaker(this.binaryAsString)
     );
   }
 

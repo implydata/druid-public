@@ -221,7 +221,7 @@ public class AvroStreamInputRowParserTest
 
     InputRow inputRow = parser2.parseBatch(ByteBuffer.wrap(out.toByteArray())).get(0);
 
-    assertInputRowCorrect(inputRow, DIMENSIONS, false);
+    assertInputRowCorrect(inputRow, DIMENSIONS);
   }
 
   @Test
@@ -262,10 +262,10 @@ public class AvroStreamInputRowParserTest
 
     InputRow inputRow = parser2.parseBatch(ByteBuffer.wrap(out.toByteArray())).get(0);
 
-    assertInputRowCorrect(inputRow, DIMENSIONS_SCHEMALESS, false);
+    assertInputRowCorrect(inputRow, DIMENSIONS_SCHEMALESS);
   }
 
-  public static void assertInputRowCorrect(InputRow inputRow, List<String> expectedDimensions, boolean isFromPigAvro)
+  public static void assertInputRowCorrect(InputRow inputRow, List<String> expectedDimensions)
   {
     assertEquals(expectedDimensions, inputRow.getDimensions());
     assertEquals(1543698L, inputRow.getTimestampFromEpoch());
@@ -316,9 +316,6 @@ public class AvroStreamInputRowParserTest
     );
     assertEquals(Collections.singletonList(SOME_UNION_VALUE), inputRow.getDimension("someUnion"));
     assertEquals(Collections.emptyList(), inputRow.getDimension("someNull"));
-    if (isFromPigAvro) {
-      assertEquals(String.valueOf(SOME_FIXED_VALUE), Arrays.toString((byte[]) inputRow.getRaw("someFixed")));
-    }
     assertEquals(
         Arrays.toString(SOME_BYTES_VALUE.array()),
         Arrays.toString((byte[]) (inputRow.getRaw("someBytes")))

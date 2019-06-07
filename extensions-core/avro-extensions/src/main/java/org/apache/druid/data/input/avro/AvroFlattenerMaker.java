@@ -19,12 +19,10 @@
 
 package org.apache.druid.data.input.avro;
 
-import com.google.common.collect.Lists;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.Option;
 import org.apache.avro.Schema;
-import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.util.Utf8;
 import org.apache.druid.java.util.common.StringUtils;
@@ -87,12 +85,10 @@ public class AvroFlattenerMaker implements ObjectFlatteners.FlattenerMaker<Gener
   }
 
 
-  private final boolean fromPigAvroStorage;
   private final boolean binaryAsString;
 
-  public AvroFlattenerMaker(final boolean fromPigAvroStorage, final boolean binaryAsString)
+  public AvroFlattenerMaker(final boolean binaryAsString)
   {
-    this.fromPigAvroStorage = fromPigAvroStorage;
     this.binaryAsString = binaryAsString;
   }
 
@@ -128,9 +124,6 @@ public class AvroFlattenerMaker implements ObjectFlatteners.FlattenerMaker<Gener
 
   private Object transformValue(final Object field)
   {
-    if (fromPigAvroStorage && field instanceof GenericData.Array) {
-      return Lists.transform((List) field, item -> String.valueOf(((GenericRecord) item).get(0)));
-    }
     if (field instanceof ByteBuffer) {
       if (binaryAsString) {
         return StringUtils.fromUtf8(((ByteBuffer) field).array());

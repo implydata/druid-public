@@ -19,8 +19,7 @@
 
 package org.apache.druid.data.input.parquet;
 
-import avro.shaded.com.google.common.collect.ImmutableMap;
-import org.apache.directory.api.util.Strings;
+import com.google.common.collect.ImmutableMap;
 import org.apache.druid.data.input.InputRow;
 import org.apache.druid.data.input.impl.InputRowParser;
 import org.apache.druid.indexer.HadoopDruidIndexerConfig;
@@ -75,7 +74,7 @@ class BaseParquetInputTest
   )
       throws IOException
   {
-    String template = Strings.utf8ToString(Files.readAllBytes(Paths.get(templateFile)));
+    String template = StringUtils.fromUtf8(Files.readAllBytes(Paths.get(templateFile)));
     String transformed;
     if (withParseType) {
       transformed = StringUtils.format(template, inputFormatType.get(type), type, parseSpecType.get(type));

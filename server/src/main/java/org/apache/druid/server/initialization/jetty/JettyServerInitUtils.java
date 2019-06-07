@@ -41,7 +41,7 @@ public class JettyServerInitUtils
     GzipHandler gzipHandler = new GzipHandler();
     gzipHandler.setMinGzipSize(0);
     gzipHandler.setIncludedMethods(GZIP_METHODS);
-    gzipHandler.setInflateBufferSize(inflateBufferSize);
+    //gzipHandler.setInflateBufferSize(inflateBufferSize);
     gzipHandler.setCompressionLevel(compressionLevel);
 
     // We don't actually have any precomputed .gz resources, and checking for them inside jars is expensive.

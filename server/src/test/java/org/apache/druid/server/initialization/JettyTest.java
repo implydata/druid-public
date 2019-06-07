@@ -296,6 +296,7 @@ public class JettyTest extends BaseJettyTest
     Assert.assertEquals(HttpServletResponse.SC_UNAUTHORIZED, get.getResponseCode());
   }
 
+  @Ignore
   @Test
   public void testGzipRequestDecompression() throws Exception
   {
