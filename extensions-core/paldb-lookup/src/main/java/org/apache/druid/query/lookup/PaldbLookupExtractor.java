@@ -19,43 +19,33 @@
 
 package org.apache.druid.query.lookup;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.linkedin.paldb.api.StoreReader;
+import org.apache.druid.collections.ReferenceCountingResourceHolder;
+import org.apache.druid.collections.StoreReaderPool;
 import org.apache.druid.common.config.NullHandling;
 import org.apache.druid.java.util.common.logger.Logger;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
-@JsonTypeName("pal")
 public class PaldbLookupExtractor extends LookupExtractor
 {
-
   private static final Logger LOG = new Logger(PaldbLookupExtractor.class);
 
-  private final StoreReader reader;
+  private final StoreReaderPool readerPool;
   private final int index;
 
-  @JsonCreator
   public PaldbLookupExtractor(
-      @JsonProperty("reader") StoreReader reader,
-      @JsonProperty("index") int index
+      StoreReaderPool readerPool,
+      int index
   )
   {
-    this.reader = reader;
+    this.readerPool = readerPool;
     this.index = index;
-  }
-
-  @JsonProperty
-  public StoreReader getReader()
-  {
-    return reader;
   }
 
   @Nullable
@@ -66,9 +56,12 @@ public class PaldbLookupExtractor extends LookupExtractor
     if (keyEquivalent == null) {
       return null;
     }
-    final String[] arr = reader.get(keyEquivalent);
+    final String[] arr;
+    try (final ReferenceCountingResourceHolder<StoreReader> reader = readerPool.take()) {
+      arr = reader.get().get(keyEquivalent);
+    }
     if (arr == null) {
-      LOG.warn("value array is null for key  " + keyEquivalent);
+      LOG.debug("value array is null for key  " + keyEquivalent);
       return null;
     }
     int len = arr.length;
@@ -92,11 +85,16 @@ public class PaldbLookupExtractor extends LookupExtractor
     if (valueToLookup == null) {
       return Collections.emptyList();
     }
-    Iterable<Map.Entry<String, String>> list = reader.iterable();
-    List<String> keys = StreamSupport.stream(list.spliterator(), false)
-                                     .filter(t -> t.getValue().equals(valueToLookup))
-                                     .map(entry -> entry.getKey())
-                                     .collect(Collectors.toList());
+    final List<String> keys = new ArrayList<>();
+    try (final ReferenceCountingResourceHolder<StoreReader> reader = readerPool.take()) {
+      Iterable<Map.Entry<String, String[]>> list = reader.get().iterable();
+      for (Map.Entry<String, String[]> entry : list) {
+        String[] val = entry.getValue();
+        if (Arrays.asList(val).contains(valueToLookup)) {
+          keys.add(entry.getKey());
+        }
+      }
+    }
     return keys;
   }
 
