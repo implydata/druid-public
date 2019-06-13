@@ -56,9 +56,15 @@ public class PaldbLookupExtractor extends LookupExtractor
     if (keyEquivalent == null) {
       return null;
     }
-    final String[] arr;
+    String[] arr = null;
     try (final ReferenceCountingResourceHolder<StoreReader> reader = readerPool.take()) {
-      arr = reader.get().get(keyEquivalent);
+      try {
+        arr = reader.get().get(keyEquivalent);
+      }
+      catch (Exception e) {
+        LOG.error("Error occurred in paldb reader while reading key[%s] and value at index[%d]", key, index);
+        LOG.error("Contents of the row %s", Arrays.toString(arr));
+      }
     }
     if (arr == null) {
       LOG.debug("value array is null for key  " + keyEquivalent);
