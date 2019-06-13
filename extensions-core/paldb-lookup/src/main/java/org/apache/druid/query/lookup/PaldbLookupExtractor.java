@@ -74,7 +74,14 @@ public class PaldbLookupExtractor extends LookupExtractor
                                                + keyEquivalent
                                                + "]");
     }
-    final String str = arr[index];
+
+    String str = null;
+    try {
+      str = arr[index];
+    }
+    catch (Exception e) {
+      LOG.error("Error occurred in paldb reader while reading key[%s] with value at index[%d]", key, index);
+    }
     return NullHandling.emptyToNullIfNeeded(str);
   }
 
