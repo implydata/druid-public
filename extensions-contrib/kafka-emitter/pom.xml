@@ -24,7 +24,7 @@
   <parent>
     <groupId>org.apache.druid</groupId>
     <artifactId>druid</artifactId>
-    <version>0.14.0-iap-pre-blookup5</version>
+    <version>0.14.0-iap-pre-blookup6-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
