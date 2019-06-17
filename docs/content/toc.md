@@ -21,15 +21,13 @@ layout: toc
   ~ under the License.
   -->
 
-## Getting Started
-  * [Design](/docs/VERSION/design/index.html)
+## Getting started
+  * [Introduction to Apache Druid](/docs/VERSION/design/index.html#what-is-druid)
     * [What is Druid?](/docs/VERSION/design/index.html#what-is-druid)
+    * [Who uses Druid?](/docs/VERSION/design/index.html#who)
     * [When should I use Druid?](/docs/VERSION/design/index.html#when-to-use-druid)
-    * [Architecture](/docs/VERSION/design/index.html#architecture)
-    * [Datasources & Segments](/docs/VERSION/design/index.html#datasources-and-segments)
-    * [Query processing](/docs/VERSION/design/index.html#query-processing)
-    * [External dependencies](/docs/VERSION/design/index.html#external-dependencies)
-  * [Getting Started](/docs/VERSION/operations/getting-started.html)
+    * [Learning more](/docs/VERSION/design/index.html#learning)
+  * [Tutorials](/docs/VERSION/operations/getting-started.html)
     * [Single-server Quickstart](/docs/VERSION/tutorials/index.html)
       * [Tutorial: Loading a file from local disk](/docs/VERSION/tutorials/tutorial-batch.html)
       * [Tutorial: Loading stream data from Apache Kafka](/docs/VERSION/tutorials/tutorial-kafka.html)
@@ -97,15 +95,16 @@ layout: toc
     * [Server configuration](/docs/VERSION/querying/sql.html#metadata)
     * [SQL metrics](/docs/VERSION/querying/sql.html#sql-metrics)
   * [Native queries](/docs/VERSION/querying/querying.html)
-    * [Timeseries](/docs/VERSION/querying/timeseriesquery.html)
-    * [TopN](/docs/VERSION/querying/topnquery.html)
-    * [GroupBy](/docs/VERSION/querying/groupbyquery.html)
-    * [Time Boundary](/docs/VERSION/querying/timeboundaryquery.html)
-    * [Segment Metadata](/docs/VERSION/querying/segmentmetadataquery.html)
-    * [DataSource Metadata](/docs/VERSION/querying/datasourcemetadataquery.html)
-    * [Search](/docs/VERSION/querying/searchquery.html)
-    * [Scan](/docs/VERSION/querying/scan-query.html)
-    * [Select](/docs/VERSION/querying/select-query.html)
+    * Query types
+      * [Timeseries](/docs/VERSION/querying/timeseriesquery.html)
+      * [TopN](/docs/VERSION/querying/topnquery.html)
+      * [GroupBy](/docs/VERSION/querying/groupbyquery.html)
+      * [Time Boundary](/docs/VERSION/querying/timeboundaryquery.html)
+      * [Segment Metadata](/docs/VERSION/querying/segmentmetadataquery.html)
+      * [DataSource Metadata](/docs/VERSION/querying/datasourcemetadataquery.html)
+      * [Search](/docs/VERSION/querying/searchquery.html)
+      * [Scan](/docs/VERSION/querying/scan-query.html)
+      * [Select](/docs/VERSION/querying/select-query.html)
     * Components
       * [Datasources](/docs/VERSION/querying/datasource.html)
       * [Filters](/docs/VERSION/querying/filters.html)
@@ -116,16 +115,19 @@ layout: toc
       * [Sorting Orders](/docs/VERSION/querying/sorting-orders.html)
       * [Virtual Columns](/docs/VERSION/querying/virtual-columns.html)
       * [Context](/docs/VERSION/querying/query-context.html)
-  * Concepts
-    * [Multi-value dimensions](/docs/VERSION/querying/multi-value-dimensions.html)
-    * [Lookups](/docs/VERSION/querying/lookups.html)
-    * [Joins](/docs/VERSION/querying/joins.html)
-    * [Multitenancy](/docs/VERSION/querying/multitenancy.html)
-    * [Caching](/docs/VERSION/querying/caching.html)
-    * [Geographic Queries](/docs/VERSION/development/geo.html) (experimental)
+  * [Multi-value dimensions](/docs/VERSION/querying/multi-value-dimensions.html)
+  * [Lookups](/docs/VERSION/querying/lookups.html)
+  * [Joins](/docs/VERSION/querying/joins.html)
+  * [Multitenancy](/docs/VERSION/querying/multitenancy.html)
+  * [Caching](/docs/VERSION/querying/caching.html)
+  * [Geographic Queries](/docs/VERSION/development/geo.html) (experimental)
 
 ## Design
-  * [Overview](/docs/VERSION/design/index.html)
+  * [Architecture](/docs/VERSION/design/index.html)
+    * [Architecture](/docs/VERSION/design/index.html#architecture)
+    * [Datasources & Segments](/docs/VERSION/design/index.html#datasources-and-segments)
+    * [Query processing](/docs/VERSION/design/index.html#query-processing)
+    * [External dependencies](/docs/VERSION/design/index.html#external-dependencies)
   * Storage
     * [Segments](/docs/VERSION/design/segments.html)
   * [Servers and Processes](/docs/VERSION/design/processes.html)
@@ -143,6 +145,20 @@ layout: toc
     * [Deep Storage](/docs/VERSION/dependencies/deep-storage.html)
     * [Metadata Storage](/docs/VERSION/dependencies/metadata-storage.html)
     * [ZooKeeper](/docs/VERSION/dependencies/zookeeper.html)
+
+## Configuration
+  * [Configuration Reference](/docs/VERSION/configuration/index.html)
+    * [Recommended Configuration File Organization](/docs/VERSION/configuration/index.html#recommended-configuration-file-organization)
+    * [Common Configuration](/docs/VERSION/configuration/index.html#common-configurations)
+    * Processes
+      * [Coordinator](/docs/VERSION/configuration/index.html#coordinator)
+      * [Overlord](/docs/VERSION/configuration/index.html#overlord)
+      * [MiddleManager & Peons](/docs/VERSION/configuration/index.html#middle-manager-and-peons)    
+      * [Historical](/docs/VERSION/configuration/index.html#historical)
+      * [Broker](/docs/VERSION/configuration/index.html#broker)
+    * [Caching](/docs/VERSION/configuration/index.html#cache-configuration)
+    * [General Query Configuration](/docs/VERSION/configuration/index.html#general-query-configuration)
+  * [Logging](/docs/VERSION/configuration/logging.html)
 
 ## Operations
   * [Management UIs](/docs/VERSION/operations/management-uis.html)    
@@ -172,20 +188,6 @@ layout: toc
   * Security
     * [TLS Support](/docs/VERSION/operations/tls-support.html)
     * [Password Provider](/docs/VERSION/operations/password-provider.html)  
-
-## Configuration
-  * [Configuration Reference](/docs/VERSION/configuration/index.html)
-  * [Recommended Configuration File Organization](/docs/VERSION/configuration/index.html#recommended-configuration-file-organization)  
-  * [Common Configuration](/docs/VERSION/configuration/index.html#common-configurations)
-  * Processes
-    * [Coordinator](/docs/VERSION/configuration/index.html#coordinator)
-    * [Overlord](/docs/VERSION/configuration/index.html#overlord)
-    * [MiddleManager & Peons](/docs/VERSION/configuration/index.html#middle-manager-and-peons)    
-    * [Historical](/docs/VERSION/configuration/index.html#historical)
-    * [Broker](/docs/VERSION/configuration/index.html#broker)
-  * [Caching](/docs/VERSION/configuration/index.html#cache-configuration)
-  * [General Query Configuration](/docs/VERSION/configuration/index.html#general-query-configuration)
-  * [Configuring Logging](/docs/VERSION/configuration/logging.html)
 
 ## Development
   * [Overview](/docs/VERSION/development/overview.html)

@@ -35,12 +35,48 @@ in [deep storage](../dependencies/deep-storage.html), they will be loaded by His
 how this works under the hood, see the [Storage design](../design/index.html#storage) section of Druid's design
 documentation.
 
+<a name="connect"></a>
+
+## Ingestion methods
+
+The table below lists Druid's most common data ingestion methods, along with comparisons to help you choose
+the best one for your situation. Each ingestion method supports its own set of data sources. For details about how
+each method works, as well as configuration properties specific to that method, check out its documentation page.
+
+|Method|Task or supervisor?|How it works|Query data immediately (real-time)?|Supported by data loader in [web console](../operations/druid-console.html)?|
+|------|-------------------|------------|-----------------------------------|----------------------------------------------------------------------------|
+|[Native batch](native-batch.html)|Task type `index` or `index_parallel`|Druid loads data directly from S3, HTTP, NFS, or other networked storage.|No|Yes|
+|[Hadoop-based](hadoop.html)|Task type `index_hadoop`|Druid launches Hadoop Map/Reduce jobs to load data files.|No|No|
+|[Kafka indexing service](../development/extensions-core/kafka-ingestion.html)|Supervisor type `kafka`|Druid reads directly from Apache Kafka.|Yes|No|
+|[Kinesis indexing service](../development/extensions-core/kinesis-ingestion.html)|Supervisor type `kinesis`|Druid reads directly from Amazon Kinesis.|Yes|No|
+
+When loading from Kafka or Kinesis, you should use the appropriate supervisor-based indexing service.
+
+When doing batch loads from files, you should use one-time tasks, and you have three options: `index` (native batch,
+single-task), `index_parallel` (native batch, parallel), or `index_hadoop` (Hadoop-based). The following table compares
+and contrasts the three batch ingestion options.
+
+|   |index_hadoop|index_parallel|index|
+|---|------------|--------------|-----|
+| Category | Hadoop-based | Native batch | Native batch |
+| Parallel indexing | Always parallel | Parallel if firehose is splittable | No |
+| Supported indexing modes | Overwrite | Append or overwrite | Append or overwrite |
+| External dependencies | Hadoop (it internally submits Map/Reduce jobs) | None | None |
+| Supported [rollup modes](#rollup) | Perfect rollup | Best-effort rollup | Both perfect and best-effort rollup |
+| Supported partitioning methods | [Both Hash-based and range partitioning](hadoop.html#partitioning-specification) | N/A | Hash-based partitioning (when `forceGuaranteedRollup` = true) |
+| Supported input locations | All locations accessible via HDFS client or Druid dataSource | All implemented [firehoses](./firehose.html) | All implemented [firehoses](./firehose.html) |
+| Supported file formats | All implemented Hadoop InputFormats | Currently text file formats (CSV, TSV, JSON) by default. Additional formats can be added though a [custom extension](../development/modules.html) implementing [`FiniteFirehoseFactory`](https://github.com/apache/incubator-druid/blob/master/core/src/main/java/org/apache/druid/data/input/FiniteFirehoseFactory.java) | Currently text file formats (CSV, TSV, JSON) by default. Additional formats can be added though a [custom extension](../development/modules.html) implementing [`FiniteFirehoseFactory`](https://github.com/apache/incubator-druid/blob/master/core/src/main/java/org/apache/druid/data/input/FiniteFirehoseFactory.java) |
+| Saving parse exceptions in ingestion report | Currently not supported | Currently not supported | Supported |
+
+TODO(gianm): Something about tranquility; mention it but generally downplay and link offsite
+
 <a name="spec"></a>
 
 ## Ingestion specs
 
-Data is loaded into Druid using either one-time [tasks](tasks.html) or ongoing [supervisors](supervisors.html). In any
-case, part of the task or supervisor definition is an _ingestion spec_.
+No matter what ingestion method you use, data is loaded into Druid using either one-time [tasks](tasks.html) or
+ongoing [supervisors](supervisors.html). In any case, part of the task or supervisor definition is an
+_ingestion spec_.
 
 <details>
 <summary>Example ingestion spec for task type "index" (native batch)</summary>
@@ -122,40 +158,6 @@ For more examples, refer to the documentation for each ingestion method.
 You can also load data visually, without the need to write an ingestion spec, using the "Load data" functionality
 available in Druid's [web console](../operations/druid-console.html). Currently, Druid's visual data loader only
 supports [native batch](native-batch.html) mode. We intend to expand it to support more ingestion methods in the future.
-
-<a name="connect"></a>
-
-## Ingestion methods
-
-The table below lists Druid's most common data ingestion methods, along with comparisons to help you choose
-the best one for your situation. Each ingestion method supports its own set of data sources. For details about how
-each method works, as well as configuration properties specific to that method, check out its documentation page.
-
-|Method|Task or supervisor?|How it works|Query data immediately (real-time)?|Supported by data loader in [web console](../operations/druid-console.html)?|
-|------|-------------------|------------|-----------------------------------|----------------------------------------------------------------------------|
-|[Native batch](native-batch.html)|Task type `index` or `index_parallel`|Druid loads data directly from S3, HTTP, NFS, or other networked storage.|No|Yes|
-|[Hadoop](hadoop.html)|Task type `index_hadoop`|Druid launches Hadoop Map/Reduce jobs to load data files.|No|No|
-|[Kafka indexing service](../development/extensions-core/kafka-ingestion.html)|Supervisor type `kafka`|Druid reads directly from Apache Kafka.|Yes|No|
-|[Kinesis indexing service](../development/extensions-core/kinesis-ingestion.html)|Supervisor type `kinesis`|Druid reads directly from Amazon Kinesis.|Yes|No|
-
-When loading from Kafka or Kinesis, you should use the appropriate supervisor-based indexing service. When doing batch
-loads from files, you should use one-time tasks, and you have three options: `index` (native batch, single-task),
-`index_parallel` (native batch, parallel), or `index_hadoop` (Hadoop-based). The following table compares and contrasts
-the three options.
-
-|   |index_hadoop|index_parallel|index|
-|---|------------|--------------|-----|
-| Category | Hadoop-based | Native batch | Native batch |
-| Parallel indexing | Always parallel | Parallel if firehose is splittable | Always sequential |
-| Supported indexing modes | Overwrite | Append or overwrite | Append or overwrite |
-| External dependency | Hadoop (it internally submits Hadoop jobs) | No dependency | No dependency |
-| Supported [rollup modes](../ingestion/index.html#roll-up-modes) | Perfect rollup | Best-effort rollup | Both perfect and best-effort rollup |
-| Supported partitioning methods | [Both Hash-based and range partitioning](hadoop.html#partitioning-specification) | N/A | Hash-based partitioning (when `forceGuaranteedRollup` = true) |
-| Supported input locations | All locations accessible via HDFS client or Druid dataSource | All implemented [firehoses](./firehose.html) | All implemented [firehoses](./firehose.html) |
-| Supported file formats | All implemented Hadoop InputFormats | Currently text file formats (CSV, TSV, JSON) by default. Additional formats can be added though a [custom extension](../development/modules.html) implementing [`FiniteFirehoseFactory`](https://github.com/apache/incubator-druid/blob/master/core/src/main/java/org/apache/druid/data/input/FiniteFirehoseFactory.java) | Currently text file formats (CSV, TSV, JSON) by default. Additional formats can be added though a [custom extension](../development/modules.html) implementing [`FiniteFirehoseFactory`](https://github.com/apache/incubator-druid/blob/master/core/src/main/java/org/apache/druid/data/input/FiniteFirehoseFactory.java) |
-| Saving parse exceptions in ingestion report | Currently not supported | Currently not supported | Supported |
-
-<!-- TODO(gianm): Something about tranquility; mention it but generally link offsite -->
 
 <a name="parse"></a>
 

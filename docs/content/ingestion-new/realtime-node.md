@@ -22,6 +22,8 @@ title: "Stream Pull Ingestion"
   ~ under the License.
   -->
 
+TODO(gianm): Fixup this page and link it in to the rest somehow
+
 <div class="note info">
 NOTE: Realtime processes are deprecated. Please use the <a href="../development/extensions-core/kafka-ingestion.html">Kafka Indexing Service</a> for stream pull use cases instead.
 </div>
