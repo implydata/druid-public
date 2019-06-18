@@ -24,7 +24,7 @@ import React from 'react';
 import ReactTable from 'react-table';
 import { Filter } from 'react-table';
 
-import { ActionCell, TableColumnSelector, ViewControlBar } from '../../components';
+import { ActionCell, RefreshButton, TableColumnSelector, ViewControlBar } from '../../components';
 import { AsyncActionDialog } from '../../dialogs';
 import { SegmentTableActionDialog } from '../../dialogs/segments-table-action-dialog/segment-table-action-dialog';
 import {
@@ -453,10 +453,9 @@ export class SegmentsView extends React.PureComponent<SegmentsViewProps, Segment
     return <>
     <div className="segments-view app-view">
       <ViewControlBar label="Segments">
-        <Button
-          icon={IconNames.REFRESH}
-          text="Refresh"
-          onClick={() => noSqlMode ? this.segmentsJsonQueryManager.rerunLastQuery() : this.segmentsSqlQueryManager.rerunLastQuery()}
+        <RefreshButton
+          refresh={() => noSqlMode ? this.segmentsJsonQueryManager.rerunLastQuery() : this.segmentsSqlQueryManager.rerunLastQuery()}
+          localStorageKey={LocalStorageKeys.SEGMENTS_REFRESH_RATE}
         />
         {
           !noSqlMode &&
