@@ -29,7 +29,7 @@ import org.apache.druid.benchmark.datagen.BenchmarkDataGenerator;
 import org.apache.druid.benchmark.datagen.BenchmarkSchemaInfo;
 import org.apache.druid.benchmark.datagen.BenchmarkSchemas;
 import org.apache.druid.benchmark.query.QueryBenchmarkUtil;
-import org.apache.druid.collections.StoreReaderPool;
+import org.apache.druid.collections.LightPool;
 import org.apache.druid.collections.StupidPool;
 import org.apache.druid.data.input.InputRow;
 import org.apache.druid.hll.HyperLogLogHash;
@@ -95,10 +95,6 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
-import org.openjdk.jmh.runner.Runner;
-import org.openjdk.jmh.runner.RunnerException;
-import org.openjdk.jmh.runner.options.Options;
-import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.io.File;
 import java.io.IOException;
@@ -191,7 +187,7 @@ public class TopnLookupBenchmark
       stringMap.put(key, value);
     }
 
-    StoreReaderPool readerPool = new StoreReaderPool(new StoreReaderGenerator("lookup.paldb"), 2);
+    LightPool<StoreReader> readerPool = new LightPool<>(new StoreReaderGenerator("lookup.paldb"));
     reader = PalDB.createReader(new File("lookup.paldb"));
     LookupExtractor paldbExtractor = new PaldbLookupExtractor(readerPool, 0);
     LookupExtractor mapExtractor = new MapLookupExtractor(stringMap, false);
