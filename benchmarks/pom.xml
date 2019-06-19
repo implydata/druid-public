@@ -74,6 +74,11 @@
     </dependency>
     <dependency>
       <groupId>org.apache.druid.extensions</groupId>
+      <artifactId>paldb-lookup</artifactId>
+      <version>${project.parent.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.druid.extensions</groupId>
       <artifactId>druid-histogram</artifactId>
       <version>${project.parent.version}</version>
     </dependency>
