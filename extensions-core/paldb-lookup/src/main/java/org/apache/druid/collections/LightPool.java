@@ -20,23 +20,54 @@
 package org.apache.druid.collections;
 
 import com.google.common.base.Supplier;
-import com.linkedin.paldb.api.StoreReader;
+import org.apache.druid.java.util.common.logger.Logger;
 
 import java.io.Closeable;
+import java.io.IOException;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
-public class StoreReaderPool extends DefaultBlockingPool<StoreReader> implements Closeable
+public class LightPool<T> implements Closeable
 {
-  public StoreReaderPool(Supplier<StoreReader> generator, int limit)
+  private static final Logger log = new Logger(LightPool.class);
+
+  private final Supplier<T> generator;
+  private final Queue<T> objects = new ConcurrentLinkedQueue<>();
+
+  public LightPool(Supplier<T> generator)
   {
-    super(generator, limit);
+    this.generator = generator;
+  }
+
+  public T take()
+  {
+    T object;
+
+    if ((object = objects.poll()) == null) {
+      object = generator.get();
+    }
+
+    return object;
+  }
+
+  public void giveBack(final T object)
+  {
+    objects.add(object);
   }
 
   @Override
   public void close()
   {
-    StoreReader reader;
-    while ((reader = objects.poll()) != null) {
-      reader.close();
+    T object;
+    while ((object = objects.poll()) != null) {
+      if (object instanceof Closeable) {
+        try {
+          ((Closeable) object).close();
+        }
+        catch (IOException e) {
+          log.warn("Could not close pooled object: [%s]", object);
+        }
+      }
     }
   }
 }

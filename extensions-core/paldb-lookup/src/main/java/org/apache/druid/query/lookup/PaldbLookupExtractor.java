@@ -20,8 +20,7 @@
 package org.apache.druid.query.lookup;
 
 import com.linkedin.paldb.api.StoreReader;
-import org.apache.druid.collections.ReferenceCountingResourceHolder;
-import org.apache.druid.collections.StoreReaderPool;
+import org.apache.druid.collections.LightPool;
 import org.apache.druid.common.config.NullHandling;
 import org.apache.druid.java.util.common.logger.Logger;
 
@@ -36,11 +35,11 @@ public class PaldbLookupExtractor extends LookupExtractor
 {
   private static final Logger LOG = new Logger(PaldbLookupExtractor.class);
 
-  private final StoreReaderPool readerPool;
+  private final LightPool<StoreReader> readerPool;
   private final int index;
 
   public PaldbLookupExtractor(
-      StoreReaderPool readerPool,
+      LightPool<StoreReader> readerPool,
       int index
   )
   {
@@ -57,13 +56,21 @@ public class PaldbLookupExtractor extends LookupExtractor
       return null;
     }
     String[] arr = null;
-    try (final ReferenceCountingResourceHolder<StoreReader> reader = readerPool.take()) {
-      try {
-        arr = reader.get().get(keyEquivalent);
-      }
-      catch (Exception e) {
-        LOG.error("Error occurred in paldb reader while reading key[%s] and value at index[%d]", key, index);
-        LOG.error("Contents of the row %s", Arrays.toString(arr));
+    StoreReader reader = null;
+    try {
+      reader = readerPool.take();
+      arr = reader.get(keyEquivalent);
+    }
+    catch (Exception e) {
+      LOG.error(
+          "Error occurred in paldb reader while reading key[%s] and value at index[%d]. Using null for the value.",
+          key,
+          index
+      );
+    }
+    finally {
+      if (reader != null) {
+        readerPool.giveBack(reader);
       }
     }
     if (arr == null) {
@@ -99,13 +106,20 @@ public class PaldbLookupExtractor extends LookupExtractor
       return Collections.emptyList();
     }
     final List<String> keys = new ArrayList<>();
-    try (final ReferenceCountingResourceHolder<StoreReader> reader = readerPool.take()) {
-      Iterable<Map.Entry<String, String[]>> list = reader.get().iterable();
+    StoreReader reader = null;
+    try {
+      reader = readerPool.take();
+      Iterable<Map.Entry<String, String[]>> list = reader.iterable();
       for (Map.Entry<String, String[]> entry : list) {
         String[] val = entry.getValue();
         if (Arrays.asList(val).contains(valueToLookup)) {
           keys.add(entry.getKey());
         }
+      }
+    }
+    finally {
+      if (reader != null) {
+        readerPool.giveBack(reader);
       }
     }
     return keys;
@@ -114,6 +128,7 @@ public class PaldbLookupExtractor extends LookupExtractor
   @Override
   public byte[] getCacheKey()
   {
+    // TODO: Must have legitimate cache key
     return new byte[0];
   }
 

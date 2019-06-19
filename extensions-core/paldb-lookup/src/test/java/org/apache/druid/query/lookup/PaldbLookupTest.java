@@ -20,8 +20,9 @@
 package org.apache.druid.query.lookup;
 
 import com.linkedin.paldb.api.PalDB;
+import com.linkedin.paldb.api.StoreReader;
 import com.linkedin.paldb.api.StoreWriter;
-import org.apache.druid.collections.StoreReaderPool;
+import org.apache.druid.collections.LightPool;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -48,7 +49,7 @@ public class PaldbLookupTest
     writer.put("foo1", new String[]{"baz"});
     writer.put("bat", new String[]{"abc", "xyz"});
     writer.close();
-    StoreReaderPool readerPool = new StoreReaderPool(new StoreReaderGenerator("store.paldb"), 2);
+    LightPool<StoreReader> readerPool = new LightPool<>(new StoreReaderGenerator("store.paldb"));
     paldbLookup = new PaldbLookupExtractor(readerPool, 0);
   }
 
