@@ -29,7 +29,7 @@ import org.apache.druid.benchmark.datagen.BenchmarkDataGenerator;
 import org.apache.druid.benchmark.datagen.BenchmarkSchemaInfo;
 import org.apache.druid.benchmark.datagen.BenchmarkSchemas;
 import org.apache.druid.benchmark.query.QueryBenchmarkUtil;
-import org.apache.druid.collections.StoreReaderPool;
+import org.apache.druid.collections.LightPool;
 import org.apache.druid.collections.StupidPool;
 import org.apache.druid.data.input.InputRow;
 import org.apache.druid.hll.HyperLogLogHash;
@@ -187,7 +187,7 @@ public class TopnLookupBenchmark
       stringMap.put(key, value);
     }
 
-    StoreReaderPool readerPool = new StoreReaderPool(new StoreReaderGenerator("lookup.paldb"), 2);
+    LightPool<StoreReader> readerPool = new LightPool<>(new StoreReaderGenerator("lookup.paldb"));
     reader = PalDB.createReader(new File("lookup.paldb"));
     LookupExtractor paldbExtractor = new PaldbLookupExtractor(readerPool, 0);
     LookupExtractor mapExtractor = new MapLookupExtractor(stringMap, false);

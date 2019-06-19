@@ -25,7 +25,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
-import org.apache.druid.collections.StoreReaderPool;
+import com.linkedin.paldb.api.StoreReader;
+import org.apache.druid.collections.LightPool;
 import org.apache.druid.java.util.common.StringUtils;
 import org.apache.druid.java.util.common.logger.Logger;
 import org.apache.druid.query.DruidProcessingConfig;
@@ -48,7 +49,7 @@ public class PaldbLookupExtractorFactory implements LookupExtractorFactory
   private final String filepath;
   @JsonProperty
   private final int index;
-  private StoreReaderPool readerPool;
+  private LightPool<StoreReader> readerPool;
   private final ReadWriteLock startStopSync = new ReentrantReadWriteLock();
   private final AtomicBoolean started = new AtomicBoolean(false);
   private final DruidProcessingConfig processingConfig;
@@ -97,7 +98,7 @@ public class PaldbLookupExtractorFactory implements LookupExtractorFactory
       try {
         if (!started.get()) {
           LOG.info("starting paldb lookup");
-          readerPool = new StoreReaderPool(new StoreReaderGenerator(filepath), processingConfig.getNumThreads());
+          readerPool = new LightPool<>(new StoreReaderGenerator(filepath));
           started.set(true);
         }
         return started.get();
