@@ -1,33 +1,29 @@
-/**
- * Copyright (c) 2017-present, Facebook, Inc.
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 // See https://docusaurus.io/docs/site-config for all the possible
 // site configuration options.
-
-// List of projects/orgs using your project for the users page.
-const users = [
-  {
-    caption: 'User1',
-    // You will need to prepend the image path with your baseUrl
-    // if it is not '/', like: '/test-site/img/image.jpg'.
-    image: '/img/undraw_open_source.svg',
-    infoLink: 'https://www.facebook.com',
-    pinned: true,
-  },
-];
 
 const siteConfig = {
   title: 'Apache Druid',
   tagline: 'A fast analytical database',
   url: 'https://druid.apache.org',
   baseUrl: '/', // Base URL for your project */
-  // For github.io type URLs, you would set the url and baseUrl like:
-  //   url: 'https://facebook.github.io',
-  //   baseUrl: '/test-site/',
 
   // Used for publishing and more
   projectName: 'Apache Druid',
@@ -38,21 +34,20 @@ const siteConfig = {
 
   // For no header links in the top nav bar -> headerLinks: [],
   headerLinks: [
-    {page: 'help', label: 'Technology'},
-    {page: 'help', label: 'Use Cases'},
-    {page: 'help', label: 'Powered By'},
+    {page: 'index', label: 'Technology'},
+    {page: 'index', label: 'Use Cases'},
+    {page: 'index', label: 'Powered By'},
     {doc: 'design/index', label: 'Docs'},
-    {page: 'help', label: 'Community'},
-    {page: 'help', label: 'Download'},
+    {page: 'index', label: 'Community'},
+    {href: '/download.html', label: 'Download'},
   ],
 
-  // If you have users set above, you add it here:
-  users,
-
   /* path to images for header/footer */
-  headerIcon: 'img/favicon.ico',
-  footerIcon: 'img/favicon.ico',
-  favicon: 'img/favicon.ico',
+  headerIcon: 'img/favicon.png',
+  footerIcon: 'img/favicon.png',
+  favicon: 'img/favicon.png',
+
+  disableHeaderTitle: true,
 
   /* Colors for website */
   colors: {
