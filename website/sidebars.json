@@ -1,0 +1,106 @@
+{
+  "docs": {
+    "Getting started": [
+      "design/index",
+      "tutorials/index",
+      "tutorials/tutorial-batch",
+      "tutorials/tutorial-kafka",
+      "tutorials/tutorial-batch-hadoop",
+      "tutorials/tutorial-tranquility",
+      "tutorials/tutorial-query",
+      "tutorials/tutorial-rollup",
+      "tutorials/tutorial-retention",
+      "tutorials/tutorial-update-data",
+      "tutorials/tutorial-compaction",
+      "tutorials/tutorial-delete-data",
+      "tutorials/tutorial-ingestion-spec",
+      "tutorials/tutorial-transform-spec",
+      "tutorials/cluster",
+      "operations/single-server",
+      "tutorials/cluster"
+    ],
+    "Data ingestion and management": [
+      "ingestion-new/index",
+      "ingestion-new/data-formats",
+      "ingestion-new/schema-design",
+      "ingestion-new/data-management",
+      "ingestion-new/native-batch",
+      "ingestion-new/hadoop",
+      "development/extensions-core/kafka-ingestion",
+      "development/extensions-core/kinesis-ingestion",
+      "ingestion-new/tranquility",
+      "ingestion-new/tasks"
+    ],
+    "Querying": [
+      "querying/sql",
+      "querying/querying",
+      {
+        "type": "subcategory",
+        "label": "Native query types",
+        "ids": [
+          "querying/timeseriesquery",
+          "querying/topnquery",
+          "querying/groupbyquery",
+          "querying/timeboundaryquery",
+          "querying/segmentmetadataquery",
+          "querying/datasourcemetadataquery",
+          "querying/searchquery",
+          "querying/scan-query",
+          "querying/select-query"
+        ]
+      },
+      "querying/multi-value-dimensions",
+      "querying/lookups",
+      "querying/joins",
+      "querying/multitenancy",
+      "querying/caching",
+      "development/geo"
+    ],
+    "Design": [
+      "design/index",
+      "design/segments",
+      "design/processes",
+      "dependencies/deep-storage",
+      "dependencies/metadata-storage",
+      "dependencies/zookeeper"
+    ],
+    "Configuration": [
+      "configuration/index",
+      "configuration/index",
+      "configuration/logging"
+    ],
+    "Operations": [
+      "operations/management-uis",
+      "operations/including-extensions",
+      "operations/rule-configuration",
+      "operations/high-availability",
+      "operations/rolling-updates",
+      "operations/metrics",
+      "operations/alerts",
+      "operations/other-hadoop",
+      "operations/http-compression",
+      "operations/api-reference",
+      "operations/basic-cluster-tuning",
+      "operations/recommendations",
+      "configuration/index",
+      "operations/dump-segment",
+      "operations/insert-segment-to-db",
+      "operations/pull-deps",
+      "operations/tls-support",
+      "operations/password-provider"
+    ],
+    "Development": [
+      "development/overview",
+      "development/extensions",
+      "development/javascript",
+      "development/build",
+      "development/versioning",
+      "development/integrating-druid-with-other-technologies",
+      "development/experimental"
+    ],
+    "Misc": [
+      "misc/math-expr",
+      "misc/papers-and-talks"
+    ]
+  }
+}

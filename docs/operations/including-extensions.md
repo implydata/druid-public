@@ -1,0 +1,78 @@
+---
+id: including-extensions
+title: "Loading extensions"
+---
+
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one
+  ~ or more contributor license agreements.  See the NOTICE file
+  ~ distributed with this work for additional information
+  ~ regarding copyright ownership.  The ASF licenses this file
+  ~ to you under the Apache License, Version 2.0 (the
+  ~ "License"); you may not use this file except in compliance
+  ~ with the License.  You may obtain a copy of the License at
+  ~
+  ~   http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing,
+  ~ software distributed under the License is distributed on an
+  ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  ~ KIND, either express or implied.  See the License for the
+  ~ specific language governing permissions and limitations
+  ~ under the License.
+  -->
+
+
+## Loading core extensions
+
+Apache Druid (incubating) bundles all [core extensions](../development/extensions.html#core-extensions) out of the box. 
+See the [list of extensions](../development/extensions.html#core-extensions) for your options. You 
+can load bundled extensions by adding their names to your common.runtime.properties 
+`druid.extensions.loadList` property. For example, to load the *postgresql-metadata-storage* and 
+*druid-hdfs-storage* extensions, use the configuration:
+
+```
+druid.extensions.loadList=["postgresql-metadata-storage", "druid-hdfs-storage"]
+```
+
+These extensions are located in the `extensions` directory of the distribution.
+
+> Druid bundles two sets of configurations: one for the [quickstart](../tutorials/quickstart.md) and 
+> one for a [clustered configuration](../tutorials/cluster.md). Make sure you are updating the correct 
+> common.runtime.properties for your setup.
+
+> Because of licensing, the mysql-metadata-storage extension does not include the required MySQL JDBC driver. For instructions 
+> on how to install this library, see the [MySQL extension page](../development/extensions-core/mysql.md).
+
+## Loading community and third-party extensions (contrib extensions)
+
+You can also load community and third-party extensions not already bundled with Druid. To do this, first download the extension and 
+then install it into your `extensions` directory. You can download extensions from their distributors directly, or 
+if they are available from Maven, the included [pull-deps](../operations/pull-deps.md) can download them for you. To use *pull-deps*, 
+specify the full Maven coordinate of the extension in the form `groupId:artifactId:version`. For example, 
+for the (hypothetical) extension *com.example:druid-example-extension:1.0.0*, run: 
+
+```
+java \
+  -cp "lib/*" \
+  -Ddruid.extensions.directory="extensions" \
+  -Ddruid.extensions.hadoopDependenciesDir="hadoop-dependencies" \
+  org.apache.druid.cli.Main tools pull-deps \
+  --no-default-hadoop \
+  -c "com.example:druid-example-extension:1.0.0"
+```
+
+You only have to install the extension once. Then, add `"druid-example-extension"` to 
+`druid.extensions.loadList` in common.runtime.properties to instruct Druid to load the extension.
+
+> Please make sure all the Extensions related configuration properties listed [here](../configuration/index.md#extensions) are set correctly.
+
+> The Maven groupId for almost every [community extension](../development/extensions.md#community-extensions) is org.apache.druid.extensions.contrib. The artifactId is the name 
+> of the extension, and the version is the latest Druid stable version.
+
+
+## Loading extensions from classpath
+
+If you add your extension jar to the classpath at runtime, Druid will also load it into the system.  This mechanism is relatively easy to reason about, 
+but it also means that you have to ensure that all dependency jars on the classpath are compatible.  That is, Druid makes no provisions while using 
+this method to maintain class loader isolation so you must make sure that the jars on your classpath are mutually compatible.
