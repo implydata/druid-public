@@ -1,4 +1,3 @@
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -19,8 +18,8 @@
 
 import { Intent } from '@blueprintjs/core';
 import { IconNames } from '@blueprintjs/icons';
-import * as copy from 'copy-to-clipboard';
-import * as React from 'react';
+import copy from 'copy-to-clipboard';
+import React from 'react';
 
 import { AppToaster } from '../../singletons/toaster';
 import { ActionIcon } from '../action-icon/action-icon';
@@ -39,28 +38,30 @@ interface ShortParts {
   suffix: string;
 }
 
-export class TableCell extends React.Component<NullTableCellProps, {}> {
+export class TableCell extends React.PureComponent<NullTableCellProps> {
   static MAX_CHARS_TO_SHOW = 50;
 
   static possiblyTruncate(str: string): React.ReactNode {
     if (str.length < TableCell.MAX_CHARS_TO_SHOW) return str;
 
     const { prefix, omitted, suffix } = TableCell.shortenString(str);
-    return <span className="table-cell truncated">
-      {prefix}
-      <span className="omitted">{omitted}</span>
-      {suffix}
-      <ActionIcon
-        icon={IconNames.CLIPBOARD}
-        onClick={() => {
-          copy(str, { format: 'text/plain' });
-          AppToaster.show({
-            message: 'Value copied to clipboard',
-            intent: Intent.SUCCESS
-          });
-        }}
-      />
-    </span>;
+    return (
+      <span className="table-cell truncated">
+        {prefix}
+        <span className="omitted">{omitted}</span>
+        {suffix}
+        <ActionIcon
+          icon={IconNames.CLIPBOARD}
+          onClick={() => {
+            copy(str, { format: 'text/plain' });
+            AppToaster.show({
+              message: 'Value copied to clipboard',
+              intent: Intent.SUCCESS,
+            });
+          }}
+        />
+      </span>
+    );
   }
 
   static shortenString(str: string): ShortParts {
@@ -72,7 +73,7 @@ export class TableCell extends React.Component<NullTableCellProps, {}> {
     return {
       prefix,
       omitted: `...${omit} omitted...`,
-      suffix
+      suffix,
     };
   }
 
@@ -82,14 +83,22 @@ export class TableCell extends React.Component<NullTableCellProps, {}> {
       return <span className="table-cell unparseable">error</span>;
     } else if (value !== '' && value != null) {
       if (timestamp) {
-        return <span className="table-cell timestamp" title={value}>{new Date(value).toISOString()}</span>;
+        return (
+          <span className="table-cell timestamp" title={value}>
+            {new Date(value).toISOString()}
+          </span>
+        );
       } else if (Array.isArray(value)) {
         return TableCell.possiblyTruncate(`[${value.join(', ')}]`);
       } else {
         return TableCell.possiblyTruncate(String(value));
       }
     } else {
-      return <span className="table-cell null">null</span>;
+      if (timestamp) {
+        return <span className="table-cell unparseable">unparseable timestamp</span>;
+      } else {
+        return <span className="table-cell null">null</span>;
+      }
     }
   }
 }

@@ -16,17 +16,14 @@
  * limitations under the License.
  */
 
-import * as React from 'react';
+import React from 'react';
 import { render } from 'react-testing-library';
 
 import { CoordinatorDynamicConfigDialog } from './coordinator-dynamic-config';
 
 describe('coordinator dynamic config', () => {
   it('matches snapshot', () => {
-    const coordinatorDynamicConfig =
-      <CoordinatorDynamicConfigDialog
-        onClose={() => null}
-      />;
+    const coordinatorDynamicConfig = <CoordinatorDynamicConfigDialog onClose={() => null} />;
     const { container } = render(coordinatorDynamicConfig, { container: document.body });
     expect(container.firstChild).toMatchSnapshot();
   });

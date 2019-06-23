@@ -18,7 +18,7 @@
 
 import { Icon, IconName } from '@blueprintjs/core';
 import classNames from 'classnames';
-import * as React from 'react';
+import React from 'react';
 
 import './action-icon.scss';
 
@@ -28,14 +28,10 @@ export interface ActionIconProps extends React.Props<any> {
   onClick?: () => void;
 }
 
-export class ActionIcon extends React.Component<ActionIconProps, {}> {
+export class ActionIcon extends React.PureComponent<ActionIconProps> {
   render() {
     const { className, icon, onClick } = this.props;
 
-    return <Icon
-      className={classNames('action-icon', className)}
-      icon={icon}
-      onClick={onClick}
-    />;
+    return <Icon className={classNames('action-icon', className)} icon={icon} onClick={onClick} />;
   }
 }
