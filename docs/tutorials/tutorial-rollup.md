@@ -1,6 +1,7 @@
 ---
 id: tutorial-rollup
 title: "Tutorial: Roll-up"
+sidebar_label: "Roll-up"
 ---
 
 <!--
@@ -27,7 +28,7 @@ Apache Druid (incubating) can summarize raw data at ingestion time using a proce
 
 This tutorial will demonstrate the effects of roll-up on an example dataset.
 
-For this tutorial, we'll assume you've already downloaded Druid as described in 
+For this tutorial, we'll assume you've already downloaded Druid as described in
 the [single-machine quickstart](index.html) and have it running on your local machine.
 
 It will also be helpful to have finished [Tutorial: Loading a file](../tutorials/tutorial-batch.md) and [Tutorial: Querying data](../tutorials/tutorial-query.md).
@@ -107,7 +108,7 @@ We'll ingest this data using the following ingestion task spec, located at `quic
 
 Roll-up has been enabled by setting `"rollup" : true` in the `granularitySpec`.
 
-Note that we have `srcIP` and `dstIP` defined as dimensions, a longSum metric is defined for the `packets` and `bytes` columns, and the `queryGranularity` has been defined as `minute`. 
+Note that we have `srcIP` and `dstIP` defined as dimensions, a longSum metric is defined for the `packets` and `bytes` columns, and the `queryGranularity` has been defined as `minute`.
 
 We will see how these definitions are used after we load this data.
 
@@ -141,7 +142,7 @@ dsql> select * from "rollup-tutorial";
 └──────────────────────────┴────────┴───────┴─────────┴─────────┴─────────┘
 Retrieved 5 rows in 1.18s.
 
-dsql> 
+dsql>
 ```
 
 Let's look at the three events in the original input data that occurred during `2018-01-01T01:01`:

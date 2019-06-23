@@ -84,7 +84,7 @@ For more details, please see the [ZooKeeper](../dependencies/zookeeper.md) page.
 
 The following diagram shows how queries and data flow through this architecture, using the suggested Master/Query/Data server organization:
 
-<img src="../../img/druid-architecture.png" width="800"/>
+<img src="../assets/druid-architecture.png" width="800"/>
 
 
 
@@ -98,7 +98,7 @@ example, a single day, if your datasource is partitioned by day). Within a chunk
 ["segments"](../design/segments.md). Each segment is a single file, typically comprising up to a few million rows of data. Since segments are
 organized into time chunks, it's sometimes helpful to think of segments as living on a timeline like the following:
 
-<img src="../../img/druid-timeline.png" width="800" />
+<img src="../assets/druid-timeline.png" width="800" />
 
 A datasource may have anywhere from just a few segments, up to hundreds of thousands and even millions of segments. Each
 segment starts life off being created on a MiddleManager, and at that point, is mutable and uncommitted. The segment
@@ -225,7 +225,7 @@ being served then does it really exist?
 
 Queries first enter the [Broker](../design/broker.md), where the Broker will identify which segments have data that may pertain to that query.
 The list of segments is always pruned by time, and may also be pruned by other attributes depending on how your
-datasource is partitioned. The Broker will then identify which [Historicals](../design/historical.md) and 
+datasource is partitioned. The Broker will then identify which [Historicals](../design/historical.md) and
 [MiddleManagers](../design/middlemanager.md) are serving those segments and send a rewritten subquery to each of those processes. The Historical/MiddleManager processes will take in the
 queries, process them and return results. The Broker receives results and merges them together to get the final answer,
 which it returns to the original caller.

@@ -1,6 +1,7 @@
 ---
 id: tutorial-query
 title: "Tutorial: Querying data"
+sidebar_label: "Querying data"
 ---
 
 <!--
@@ -33,7 +34,7 @@ The tutorial assumes that you've already completed one of the 4 ingestion tutori
 * [Tutorial: Loading stream data using Tranquility](../tutorials/tutorial-tranquility.md)
 
 Druid queries are sent over HTTP.
-The Druid console includes a view to issue queries to Druid and nicely format the results. 
+The Druid console includes a view to issue queries to Druid and nicely format the results.
 
 ## Druid SQL queries
 
@@ -62,7 +63,7 @@ You can also configure extra context flags to be sent with the query from the mo
 
 ![Query options](../assets/tutorial-query-02.png "Query options")
 
-Note that the console will by default wrap your SQL queries in a limit so that you can issue queries like `SELECT * FROM wikipedia` without much hesitation - you can turn off this behaviour. 
+Note that the console will by default wrap your SQL queries in a limit so that you can issue queries like `SELECT * FROM wikipedia` without much hesitation - you can turn off this behaviour.
 
 ### Query SQL via dsql
 
@@ -73,7 +74,7 @@ Let's now run `bin/dsql`; you should see the following prompt:
 ```bash
 Welcome to dsql, the command-line client for Druid SQL.
 Type "\h" for help.
-dsql> 
+dsql>
 ```
 
 To submit the query, paste it to the `dsql` prompt and press enter:

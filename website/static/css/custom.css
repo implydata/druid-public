@@ -31,6 +31,32 @@
 @media only screen and (min-width: 1500px) {
 }
 
+.fixedHeaderContainer header img {
+  position: absolute;
+  top: -4px;
+  height: 42px;
+  margin: 0;
+}
+
+.navigationSlider .slidingNav ul li a {
+  color: #9caeff;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.navigationSlider .slidingNav ul li:last-child a {
+  display: inline-block;
+  height: 32px;
+  line-height: 32px;
+  background: #9caeff;
+  border-radius: 2px;
+  padding: 0 10px;
+  color: #1C1C26;
+  font-weight: 600;
+  min-width: 106px;
+  text-align: center;
+}
+
 pre code {
   max-height: 500px;
 }
@@ -38,3 +64,33 @@ pre code {
 .mainContainer a {
   color: #4460de;
 }
+
+footer.druid-footer {
+  line-height: 1.4em; }
+footer.druid-footer a:hover {
+  color: #4460de; }
+footer.druid-footer .license {
+  margin-top: 12px;
+  font-size: 11px;
+  color: #aaa;
+  line-height: 1.4em; }
+footer.druid-footer .license a:hover {
+  text-decoration: underline; }
+
+footer.druid-footer .license {
+  margin-top: 12px;
+  font-size: 11px;
+  color: #aaa; }
+footer.druid-footer .license a:hover {
+  color: #4460de;
+  text-decoration: underline; }
+
+footer.druid-footer {
+  padding: 32px 0 48px 0;
+  background-color: #f3f3f3;
+  border-top: 1px solid white;
+  margin-top: 50px; }
+footer.druid-footer .fa, .druid-footer .fab, .druid-footer .fas {
+  font-size: 18px;
+  margin: 6px 0;
+  color: #4460de; }

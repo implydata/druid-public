@@ -1,6 +1,7 @@
 ---
 id: tutorial-batch-hadoop
 title: "Tutorial: Load batch data using Apache Hadoop"
+sidebar_label: "Load batch data using Apache Hadoop"
 ---
 
 <!--
@@ -94,7 +95,7 @@ starting yarn daemons
 starting resourcemanager, logging to /usr/local/hadoop/logs/yarn--resourcemanager-druid-hadoop-demo.out
 localhost: starting nodemanager, logging to /usr/local/hadoop/logs/yarn-root-nodemanager-druid-hadoop-demo.out
 starting historyserver, logging to /usr/local/hadoop/logs/mapred--historyserver-druid-hadoop-demo.out
-bash-4.1#  
+bash-4.1#
 ```
 
 The `Unable to load native-hadoop library for your platform... using builtin-java classes where applicable` warning messages can be safely ignored.
@@ -210,7 +211,7 @@ After the data load is complete, please follow the [query tutorial](../tutorials
 
 ## Cleanup
 
-This tutorial is only meant to be used together with the [query tutorial](../tutorials/tutorial-query.md). 
+This tutorial is only meant to be used together with the [query tutorial](../tutorials/tutorial-query.md).
 
 If you wish to go through any of the other tutorials, you will need to:
 * Shut down the cluster and reset the cluster state by removing the contents of the `var` directory under the druid package.

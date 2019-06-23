@@ -1,6 +1,7 @@
 ---
 id: tutorial-retention
 title: "Tutorial: Configuring data retention"
+sidebar_label: "Configuring data retention"
 ---
 
 <!--
@@ -25,8 +26,8 @@ title: "Tutorial: Configuring data retention"
 
 This tutorial demonstrates how to configure retention rules on a datasource to set the time intervals of data that will be retained or dropped.
 
-For this tutorial, we'll assume you've already downloaded Apache Druid (incubating) as described in 
-the [single-machine quickstart](index.html) and have it running on your local machine. 
+For this tutorial, we'll assume you've already downloaded Apache Druid (incubating) as described in
+the [single-machine quickstart](index.html) and have it running on your local machine.
 
 It will also be helpful to have finished [Tutorial: Loading a file](../tutorials/tutorial-batch.md) and [Tutorial: Querying data](../tutorials/tutorial-query.md).
 
@@ -41,14 +42,14 @@ bin/post-index-task --file quickstart/tutorial/retention-index.json --url http:/
 ```
 
 After the ingestion completes, go to [http://localhost:8888/unified-console.html#datasources](http://localhost:8888/unified-console.html#datasources) in a browser to access the Druid Console's datasource view.
- 
+
 This view shows the available datasources and a summary of the retention rules for each datasource:
 
 ![Summary](../assets/tutorial-retention-01.png "Summary")
 
-Currently there are no rules set for the `retention-tutorial` datasource. Note that there are default rules for the cluster: load forever with 2 replicants in `_default_tier`. 
+Currently there are no rules set for the `retention-tutorial` datasource. Note that there are default rules for the cluster: load forever with 2 replicants in `_default_tier`.
 
-This means that all data will be loaded regardless of timestamp, and each segment will be replicated to two Historical processes in the default tier. 
+This means that all data will be loaded regardless of timestamp, and each segment will be replicated to two Historical processes in the default tier.
 
 In this tutorial, we will ignore the tiering and redundancy concepts for now.
 
@@ -68,7 +69,7 @@ A rule configuration window will appear:
 
 ![Rule configuration](../assets/tutorial-retention-03.png "Rule configuration")
 
-Now click the `+ New rule` button twice. 
+Now click the `+ New rule` button twice.
 
 In the upper rule box, select `Load` and `by interval`, and then enter `2015-09-12T12:00:00.000Z/2015-09-13T00:00:00.000Z` in field next to `by interval`. Replicants can remain at 2 in the `_default_tier`.
 
@@ -99,13 +100,13 @@ The resulting retention rule chain is the following:
 
 The rule chain is evaluated from top to bottom, with the default rule chain always added at the bottom.
 
-The tutorial rule chain we just created loads data if it is within the specified 12 hour interval. 
+The tutorial rule chain we just created loads data if it is within the specified 12 hour interval.
 
 If data is not within the 12 hour interval, the rule chain evaluates `dropForever` next, which will drop any data.
 
 The `dropForever` terminates the rule chain, effectively overriding the default `loadForever` rule, which will never be reached in this rule chain.
 
-Note that in this tutorial we defined a load rule on a specific interval. 
+Note that in this tutorial we defined a load rule on a specific interval.
 
 If instead you want to retain data based on how old it is (e.g., retain data that ranges from 3 months in the past to the present time), you would define a Period load rule instead.
 

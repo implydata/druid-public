@@ -1,6 +1,7 @@
 ---
 id: tutorial-ingestion-spec
 title: "Tutorial: Writing an ingestion spec"
+sidebar_label: "Writing an ingestion spec"
 ---
 
 <!--
@@ -25,8 +26,8 @@ title: "Tutorial: Writing an ingestion spec"
 
 This tutorial will guide the reader through the process of defining an ingestion spec, pointing out key considerations and guidelines.
 
-For this tutorial, we'll assume you've already downloaded Apache Druid (incubating) as described in 
-the [single-machine quickstart](index.html) and have it running on your local machine. 
+For this tutorial, we'll assume you've already downloaded Apache Druid (incubating) as described in
+the [single-machine quickstart](index.html) and have it running on your local machine.
 
 It will also be helpful to have finished [Tutorial: Loading a file](../tutorials/tutorial-batch.md), [Tutorial: Querying data](../tutorials/tutorial-query.md), and [Tutorial: Rollup](../tutorials/tutorial-rollup.md).
 
@@ -57,7 +58,7 @@ Suppose we have the following network flow data:
 
 Save the JSON contents above into a file called `ingestion-tutorial-data.json` in `quickstart/`.
 
-Let's walk through the process of defining an ingestion spec that can load this data. 
+Let's walk through the process of defining an ingestion spec that can load this data.
 
 For this tutorial, we will be using the native batch indexing task. When using other task types, some aspects of the ingestion spec will differ, and this tutorial will point out such areas.
 
@@ -107,7 +108,7 @@ Since our input data is represented as JSON strings, we'll use a `string` parser
 
 ### Time column
 
-The `parser` needs to know how to extract the main timestamp field from the input data. When using a `json` type `parseSpec`, the timestamp is defined in a `timestampSpec`. 
+The `parser` needs to know how to extract the main timestamp field from the input data. When using a `json` type `parseSpec`, the timestamp is defined in a `timestampSpec`.
 
 The timestamp column in our input data is named "ts", containing ISO 8601 timestamps, so let's add a `timestampSpec` with that information to the `parseSpec`:
 
@@ -143,7 +144,7 @@ When ingesting data, we must consider whether we wish to use rollup or not.
 
 * If rollup is disabled, then all columns are treated as "dimensions" and no pre-aggregation occurs.
 
-For this tutorial, let's enable rollup. This is specified with a `granularitySpec` on the `dataSchema`. 
+For this tutorial, let's enable rollup. This is specified with a `granularitySpec` on the `dataSchema`.
 
 Note that the `granularitySpec` lies outside of the `parser`. We will revist the `parser` soon when we define our dimensions and metrics.
 
@@ -215,7 +216,7 @@ Each dimension has a `name` and a `type`, where `type` can be "long", "float", "
 Note that `srcIP` is a "string" dimension; for string dimensions, it is enough to specify just a dimension name, since "string" is the default dimension type.
 
 Also note that `protocol` is a numeric value in the input data, but we are ingesting it as a "string" column; Druid will coerce the input longs to strings during ingestion.
- 
+
 ##### Strings vs. Numerics
 
 Should a numeric input be ingested as a numeric dimension or as a string dimension?
@@ -247,7 +248,7 @@ Metrics are specified with a `metricsSpec` inside the `dataSchema`:
           { "name" : "dstPort", "type" : "long" },
           { "name" : "protocol", "type" : "string" }
         ]
-      }   
+      }
     }
   },
   "metricsSpec" : [
@@ -322,7 +323,7 @@ Segment granularity is configured by the `segmentGranularity` property in the `g
           { "name" : "dstPort", "type" : "long" },
           { "name" : "protocol", "type" : "string" }
         ]
-      }      
+      }
     }
   },
   "metricsSpec" : [
@@ -364,7 +365,7 @@ The query granularity is configured by the `queryGranularity` property in the `g
           { "name" : "dstPort", "type" : "long" },
           { "name" : "protocol", "type" : "string" }
         ]
-      }      
+      }
     }
   },
   "metricsSpec" : [
@@ -419,7 +420,7 @@ The interval is also specified in the `granularitySpec`:
           { "name" : "dstPort", "type" : "long" },
           { "name" : "protocol", "type" : "string" }
         ]
-      }      
+      }
     }
   },
   "metricsSpec" : [
@@ -465,8 +466,8 @@ The `dataSchema` is shared across all task types, but each task type has its own
               { "name" : "dstIP", "type" : "string" },
               { "name" : "dstPort", "type" : "long" },
               { "name" : "protocol", "type" : "string" }
-            ]              
-          }      
+            ]
+          }
         }
       },
       "metricsSpec" : [
@@ -525,7 +526,7 @@ Now let's define our input source, which is specified in an `ioConfig` object. E
               { "name" : "dstPort", "type" : "long" },
               { "name" : "protocol", "type" : "string" }
             ]
-          }      
+          }
         }
       },
       "metricsSpec" : [
@@ -595,7 +596,7 @@ We've finished defining the ingestion spec, it should now look like the followin
               { "name" : "dstPort", "type" : "long" },
               { "name" : "protocol", "type" : "string" }
             ]
-          }      
+          }
         }
       },
       "metricsSpec" : [
@@ -657,5 +658,5 @@ dsql> select * from "ingestion-tutorial";
 └──────────────────────────┴───────┴──────┴───────┴─────────┴─────────┴─────────┴──────────┴─────────┴─────────┘
 Retrieved 5 rows in 0.12s.
 
-dsql> 
+dsql>
 ```

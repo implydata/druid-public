@@ -32,7 +32,7 @@ Druid has several process types:
 * [Broker](../design/broker.md)
 * [Historical](../design/historical.md)
 * [MiddleManager](../design/middlemanager.md) and [Peons](../design/peons.md)
-* [Router (Optional)](../development/router.md) 
+* [Router (Optional)](../development/router.md)
 
 ## Server Types
 
@@ -42,7 +42,7 @@ Druid processes can be deployed any way you like, but for ease of deployment we 
 * **Query**
 * **Data**
 
-<img src="../../img/druid-architecture.png" width="800"/>
+<img src="../assets/druid-architecture.png" width="800"/>
 
 This section describes the Druid processes and the suggested Master/Query/Data server organization, as shown in the architecture diagram above.
 
@@ -125,6 +125,6 @@ Please see [Coordinator Configuration: Operation](../configuration/index.html#co
 
 ### Historicals and MiddleManagers
 
-With higher levels of ingestion or query load, it can make sense to deploy the Historical and MiddleManager processes on separate hosts to to avoid CPU and memory contention. 
+With higher levels of ingestion or query load, it can make sense to deploy the Historical and MiddleManager processes on separate hosts to to avoid CPU and memory contention.
 
 The Historical also benefits from having free memory for memory mapped segments, which can be another reason to deploy the Historical and MiddleManager processes separately.

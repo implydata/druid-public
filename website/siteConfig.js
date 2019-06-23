@@ -43,7 +43,7 @@ const siteConfig = {
   ],
 
   /* path to images for header/footer */
-  headerIcon: 'img/favicon.png',
+  headerIcon: 'img/druid_nav.png',
   footerIcon: 'img/favicon.png',
   favicon: 'img/favicon.png',
 

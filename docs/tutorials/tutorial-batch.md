@@ -1,6 +1,7 @@
 ---
 id: tutorial-batch
 title: "Tutorial: Loading a file"
+sidebar_label: "Loading a file"
 ---
 
 <!--
@@ -25,7 +26,7 @@ title: "Tutorial: Loading a file"
 
 This tutorial demonstrates how to perform a batch file load, using Apache Druid (incubating)'s native batch ingestion.
 
-For this tutorial, we'll assume you've already downloaded Druid as described in 
+For this tutorial, we'll assume you've already downloaded Druid as described in
 the [quickstart](index.html) using the `micro-quickstart` single-machine configuration and have it
 running on your local machine. You don't need to have loaded any data yet.
 
@@ -63,7 +64,7 @@ Feel free to play around with different parser options to get a preview of how D
 With the `json` parser selected, click `Next: Parse time` to get to the step centered around determining your primary timestamp column.
 Druid's architecture requires a primary timestamp column (internally stored in a column called `__time`).
 If you do not have a timestamp in your data, select `Constant value`.
-In our example, the data loader will determine that the `time` column in our raw data is the only candidate that can be used as the primary time column. 
+In our example, the data loader will determine that the `time` column in our raw data is the only candidate that can be used as the primary time column.
 
 ![Data loader parse time](../assets/tutorial-batch-data-loader-04.png "Data loader parse time")
 
@@ -83,7 +84,7 @@ Since this is a small dataset, there are no adjustments that need to be made in 
 ![Data loader partition](../assets/tutorial-batch-data-loader-06.png "Data loader partition")
 
 Clicking past the `Tune` step, we get to the publish step, which is where we can specify what the datasource name in Druid.
-Let's name this datasource `wikipedia`.  
+Let's name this datasource `wikipedia`.
 
 ![Data loader publish](../assets/tutorial-batch-data-loader-07.png "Data loader publish")
 
@@ -96,16 +97,16 @@ Similarly, you can also edit the spec directly and see it reflected in the previ
 
 Once you are satisfied with the spec, click `Submit` and an ingestion task will be created.
 
-You will be taken to the task view with the focus on the newly created task. 
+You will be taken to the task view with the focus on the newly created task.
 
 ![Tasks view](../assets/tutorial-batch-data-loader-09.png "Tasks view")
 
 In the tasks view, you can click `Refresh` a couple of times until your ingestion task (hopefully) succeeds.
 
-When a tasks succeeds it means that it built one or more segments that will now be picked up by the data servers.  
+When a tasks succeeds it means that it built one or more segments that will now be picked up by the data servers.
 
 Navigate to the `Datasources` view and click refresh until your datasource (`wikipedia`) appears.
-This can take a few seconds as the segments are being loaded.  
+This can take a few seconds as the segments are being loaded.
 
 ![Datasource view](../assets/tutorial-batch-data-loader-10.png "Datasource view")
 
@@ -196,7 +197,7 @@ From the task view, click on `Submit task` and select `Raw JSON task`.
 
 ![Tasks view add task](../assets/tutorial-batch-submit-task-01.png "Tasks view add task")
 
-This will bring up the spec submission dialog where you can paste the spec above.  
+This will bring up the spec submission dialog where you can paste the spec above.
 
 ![Query view](../assets/tutorial-batch-submit-task-02.png "Query view")
 
@@ -248,7 +249,7 @@ Which will print the ID of the task if the submission was successful:
 {"task":"index_wikipedia_2018-06-09T21:30:32.802Z"}
 ```
 
-You can monitor the status of this task from the console as outlined above. 
+You can monitor the status of this task from the console as outlined above.
 
 
 ## Querying your data

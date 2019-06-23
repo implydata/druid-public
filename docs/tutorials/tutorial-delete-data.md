@@ -1,6 +1,7 @@
 ---
 id: tutorial-delete-data
 title: "Tutorial: Deleting data"
+sidebar_label: "Deleting data"
 ---
 
 <!--
@@ -25,8 +26,8 @@ title: "Tutorial: Deleting data"
 
 This tutorial demonstrates how to delete existing data.
 
-For this tutorial, we'll assume you've already downloaded Apache Druid (incubating) as described in 
-the [single-machine quickstart](index.html) and have it running on your local machine. 
+For this tutorial, we'll assume you've already downloaded Apache Druid (incubating) as described in
+the [single-machine quickstart](index.html) and have it running on your local machine.
 
 ## Load initial data
 

@@ -481,43 +481,55 @@
         "title": "Quickstart"
       },
       "tutorials/tutorial-batch-hadoop": {
-        "title": "Tutorial: Load batch data using Apache Hadoop"
+        "title": "Tutorial: Load batch data using Apache Hadoop",
+        "sidebar_label": "Load batch data using Apache Hadoop"
       },
       "tutorials/tutorial-batch": {
-        "title": "Tutorial: Loading a file"
+        "title": "Tutorial: Loading a file",
+        "sidebar_label": "Loading a file"
       },
       "tutorials/tutorial-compaction": {
-        "title": "Tutorial: Compacting segments"
+        "title": "Tutorial: Compacting segments",
+        "sidebar_label": "Compacting segments"
       },
       "tutorials/tutorial-delete-data": {
-        "title": "Tutorial: Deleting data"
+        "title": "Tutorial: Deleting data",
+        "sidebar_label": "Deleting data"
       },
       "tutorials/tutorial-ingestion-spec": {
-        "title": "Tutorial: Writing an ingestion spec"
+        "title": "Tutorial: Writing an ingestion spec",
+        "sidebar_label": "Writing an ingestion spec"
       },
       "tutorials/tutorial-kafka": {
-        "title": "Tutorial: Load streaming data from Apache Kafka"
+        "title": "Tutorial: Load streaming data from Apache Kafka",
+        "sidebar_label": "Load streaming data from Apache Kafka"
       },
       "tutorials/tutorial-kerberos-hadoop": {
         "title": "Configuring Apache Druid (incubating) to use Kerberized Apache Hadoop as Deep Storage"
       },
       "tutorials/tutorial-query": {
-        "title": "Tutorial: Querying data"
+        "title": "Tutorial: Querying data",
+        "sidebar_label": "Querying data"
       },
       "tutorials/tutorial-retention": {
-        "title": "Tutorial: Configuring data retention"
+        "title": "Tutorial: Configuring data retention",
+        "sidebar_label": "Configuring data retention"
       },
       "tutorials/tutorial-rollup": {
-        "title": "Tutorial: Roll-up"
+        "title": "Tutorial: Roll-up",
+        "sidebar_label": "Roll-up"
       },
       "tutorials/tutorial-tranquility": {
-        "title": "Tutorial: Load streaming data with HTTP push"
+        "title": "Tutorial: Load streaming data with HTTP push",
+        "sidebar_label": "Load streaming data with HTTP push"
       },
       "tutorials/tutorial-transform-spec": {
-        "title": "Tutorial: Transforming input data"
+        "title": "Tutorial: Transforming input data",
+        "sidebar_label": "Transforming input data"
       },
       "tutorials/tutorial-update-data": {
-        "title": "Tutorial: Updating existing data"
+        "title": "Tutorial: Updating existing data",
+        "sidebar_label": "Updating existing data"
       }
     },
     "links": {

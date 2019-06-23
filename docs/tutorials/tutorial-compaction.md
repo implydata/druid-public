@@ -1,6 +1,7 @@
 ---
 id: tutorial-compaction
 title: "Tutorial: Compacting segments"
+sidebar_label: "Compacting segments"
 ---
 
 <!--
@@ -28,8 +29,8 @@ This tutorial demonstrates how to compact existing segments into fewer but large
 Because there is some per-segment memory and processing overhead, it can sometimes be beneficial to reduce the total number of segments.
 Please check [Segment size optimization](../operations/segment-optimization.md) for details.
 
-For this tutorial, we'll assume you've already downloaded Apache Druid (incubating) as described in 
-the [single-machine quickstart](index.html) and have it running on your local machine. 
+For this tutorial, we'll assume you've already downloaded Apache Druid (incubating) as described in
+the [single-machine quickstart](index.html) and have it running on your local machine.
 
 It will also be helpful to have finished [Tutorial: Loading a file](../tutorials/tutorial-batch.md) and [Tutorial: Querying data](../tutorials/tutorial-query.md).
 
@@ -51,7 +52,7 @@ After the ingestion completes, go to [http://localhost:8888/unified-console.html
 ![compaction-tutorial datasource](../assets/tutorial-compaction-01.png "compaction-tutorial datasource")
 
 Click the `51 segments` link next to "Fully Available" for the `compaction-tutorial` datasource to view information about the datasource's segments:
- 
+
 There will be 51 segments for this datasource, 1-3 segments per hour in the input data:
 
 ![Original segments](../assets/tutorial-compaction-02.png "Original segments")
@@ -87,9 +88,9 @@ We have included a compaction task spec for this tutorial datasource at `quickst
 }
 ```
 
-This will compact all segments for the interval `2015-09-12/2015-09-13` in the `compaction-tutorial` datasource. 
+This will compact all segments for the interval `2015-09-12/2015-09-13` in the `compaction-tutorial` datasource.
 
-The parameters in the `tuningConfig` control how many segments will be present in the compacted set of segments. 
+The parameters in the `tuningConfig` control how many segments will be present in the compacted set of segments.
 
 In this tutorial example, only one compacted segment will be created per hour, as each hour has less rows than the 5000000 `maxRowsPerSegment` (note that the total number of rows is 39244).
 

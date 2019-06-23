@@ -1,6 +1,7 @@
 ---
 id: tutorial-tranquility
 title: "Tutorial: Load streaming data with HTTP push"
+sidebar_label: "Load streaming data with HTTP push"
 ---
 
 <!--
@@ -63,7 +64,7 @@ You can check the log file in `var/sv/tranquility-server.log` to confirm that th
 Let's send the sample Wikipedia edits data to Tranquility:
 
 ```bash
-gunzip -k quickstart/tutorial/wikiticker-2015-09-12-sampled.json.gz 
+gunzip -k quickstart/tutorial/wikiticker-2015-09-12-sampled.json.gz
 curl -XPOST -H'Content-Type: application/json' --data-binary @quickstart/tutorial/wikiticker-2015-09-12-sampled.json http://localhost:8200/v1/post/wikipedia
 ```
 

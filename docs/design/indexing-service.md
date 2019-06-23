@@ -23,7 +23,7 @@ title: "Indexing Service"
   -->
 
 
-The Apache Druid (incubating) indexing service is a highly-available, distributed service that runs indexing related tasks. 
+The Apache Druid (incubating) indexing service is a highly-available, distributed service that runs indexing related tasks.
 
 Indexing [tasks](../ingestion/tasks.md) create (and sometimes destroy) Druid [segments](../design/segments.md). The indexing service has a master/slave like architecture.
 
@@ -32,7 +32,7 @@ Overlords and MiddleManagers may run on the same process or across multiple proc
 
 Tasks are managed using API endpoints on the Overlord service. Please see [Overlord Task API](../operations/api-reference.html#overlord-tasks) for more information.
 
-![Indexing Service](../../img/indexing_service.png "Indexing Service")
+![Indexing Service](../assets/indexing_service.png "Indexing Service")
 
 <!--
 Preamble

@@ -1,6 +1,7 @@
 ---
 id: tutorial-kafka
 title: "Tutorial: Load streaming data from Apache Kafka"
+sidebar_label: "Load streaming data from Apache Kafka"
 ---
 
 <!--
@@ -27,7 +28,7 @@ title: "Tutorial: Load streaming data from Apache Kafka"
 
 This tutorial demonstrates how to load data into Apache Druid (incubating) from a Kafka stream, using Druid's Kafka indexing service.
 
-For this tutorial, we'll assume you've already downloaded Druid as described in 
+For this tutorial, we'll assume you've already downloaded Druid as described in
 the [quickstart](index.html) using the `micro-quickstart` single-machine configuration and have it
 running on your local machine. You don't need to have loaded any data yet.
 
