@@ -1,6 +1,6 @@
 ---
 id: kinesis-ingestion
-title: "Amazon Kinesis Indexing Service"
+title: "Amazon Kinesis ingestion"
 ---
 
 <!--

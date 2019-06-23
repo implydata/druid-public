@@ -39,6 +39,7 @@ the [Batch ingestion](../ingestion/hadoop.html#partitioning-specification) docum
 for more information.
 
 ### A segment file's core data structures
+
 Here we describe the internal structure of segment files, which is
 essentially *columnar*: the data for each column is laid out in
 separate data structures. By storing each column separately, Druid can
@@ -143,16 +144,14 @@ the 'column data' is an array of values. Additionally, a row with *n*
 values in 'column data' will have *n* non-zero valued entries in
 bitmaps.
 
-Naming Convention
------------------
+## Naming Convention
 
 Identifiers for segments are typically constructed using the segment datasource, interval start time (in ISO 8601 format), interval end time (in ISO 8601 format), and a version. If data is additionally sharded beyond a time range, the segment identifier will also contain a partition number.
 
 An example segment identifier may be:
 datasource_intervalStart_intervalEnd_version_partitionNum
 
-Segment Components
-------------------
+## Segment Components
 
 Behind the scenes, a segment is comprised of several files, listed below.
 
@@ -174,8 +173,7 @@ Behind the scenes, a segment is comprised of several files, listed below.
 
 In the codebase, segments have an internal format version. The current segment format version is `v9`.
 
-Format of a column
-------------------
+## Format of a column
 
 Each column is stored as two parts:
 
@@ -184,8 +182,7 @@ Each column is stored as two parts:
 
 A ColumnDescriptor is essentially an object that allows us to use jackson’s polymorphic deserialization to add new and interesting methods of serialization with minimal impact to the code. It consists of some metadata about the column (what type is it, is it multi-value, etc.) and then a list of serde logic that can deserialize the rest of the binary.
 
-Sharding Data to Create Segments
---------------------------------
+## Sharding Data to Create Segments
 
 ### Sharding
 
@@ -202,3 +199,60 @@ All 3 segments must be loaded before a query for the interval `2011-01-01T02:00:
 
 The exception to this rule is with using linear shard specs. Linear shard specs do not force 'completeness' and queries can complete even if shards are not loaded in the system.
 For example, if your real-time ingestion creates 3 segments that were sharded with linear shard spec, and only two of the segments were loaded in the system, queries would return results only for those 2 segments.
+
+## Schema changes
+
+## Replacing segments
+
+Druid uniquely 
+identifies segments using the datasource, interval, version, and partition number. The partition number is only visible in the segment id if 
+there are multiple segments created for some granularity of time. For example, if you have hourly segments, but you 
+have more data in an hour than a single segment can hold, you can create multiple segments for the same hour. These segments will share 
+the same datasource, interval, and version, but have linearly increasing partition numbers.
+
+```
+foo_2015-01-01/2015-01-02_v1_0
+foo_2015-01-01/2015-01-02_v1_1
+foo_2015-01-01/2015-01-02_v1_2
+```
+
+In the example segments above, the dataSource = foo, interval = 2015-01-01/2015-01-02, version = v1, partitionNum = 0. 
+If at some later point in time, you reindex the data with a new schema, the newly created segments will have a higher version id.
+
+```
+foo_2015-01-01/2015-01-02_v2_0
+foo_2015-01-01/2015-01-02_v2_1
+foo_2015-01-01/2015-01-02_v2_2
+```
+
+Druid batch indexing (either Hadoop-based or IndexTask-based) guarantees atomic updates on an interval-by-interval basis. 
+In our example, until all `v2` segments for `2015-01-01/2015-01-02` are loaded in a Druid cluster, queries exclusively use `v1` segments. 
+Once all `v2` segments are loaded and queryable, all queries ignore `v1` segments and switch to the `v2` segments. 
+Shortly afterwards, the `v1` segments are unloaded from the cluster.
+
+Note that updates that span multiple segment intervals are only atomic within each interval. They are not atomic across the entire update. 
+For example, you have segments such as the following:
+
+```
+foo_2015-01-01/2015-01-02_v1_0
+foo_2015-01-02/2015-01-03_v1_1
+foo_2015-01-03/2015-01-04_v1_2
+```
+
+`v2` segments will be loaded into the cluster as soon as they are built and replace `v1` segments for the period of time the 
+segments overlap. Before v2 segments are completely loaded, your cluster may have a mixture of `v1` and `v2` segments.
+ 
+```
+foo_2015-01-01/2015-01-02_v1_0
+foo_2015-01-02/2015-01-03_v2_1
+foo_2015-01-03/2015-01-04_v1_2
+``` 
+ 
+In this case, queries may hit a mixture of `v1` and `v2` segments.
+
+## Different schemas among segments
+
+Druid segments for the same datasource may have different schemas. If a string column (dimension) exists in one segment but not 
+another, queries that involve both segments still work. Queries for the segment missing the dimension will behave as if the dimension has only null values. 
+Similarly, if one segment has a numeric column (metric) but another does not, queries on the segment missing the 
+metric will generally "do the right thing". Aggregations over this missing metric behave as if the metric were missing.

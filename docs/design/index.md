@@ -1,6 +1,6 @@
 ---
 id: index
-title: "Apache Druid (incubating) Design"
+title: "Introduction to Apache Druid"
 ---
 
 <!--
@@ -21,7 +21,6 @@ title: "Apache Druid (incubating) Design"
   ~ specific language governing permissions and limitations
   ~ under the License.
   -->
-
 
 ## What is Druid?
 

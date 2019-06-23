@@ -1,6 +1,6 @@
 ---
 id: kafka-ingestion
-title: "Apache Kafka Indexing Service"
+title: "Apache Kafka ingestion"
 ---
 
 <!--

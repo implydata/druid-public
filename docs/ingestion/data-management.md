@@ -1,6 +1,6 @@
 ---
 id: data-management
-title: "Ingestion"
+title: "Data management"
 ---
 
 <!--
@@ -30,6 +30,10 @@ title: "Ingestion"
 
 
 ## Compaction and reindexing
+
+Compaction is a type of overwrite operation, which reads an existing set of segments, combines them into a new set with larger but fewer segments, and overwrites the original set with the new compacted set, without changing the data that is stored.
+
+For performance reasons, it is sometimes beneficial to compact a set of segments into a set of larger but fewer segments, as there is some per-segment processing and memory overhead in both the ingestion and querying paths.
 
 Compaction tasks merge all segments of the given interval. The syntax is:
 
@@ -100,7 +104,11 @@ You can check that your segments are rolled up or not by using [Segment Metadata
 
 ## Adding new data
 
+Druid can insert new data to an existing datasource by appending new segments to existing segment sets. It can also add new data by merging an existing set of segments with new data and overwriting the original set. 
 
+Druid does not support single-record updates by primary key.
+
+Updates are described further at [update existing data](../ingestion/update-existing-data.md).
 
 ## Updating existing data
 
@@ -243,9 +251,13 @@ can be used to read data from segments inside Druid. Note that IndexTask is to b
 it has to do all processing inside a single process and can't scale. Please use Hadoop batch ingestion for production 
 scenarios dealing with more than 1GB of data.
 
-
-
 ## Deleting data
+
+Druid supports permanent deletion of segments that are in an "unused" state (see the [Segment states](#segment-states) section above).
+
+The Kill Task deletes unused segments within a specified interval from metadata storage and deep storage.
+
+For more information, please see [Kill Task](../ingestion/tasks.html#kill-task).
 
 Permanent deletion of a segment in Apache Druid (incubating) has two steps:
 
@@ -272,6 +284,12 @@ Kill tasks delete all information about a segment and removes it from deep stora
 }
 ```
 
-
-
 ## Retention
+
+Druid supports retention rules, which are used to define intervals of time where data should be preserved, and intervals where data should be discarded.
+
+Druid also supports separating Historical processes into tiers, and the retention rules can be configured to assign data for specific intervals to specific tiers.
+
+These features are useful for performance/cost management; a common use case is separating Historical processes into a "hot" tier and a "cold" tier.
+
+For more information, please see [Load rules](../operations/rule-configuration.md).

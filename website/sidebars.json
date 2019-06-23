@@ -3,6 +3,10 @@
     "Getting started": [
       "design/index",
       "tutorials/index",
+      "operations/single-server",
+      "tutorials/cluster"
+    ],
+    "Tutorials": [
       "tutorials/tutorial-batch",
       "tutorials/tutorial-kafka",
       "tutorials/tutorial-batch-hadoop",
@@ -14,41 +18,34 @@
       "tutorials/tutorial-compaction",
       "tutorials/tutorial-delete-data",
       "tutorials/tutorial-ingestion-spec",
-      "tutorials/tutorial-transform-spec",
-      "tutorials/cluster",
-      "operations/single-server",
-      "tutorials/cluster"
+      "tutorials/tutorial-transform-spec"
     ],
     "Data ingestion and management": [
-      "ingestion-new/index",
-      "ingestion-new/data-formats",
-      "ingestion-new/schema-design",
-      "ingestion-new/data-management",
-      "ingestion-new/native-batch",
-      "ingestion-new/hadoop",
+      "ingestion/index",
+      "ingestion/data-formats",
+      "ingestion/schema-design",
+      "ingestion/data-management",
+      "ingestion/native-batch",
+      "ingestion/hadoop",
       "development/extensions-core/kafka-ingestion",
       "development/extensions-core/kinesis-ingestion",
-      "ingestion-new/tranquility",
-      "ingestion-new/tasks"
+      "ingestion/tranquility",
+      "ingestion/tasks",
+      "ingestion/supervisors",
+      "ingestion/faq"
     ],
     "Querying": [
       "querying/sql",
       "querying/querying",
-      {
-        "type": "subcategory",
-        "label": "Native query types",
-        "ids": [
-          "querying/timeseriesquery",
-          "querying/topnquery",
-          "querying/groupbyquery",
-          "querying/timeboundaryquery",
-          "querying/segmentmetadataquery",
-          "querying/datasourcemetadataquery",
-          "querying/searchquery",
-          "querying/scan-query",
-          "querying/select-query"
-        ]
-      },
+      "querying/timeseriesquery",
+      "querying/topnquery",
+      "querying/groupbyquery",
+      "querying/timeboundaryquery",
+      "querying/segmentmetadataquery",
+      "querying/datasourcemetadataquery",
+      "querying/searchquery",
+      "querying/scan-query",
+      "querying/select-query",
       "querying/multi-value-dimensions",
       "querying/lookups",
       "querying/joins",
@@ -57,7 +54,7 @@
       "development/geo"
     ],
     "Design": [
-      "design/index",
+      "design/architecture",
       "design/segments",
       "design/processes",
       "dependencies/deep-storage",
@@ -65,7 +62,6 @@
       "dependencies/zookeeper"
     ],
     "Configuration": [
-      "configuration/index",
       "configuration/index",
       "configuration/logging"
     ],
@@ -82,7 +78,6 @@
       "operations/api-reference",
       "operations/basic-cluster-tuning",
       "operations/recommendations",
-      "configuration/index",
       "operations/dump-segment",
       "operations/insert-segment-to-db",
       "operations/pull-deps",

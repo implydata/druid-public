@@ -1,6 +1,6 @@
 ---
 id: index
-title: "Apache Druid (incubating) Single-Server Quickstart"
+title: "Quickstart"
 ---
 
 <!--

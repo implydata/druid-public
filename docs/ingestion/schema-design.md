@@ -1,6 +1,6 @@
 ---
 id: schema-design
-title: "Schema Design"
+title: "Schema design tips"
 ---
 
 <!--

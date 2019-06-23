@@ -1,6 +1,6 @@
 ---
 id: data-formats
-title: "Data Formats for Ingestion"
+title: "Data formats"
 ---
 
 <!--
@@ -21,6 +21,7 @@ title: "Data Formats for Ingestion"
   ~ specific language governing permissions and limitations
   ~ under the License.
   -->
+
 
 
 Apache Druid (incubating) can ingest denormalized data in JSON, CSV, or a delimited form such as TSV, or any custom format. While most examples in the documentation use data in JSON format, it is not difficult to configure Druid to ingest any other delimited data.
@@ -55,11 +56,11 @@ _CSV_
 _TSV (Delimited)_
 
 ```
-2013-08-31T01:02:33Z	"Gypsy Danger"	"en"	"nuclear"	"true"	"true"	"false"	"false"	"article"	"North America"	"United States"	"Bay Area"	"San Francisco"	57	200	-143
-2013-08-31T03:32:45Z	"Striker Eureka"	"en"	"speed"	"false"	"true"	"true"	"false"	"wikipedia"	"Australia"	"Australia"	"Cantebury"	"Syndey"	459	129	330
-2013-08-31T07:11:21Z	"Cherno Alpha"	"ru"	"masterYi"	"false"	"true"	"true"	"false"	"article"	"Asia"	"Russia"	"Oblast"	"Moscow"	123	12	111
-2013-08-31T11:58:39Z	"Crimson Typhoon"	"zh"	"triplets"	"true"	"false"	"true"	"false"	"wikipedia"	"Asia"	"China"	"Shanxi"	"Taiyuan"	905	5	900
-2013-08-31T12:41:27Z	"Coyote Tango"	"ja"	"cancer"	"true"	"false"	"true"	"false"	"wikipedia"	"Asia"	"Japan"	"Kanto"	"Tokyo"	1	10	-9
+2013-08-31T01:02:33Z  "Gypsy Danger"  "en"  "nuclear" "true"  "true"  "false" "false" "article" "North America" "United States" "Bay Area"  "San Francisco" 57  200 -143
+2013-08-31T03:32:45Z  "Striker Eureka"  "en"  "speed" "false" "true"  "true"  "false" "wikipedia" "Australia" "Australia" "Cantebury" "Syndey"  459 129 330
+2013-08-31T07:11:21Z  "Cherno Alpha"  "ru"  "masterYi"  "false" "true"  "true"  "false" "article" "Asia"  "Russia"  "Oblast"  "Moscow"  123 12  111
+2013-08-31T11:58:39Z  "Crimson Typhoon" "zh"  "triplets"  "true"  "false" "true"  "false" "wikipedia" "Asia"  "China" "Shanxi"  "Taiyuan" 905 5 900
+2013-08-31T12:41:27Z  "Coyote Tango"  "ja"  "cancer"  "true"  "false" "true"  "false" "wikipedia" "Asia"  "Japan" "Kanto" "Tokyo" 1 10  -9
 ```
 
 Note that the CSV and TSV data do not contain column heads. This becomes important when you specify the data for ingesting.
@@ -200,3 +201,84 @@ This means any flattening or parsing multi-dimensional values must be done here.
 Dimensions can have multiple values for TSV and CSV data. To specify the delimiter for a multi-value dimension, set the `listDelimiter` in the `parseSpec`.
 
 JSON data can contain multi-value dimensions as well. The multiple values for a dimension must be formatted as a JSON array in the ingested data. No additional `parseSpec` configuration is needed.
+
+## Parser
+
+If `type` is not included, the parser defaults to `string`. For additional data formats, please see our [extensions list](../development/extensions.md).
+
+### String Parser
+
+| Field | Type | Description | Required |
+|-------|------|-------------|----------|
+| type | String | This should say `string` in general, or `hadoopyString` when used in a Hadoop indexing job. | no |
+| parseSpec | JSON Object | Specifies the format, timestamp, and dimensions of the data. | yes |
+
+### ParseSpec
+
+ParseSpecs serve two purposes:
+
+- The String Parser use them to determine the format (i.e. JSON, CSV, TSV) of incoming rows.
+- All Parsers use them to determine the timestamp and dimensions of incoming rows.
+
+If `format` is not included, the parseSpec defaults to `tsv`.
+
+#### JSON ParseSpec
+
+Use this with the String Parser to load JSON.
+
+| Field | Type | Description | Required |
+|-------|------|-------------|----------|
+| format | String | This should say `json`. | no |
+| timestampSpec | JSON Object | Specifies the column and format of the timestamp. | yes |
+| dimensionsSpec | JSON Object | Specifies the dimensions of the data. | yes |
+| flattenSpec | JSON Object | Specifies flattening configuration for nested JSON data. See [Flattening JSON](./flatten-json.md) for more info. | no |
+
+#### JSON Lowercase ParseSpec
+
+> The _jsonLowercase_ parser is deprecated and may be removed in a future version of Druid.
+
+This is a special variation of the JSON ParseSpec that lower cases all the column names in the incoming JSON data. This parseSpec is required if you are updating to Druid 0.7.x from Druid 0.6.x, are directly ingesting JSON with mixed case column names, do not have any ETL in place to lower case those column names, and would like to make queries that include the data you created using 0.6.x and 0.7.x.
+
+| Field | Type | Description | Required |
+|-------|------|-------------|----------|
+| format | String | This should say `jsonLowercase`. | yes |
+| timestampSpec | JSON Object | Specifies the column and format of the timestamp. | yes |
+| dimensionsSpec | JSON Object | Specifies the dimensions of the data. | yes |
+
+#### CSV ParseSpec
+
+Use this with the String Parser to load CSV. Strings are parsed using the com.opencsv library.
+
+| Field | Type | Description | Required |
+|-------|------|-------------|----------|
+| format | String | This should say `csv`. | yes |
+| timestampSpec | JSON Object | Specifies the column and format of the timestamp. | yes |
+| dimensionsSpec | JSON Object | Specifies the dimensions of the data. | yes |
+| listDelimiter | String | A custom delimiter for multi-value dimensions. | no (default == ctrl+A) |
+| columns | JSON array | Specifies the columns of the data. | yes |
+
+#### TSV / Delimited ParseSpec
+
+Use this with the String Parser to load any delimited text that does not require special escaping. By default,
+the delimiter is a tab, so this will load TSV.
+
+| Field | Type | Description | Required |
+|-------|------|-------------|----------|
+| format | String | This should say `tsv`. | yes |
+| timestampSpec | JSON Object | Specifies the column and format of the timestamp. | yes |
+| dimensionsSpec | JSON Object | Specifies the dimensions of the data. | yes |
+| delimiter | String | A custom delimiter for data values. | no (default == \t) |
+| listDelimiter | String | A custom delimiter for multi-value dimensions. | no (default == ctrl+A) |
+| columns | JSON String array | Specifies the columns of the data. | yes |
+
+#### TimeAndDims ParseSpec
+
+Use this with non-String Parsers to provide them with timestamp and dimensions information. Non-String Parsers
+handle all formatting decisions on their own, without using the ParseSpec.
+
+| Field | Type | Description | Required |
+|-------|------|-------------|----------|
+| format | String | This should say `timeAndDims`. | yes |
+| timestampSpec | JSON Object | Specifies the column and format of the timestamp. | yes |
+| dimensionsSpec | JSON Object | Specifies the dimensions of the data. | yes |
+

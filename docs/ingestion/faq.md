@@ -1,6 +1,7 @@
 ---
 id: faq
-title: "Apache Druid (incubating) FAQ"
+title: "Ingestion troubleshooting FAQ"
+sidebar_label: "Troubleshooting FAQ"
 ---
 
 <!--
@@ -26,9 +27,10 @@ title: "Apache Druid (incubating) FAQ"
 ### Realtime Ingestion
 
 The most common cause of this is because events being ingested are out of band of Druid's `windowPeriod`. Druid realtime ingestion 
-only accepts events within a configurable windowPeriod of the current time. You can verify this is what is happening by looking at the logs of your real-time process for log lines containing "ingest/events/*". These metrics will indicate the events ingested, rejected, etc. 
+only accepts events within a configurable windowPeriod of the current time. You can verify this is what is happening by looking at the logs of your real-time process for log lines containing `ingest/events/*`. These metrics will indicate the events ingested, rejected, etc.
+
 We recommend using batch ingestion methods for historical data in production. 
- 
+
 ### Batch Ingestion
  
 If you are trying to batch load historical data but no events are being loaded, make sure the interval of your ingestion spec actually encapsulates the interval of your data. Events outside this interval are dropped. 

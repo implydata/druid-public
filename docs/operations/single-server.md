@@ -1,6 +1,6 @@
 ---
 id: single-server
-title: "Single Server Deployments"
+title: "Single server deployment"
 ---
 
 <!--
