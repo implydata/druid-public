@@ -34,3 +34,7 @@
 pre code {
   max-height: 500px;
 }
+
+.mainContainer a {
+  color: #4460de;
+}
