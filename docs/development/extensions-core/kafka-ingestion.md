@@ -1,6 +1,7 @@
 ---
 id: kafka-ingestion
 title: "Apache Kafka ingestion"
+sidebar_label: "Apache Kafka"
 ---
 
 <!--

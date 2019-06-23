@@ -41,6 +41,8 @@ The table below lists Druid's most common data ingestion methods, along with com
 the best one for your situation. Each ingestion method supports its own set of data sources. For details about how
 each method works, as well as configuration properties specific to that method, check out its documentation page.
 
+### Streaming
+
 |Method|Task or supervisor?|How it works|Query data immediately (real-time)?|Supported by data loader in [web console](../operations/druid-console.md)?|
 |------|-------------------|------------|-----------------------------------|----------------------------------------------------------------------------|
 |[Native batch](native-batch.html)|Task type `index` or `index_parallel`|Druid loads data directly from S3, HTTP, NFS, or other networked storage.|No|Yes|
@@ -50,23 +52,25 @@ each method works, as well as configuration properties specific to that method, 
 
 When loading from Kafka or Kinesis, you should use the appropriate supervisor-based indexing service.
 
+TODO(gianm): Something about tranquility; mention it but generally downplay and link offsite
+
+### Batch
+
 When doing batch loads from files, you should use one-time tasks, and you have three options: `index` (native batch,
 single-task), `index_parallel` (native batch, parallel), or `index_hadoop` (Hadoop-based). The following table compares
 and contrasts the three batch ingestion options.
 
-|   |index_hadoop|index_parallel|index|
+|   |Task type `index_hadoop`|Task type `index_parallel`|Task type `index`|
 |---|------------|--------------|-----|
-| Category | Hadoop-based | Native batch | Native batch |
-| Parallel indexing | Always parallel | Parallel if firehose is splittable | No |
-| Supported indexing modes | Overwrite | Append or overwrite | Append or overwrite |
-| External dependencies | Hadoop (it internally submits Map/Reduce jobs) | None | None |
-| Supported [rollup modes](#rollup) | Perfect rollup | Best-effort rollup | Both perfect and best-effort rollup |
-| Supported partitioning methods | [Both Hash-based and range partitioning](hadoop.html#partitioning-specification) | N/A | Hash-based partitioning (when `forceGuaranteedRollup` = true) |
-| Supported input locations | All locations accessible via HDFS client or Druid dataSource | All implemented [firehoses](./firehose.md) | All implemented [firehoses](./firehose.md) |
-| Supported file formats | All implemented Hadoop InputFormats | Currently text file formats (CSV, TSV, JSON) by default. Additional formats can be added though a [custom extension](../development/modules.md) implementing [`FiniteFirehoseFactory`](https://github.com/apache/incubator-druid/blob/master/core/src/main/java/org/apache/druid/data/input/FiniteFirehoseFactory.java) | Currently text file formats (CSV, TSV, JSON) by default. Additional formats can be added though a [custom extension](../development/modules.md) implementing [`FiniteFirehoseFactory`](https://github.com/apache/incubator-druid/blob/master/core/src/main/java/org/apache/druid/data/input/FiniteFirehoseFactory.java) |
-| Saving parse exceptions in ingestion report | Currently not supported | Currently not supported | Supported |
-
-TODO(gianm): Something about tranquility; mention it but generally downplay and link offsite
+| **Category** | [Hadoop-based](hadoop.html) | [Native batch](native-batch.html) | [Native batch](native-batch.html) |
+| **Parallel?** | Always parallel | Parallel if firehose is splittable | No |
+| **Append or overwrite?** | Overwrite only | Both supported | Both supported |
+| **External dependencies** | Hadoop (it internally submits Map/Reduce jobs) | None | None |
+| **Supported input locations** | Any Hadoop filesystem or Druid dataSource | Any [firehose](native-batch.md#firehoses) | Any [firehose](native-batch.md#firehoses) |
+| **Supported file formats** | Any Hadoop InputFormat | Currently text file formats (CSV, TSV, JSON) by default. Additional formats can be added though a [custom extension](../development/modules.md) implementing [`FiniteFirehoseFactory`](https://github.com/apache/incubator-druid/blob/master/core/src/main/java/org/apache/druid/data/input/FiniteFirehoseFactory.java) | Currently text file formats (CSV, TSV, JSON) by default. Additional formats can be added though a [custom extension](../development/modules.md) implementing [`FiniteFirehoseFactory`](https://github.com/apache/incubator-druid/blob/master/core/src/main/java/org/apache/druid/data/input/FiniteFirehoseFactory.java) |
+| **Supported [rollup modes](#rollup)** | Perfect rollup | Best-effort rollup | Both perfect and best-effort rollup |
+| **Supported partitioning methods** | [Hash-based or range partitioning](hadoop.html#partitioning-specification) | N/A | Hash-based partitioning (when `forceGuaranteedRollup` = true) |
+| **Saving parse exceptions in ingestion report** | Currently not supported | Currently not supported | Supported |
 
 ## Primary timestamp
 
@@ -241,9 +245,8 @@ Ingestion specs consists of three main components:
 - `tuningConfig`, which controls various tuning parameters. For more information, see the [tuning](#tuning) and
   [partitioning](#partitioning) sections on this page.
 
-<details>
-<summary>Example ingestion spec for task type "index" (native batch)</summary>
-<code>
+Example ingestion spec for task type "index" (native batch):
+
 ```
 {
   "type": "index",
@@ -304,8 +307,6 @@ Ingestion specs consists of three main components:
   }
 }
 ```
-</code>
-</details>
 
 The specific options supported by these sections will depend on the [ingestion method](#connect) you have chosen.
 For more examples, refer to the documentation for each ingestion method.

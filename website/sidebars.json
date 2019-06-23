@@ -25,11 +25,17 @@
       "ingestion/data-formats",
       "ingestion/schema-design",
       "ingestion/data-management",
-      "ingestion/native-batch",
-      "ingestion/hadoop",
-      "development/extensions-core/kafka-ingestion",
-      "development/extensions-core/kinesis-ingestion",
-      "ingestion/tranquility",
+      {
+        "type": "subcategory",
+        "label": "Ingestion methods",
+        "ids": [
+          "ingestion/native-batch",
+          "ingestion/hadoop",
+          "development/extensions-core/kafka-ingestion",
+          "development/extensions-core/kinesis-ingestion",
+          "ingestion/tranquility"
+        ]
+      },
       "ingestion/tasks",
       "ingestion/supervisors",
       "ingestion/faq"

@@ -1,6 +1,7 @@
 ---
 id: native-batch
 title: "Native batch ingestion"
+sidebar_label: "Native batch"
 ---
 
 <!--

@@ -1,6 +1,7 @@
 ---
 id: kinesis-ingestion
 title: "Amazon Kinesis ingestion"
+sidebar_label: "Amazon Kinesis"
 ---
 
 <!--

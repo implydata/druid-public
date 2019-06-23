@@ -207,10 +207,12 @@
         "title": "Apache Kafka Lookups"
       },
       "development/extensions-core/kafka-ingestion": {
-        "title": "Apache Kafka ingestion"
+        "title": "Apache Kafka ingestion",
+        "sidebar_label": "Apache Kafka"
       },
       "development/extensions-core/kinesis-ingestion": {
-        "title": "Amazon Kinesis ingestion"
+        "title": "Amazon Kinesis ingestion",
+        "sidebar_label": "Amazon Kinesis"
       },
       "development/extensions-core/lookups-cached-global": {
         "title": "Globally Cached Lookups"
@@ -277,13 +279,15 @@
         "sidebar_label": "Troubleshooting FAQ"
       },
       "ingestion/hadoop": {
-        "title": "Hadoop-based ingestion"
+        "title": "Hadoop-based ingestion",
+        "sidebar_label": "Hadoop-based"
       },
       "ingestion/index": {
         "title": "Ingestion"
       },
       "ingestion/native-batch": {
-        "title": "Native batch ingestion"
+        "title": "Native batch ingestion",
+        "sidebar_label": "Native batch"
       },
       "ingestion/realtime-node": {
         "title": "Stream Pull Ingestion"
