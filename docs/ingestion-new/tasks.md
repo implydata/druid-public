@@ -23,11 +23,11 @@ title: "Task reference"
   -->
 
 
-<a name="types"></a>
+
 
 ## Task types
 
-<a name="locking"></a>
+
 
 ## Task locking and priority
 
@@ -84,7 +84,7 @@ parameters apply to all task types.
 > When a task acquires a lock, it sends a request via HTTP and awaits until it receives a response containing the lock acquisition result.
 > As a result, an HTTP timeout error can occur if `taskLockTimeout` is greater than `druid.server.http.maxIdleTime` of Overlords.
 
-<a name="reports"></a>
+
 
 ## Task reports
 

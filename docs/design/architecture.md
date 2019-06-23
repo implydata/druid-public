@@ -86,7 +86,7 @@ The following diagram shows how queries and data flow through this architecture,
 
 <img src="../../img/druid-architecture.png" width="800"/>
 
-<a name="storage"></a>
+
 
 ## Storage design
 

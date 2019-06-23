@@ -25,18 +25,6 @@ title: "Apache Druid (incubating) API Reference"
 
 This page documents all of the API endpoints for each Druid service type.
 
-## Table of Contents
-  * [Common](#common)
-  * [Master Server](#master-server)
-    * [Coordinator](#coordinator)
-    * [Overlord](#overlord)
-  * [Data Server](#data-server)
-    * [MiddleManager](#middlemanager)
-    * [Peon](#peon)
-    * [Historical](#historical)
-  * [Query Server](#query-server)
-    * [Broker](#broker)
-
 ## Common
 
 The following endpoints are supported by all processes.
@@ -254,7 +242,7 @@ JSON Request Payload:
 |`interval`|The interval for which to mark segments unused|"2015-09-12T03:00:00.000Z/2015-09-12T05:00:00.000Z"|
 |`segmentIds`|Set of segment Ids to be marked unused|["segmentId1", "segmentId2"]|
 
-##### DELETE<a name="coordinator-delete"></a>
+##### DELETE
 
 * `/druid/coordinator/v1/datasources/{dataSourceName}`
 
@@ -411,7 +399,7 @@ This returns a JSON object with field "leader", either true or false. In additio
 server is the current leader and HTTP 404 if not. This is suitable for use as a load balancer status check if you
 only want the active leader to be considered in-service at the load balancer.
 
-#### Tasks<a name="overlord-tasks"></a> 
+#### Tasks 
 
 Note that all _interval_ URL parameters are ISO 8601 strings delimited by a `_` instead of a `/`
 (e.g., 2016-06-27_2016-06-28).

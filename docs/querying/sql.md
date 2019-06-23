@@ -103,7 +103,7 @@ query will run separately, back to back (not in parallel). Druid does not curren
 Add "EXPLAIN PLAN FOR" to the beginning of any query to see how it would be run as a native Druid query. In this case,
 the query will not actually be executed.
 
-<a name="functions"></a>
+
 
 ## Built-in functions
 
@@ -297,7 +297,7 @@ Additionally, some Druid features are not supported by the SQL language. Some un
 - [Spatial filters](../development/geo.md).
 - [Query cancellation](querying.html#query-cancellation).
 
-<a name="types"></a>
+
 
 ## Data types and casts
 
@@ -404,7 +404,7 @@ either through query context or through Broker configuration.
 - The APPROX_COUNT_DISTINCT and APPROX_QUANTILE aggregation functions always use approximate algorithms, regardless
 of configuration.
 
-<a name="client"></a>
+
 
 ## Client APIs
 
@@ -543,7 +543,7 @@ Connection context can be specified as JDBC connection properties or as a "conte
 |`useApproximateCountDistinct`|Whether to use an approximate cardinalty algorithm for `COUNT(DISTINCT foo)`.|druid.sql.planner.useApproximateCountDistinct on the Broker (default: true)|
 |`useApproximateTopN`|Whether to use approximate [TopN queries](topnquery.html) when a SQL query could be expressed as such. If false, exact [GroupBy queries](groupbyquery.html) will be used instead.|druid.sql.planner.useApproximateTopN on the Broker (default: true)|
 
-<a name="metadata"></a>
+
 
 ## Metadata tables
 

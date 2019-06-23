@@ -25,7 +25,7 @@ title: "Ingestion"
 
 ## Overview
 
-<a name="datasources"></a>
+
 
 ### Datasources and segments
 

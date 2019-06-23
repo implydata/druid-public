@@ -34,7 +34,7 @@ in [deep storage](../dependencies/deep-storage.md), they will be loaded by Histo
 how this works under the hood, see the [Storage design](../design/index.html#storage) section of Druid's design
 documentation.
 
-<a name="connect"></a>
+
 
 ## Ingestion methods
 
@@ -69,7 +69,7 @@ and contrasts the three batch ingestion options.
 
 TODO(gianm): Something about tranquility; mention it but generally downplay and link offsite
 
-<a name="spec"></a>
+
 
 ## Ingestion specs
 
@@ -158,13 +158,13 @@ You can also load data visually, without the need to write an ingestion spec, us
 available in Druid's [web console](../operations/druid-console.md). Currently, Druid's visual data loader only
 supports [native batch](native-batch.html) mode. We intend to expand it to support more ingestion methods in the future.
 
-<a name="parse"></a>
+
 
 ## Parser
 
 The `parser` is part of the `dataSchema` section of the ingestion spec.
 
-<a name="timestamp"></a>
+
 
 ## Primary timestamp
 
@@ -219,7 +219,7 @@ The `granularitySpec` has five possible parameters:
 |intervals||null|
 |type||uniform|
 
-<a name="transform"></a>
+
 
 ## Transforms and filters
 
@@ -279,11 +279,11 @@ The `filter` conditionally filters input rows during ingestion. Only rows that p
 ingested. Any of Druid's standard [query filters](../querying/filters.md) can be used. Note that within a
 `transformSpec`, the `transforms` are applied before the `filter`, so the filter can refer to a transform.
 
-<a name="schema"></a>
+
 
 ## Schema
 
-<a name="tune"></a>
+
 
 ## Tuning
 
@@ -333,7 +333,7 @@ ingestion method (below) for details.
 |[Kafka indexing service](../development/extensions-core/kafka-ingestion.md)|[Kafka tuning](../development/extensions-core/kafka-ingestion.html#tuning)|
 |[Kinesis indexing service](../development/extensions-core/kinesis-ingestion.md)|[Kinesis tuning](../development/extensions-core/kinesis-ingestion.html#tuning)|
 
-<a name="partitioning"></a>
+
 
 ## Partitioning
 

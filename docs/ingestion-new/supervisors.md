@@ -23,26 +23,26 @@ title: "Supervisor reference"
   -->
 
 
-<a name="types"></a>
+
 
 ## Supervisor types
 
-<a name="deploy"></a>
+
 
 ## Deploying supervisors
 
-<a name="reports"></a>
+
 
 ## Status reports
 
-<a name="suspend-resume"></a>
+
 
 ## Suspending and resuming
 
-<a name="reset"></a>
+
 
 ## Resetting
 
-<a name="terminate"></a>
+
 
 ## Terminating

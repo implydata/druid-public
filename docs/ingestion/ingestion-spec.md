@@ -202,7 +202,7 @@ handle all formatting decisions on their own, without using the ParseSpec.
 
 MOVED to ingestion/index.html
 
-<a name="dimensions"></a>
+
 
 ### DimensionsSpec
 

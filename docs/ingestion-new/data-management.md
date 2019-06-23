@@ -23,11 +23,11 @@ title: "Ingestion"
   -->
 
 
-<a name="schema-changes"></a>
+
 
 ## Schema changes
 
-<a name="reindexing"></a>
+
 
 ## Compaction and reindexing
 
@@ -96,11 +96,11 @@ your own ordering and types, you can specify a custom `dimensionsSpec` in the co
 See [Roll-up](../ingestion/index.html#rollup) for more details. 
 You can check that your segments are rolled up or not by using [Segment Metadata Queries](../querying/segmentmetadataquery.html#analysistypes).
 
-<a name="append"></a>
+
 
 ## Adding new data
 
-<a name="updating"></a>
+
 
 ## Updating existing data
 
@@ -243,7 +243,7 @@ can be used to read data from segments inside Druid. Note that IndexTask is to b
 it has to do all processing inside a single process and can't scale. Please use Hadoop batch ingestion for production 
 scenarios dealing with more than 1GB of data.
 
-<a name="deleting"></a>
+
 
 ## Deleting data
 
@@ -272,6 +272,6 @@ Kill tasks delete all information about a segment and removes it from deep stora
 }
 ```
 
-<a name="retention"></a>
+
 
 ## Retention

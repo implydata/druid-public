@@ -243,7 +243,7 @@ For Roaring bitmaps:
 |type|String|Must be `roaring`.|yes|
 |compressRunOnSerialization|Boolean|Use a run-length encoding where it is estimated as more space efficient.|no (default == `true`)|
 
-<a name="partitions-spec"></a>
+
 
 ## Partitioning specification
 
