@@ -756,7 +756,7 @@ To view last <n> entries of the audit history of Coordinator dynamic config issu
 http://<COORDINATOR_IP>:<PORT>/druid/coordinator/v1/config/history?count=<n>
 ```
 
-##### Lookups Dynamic Configuration (EXPERIMENTAL)<a id="lookups-dynamic-configuration"></a>
+##### Lookups Dynamic Configuration (EXPERIMENTAL)
 These configuration options control the behavior of the Lookup dynamic configuration described in the [lookups page](../querying/lookups.md)
 
 |Property|Description|Default|
@@ -991,7 +991,7 @@ middleManagers up to capacity simultaneously, rather than a single middleManager
 |`type`|`fillCapacity`.|required; must be `fillCapacity`|
 |`affinityConfig`|[Affinity config](#affinity) object|null (no affinity)|
 
-###### Javascript<a id="javascript-worker-select-strategy"></a>
+###### Javascript
 
 Allows defining arbitrary logic for selecting workers to run task using a JavaScript function.
 The function is passed remoteTaskRunnerConfig, map of workerId to available workers and task to be executed and returns the workerId on which the task should be run or null if the task cannot be run.

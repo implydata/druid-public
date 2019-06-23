@@ -23,7 +23,7 @@ title: "Apache Druid (incubating) Design"
   -->
 
 
-## What is Druid?<a id="what-is-druid"></a>
+## What is Druid?
 
 Apache Druid (incubating) is a real-time analytics database designed for fast slice-and-dice analytics
 ("[OLAP](http://en.wikipedia.org/wiki/Online_analytical_processing)" queries) on large data sets. Druid is most often
@@ -75,7 +75,7 @@ offers exact count-distinct and exact ranking.
 10. **Automatic summarization at ingest time.** Druid optionally supports data summarization at ingestion time. This
 summarization partially pre-aggregates your data, and can lead to big costs savings and performance boosts.
 
-## Who uses Druid?<a id="who"></a>
+## Who uses Druid?
 
 TODO(gianm): Cool stuff here such as the following links
 
@@ -83,7 +83,7 @@ TODO(gianm): Cool stuff here such as the following links
 - https://yahooeng.tumblr.com/post/147711922956/combining-druid-and-datasketches-for-real-time
 - https://www.ebayinc.com/stories/blogs/tech/monitoring-at-ebay-with-druid/
 
-## When should I use Druid?<a id="when-to-use-druid"></a>
+## When should I use Druid?
 
 Druid is likely a good choice if your use case fits a few of the following descriptors:
 
