@@ -48,13 +48,13 @@ bin/post-index-task --file quickstart/tutorial/compaction-init-index.json --url 
 
 After the ingestion completes, go to [http://localhost:8888/unified-console.html#datasources](http://localhost:8888/unified-console.html#datasources) in a browser to see the new datasource in the Druid Console.
 
-![compaction-tutorial datasource](../tutorials/img/tutorial-compaction-01.png "compaction-tutorial datasource")
+![compaction-tutorial datasource](../assets/tutorial-compaction-01.png "compaction-tutorial datasource")
 
 Click the `51 segments` link next to "Fully Available" for the `compaction-tutorial` datasource to view information about the datasource's segments:
  
 There will be 51 segments for this datasource, 1-3 segments per hour in the input data:
 
-![Original segments](../tutorials/img/tutorial-compaction-02.png "Original segments")
+![Original segments](../assets/tutorial-compaction-02.png "Original segments")
 
 Running a COUNT(*) query on this datasource shows that there are 39,244 rows:
 
@@ -105,9 +105,9 @@ The original 51 segments will eventually be marked as "unused" by the Coordinato
 
 By default, the Druid Coordinator will not mark segments as unused until the Coordinator process has been up for at least 15 minutes, so you may see the old segment set and the new compacted set at the same time in the Druid Console, with 75 total segments:
 
-![Compacted segments intermediate state 1](../tutorials/img/tutorial-compaction-03.png "Compacted segments intermediate state 1")
+![Compacted segments intermediate state 1](../assets/tutorial-compaction-03.png "Compacted segments intermediate state 1")
 
-![Compacted segments intermediate state 2](../tutorials/img/tutorial-compaction-04.png "Compacted segments intermediate state 2")
+![Compacted segments intermediate state 2](../assets/tutorial-compaction-04.png "Compacted segments intermediate state 2")
 
 The new compacted segments have a more recent version than the original segments, so even when both sets of segments are shown in the Druid Console, queries will only read from the new compacted segments.
 
@@ -125,9 +125,9 @@ Retrieved 1 row in 1.30s.
 
 After the Coordinator has been running for at least 15 minutes, the [segments view](http://localhost:8888/unified-console.html#segments) should show there are 24 segments, one per hour:
 
-![Compacted segments hourly granularity 1](../tutorials/img/tutorial-compaction-05.png "Compacted segments hourly granularity 1")
+![Compacted segments hourly granularity 1](../assets/tutorial-compaction-05.png "Compacted segments hourly granularity 1")
 
-![Compacted segments hourly granularity 2](../tutorials/img/tutorial-compaction-06.png "Compacted segments hourly granularity 2")
+![Compacted segments hourly granularity 2](../assets/tutorial-compaction-06.png "Compacted segments hourly granularity 2")
 
 ## Compact the data with new segment granularity
 
@@ -160,9 +160,9 @@ bin/post-index-task --file quickstart/tutorial/compaction-day-granularity.json -
 
 It will take a bit of time before the Coordinator marks the old input segments as unused, so you may see an intermediate state with 25 total segments. Eventually, there will only be one DAY granularity segment:
 
-![Compacted segments day granularity 1](../tutorials/img/tutorial-compaction-07.png "Compacted segments day granularity 1")
+![Compacted segments day granularity 1](../assets/tutorial-compaction-07.png "Compacted segments day granularity 1")
 
-![Compacted segments day granularity 2](../tutorials/img/tutorial-compaction-08.png "Compacted segments day granularity 2")
+![Compacted segments day granularity 2](../assets/tutorial-compaction-08.png "Compacted segments day granularity 2")
 
 
 ## Further reading

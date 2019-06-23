@@ -44,7 +44,7 @@ After the ingestion completes, go to [http://localhost:8888/unified-console.html
  
 This view shows the available datasources and a summary of the retention rules for each datasource:
 
-![Summary](../tutorials/img/tutorial-retention-01.png "Summary")
+![Summary](../assets/tutorial-retention-01.png "Summary")
 
 Currently there are no rules set for the `retention-tutorial` datasource. Note that there are default rules for the cluster: load forever with 2 replicants in `_default_tier`. 
 
@@ -56,7 +56,7 @@ Let's view the segments for the `retention-tutorial` datasource by clicking the 
 
 The segments view ([http://localhost:8888/unified-console.html#segments](http://localhost:8888/unified-console.html#segments)) provides information about what segments a datasource contains. The page shows that there are 24 segments, each one containing data for a specific hour of 2015-09-12:
 
-![Original segments](../tutorials/img/tutorial-retention-02.png "Original segments")
+![Original segments](../assets/tutorial-retention-02.png "Original segments")
 
 ## Set retention rules
 
@@ -66,7 +66,7 @@ Go to the [datasources view](http://localhost:8888/unified-console.html#datasour
 
 A rule configuration window will appear:
 
-![Rule configuration](../tutorials/img/tutorial-retention-03.png "Rule configuration")
+![Rule configuration](../assets/tutorial-retention-03.png "Rule configuration")
 
 Now click the `+ New rule` button twice. 
 
@@ -76,18 +76,18 @@ In the lower rule box, select `Drop` and `forever`.
 
 The rules should look like this:
 
-![Set rules](../tutorials/img/tutorial-retention-04.png "Set rules")
+![Set rules](../assets/tutorial-retention-04.png "Set rules")
 
 Now click `Next`. The rule configuration process will ask for a user name and comment, for change logging purposes. You can enter `tutorial` for both.
 
 Now click `Save`. You can see the new rules in the datasources view:
 
-![New rules](../tutorials/img/tutorial-retention-05.png "New rules")
+![New rules](../assets/tutorial-retention-05.png "New rules")
 
 Give the cluster a few minutes to apply the rule change, and go to the [segments view](http://localhost:8888/unified-console.html#segments) in the Druid Console.
 The segments for the first 12 hours of 2015-09-12 are now gone:
 
-![New segments](../tutorials/img/tutorial-retention-06.png "New segments")
+![New segments](../assets/tutorial-retention-06.png "New segments")
 
 The resulting retention rule chain is the following:
 

@@ -63,7 +63,7 @@ We will use Druid's Kafka indexing service to ingest messages from our newly cre
 
 In the console, click `Submit supervisor` to open the submit supervisor dialog.
 
-![Submit supervisor](../tutorials/img/tutorial-kafka-01.png "Submit supervisor")
+![Submit supervisor](../assets/tutorial-kafka-01.png "Submit supervisor")
 
 Paste in this spec and click `Submit`.
 
@@ -131,7 +131,7 @@ Paste in this spec and click `Submit`.
 
 This will start the supervisor that will in turn spawn some tasks that will start listening for incoming data.
 
-![Running supervisor](../tutorials/img/tutorial-kafka-02.png "Running supervisor")
+![Running supervisor](../assets/tutorial-kafka-02.png "Running supervisor")
 
 ### Submit a supervisor directly
 

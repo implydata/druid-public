@@ -119,7 +119,7 @@ Later on, if you'd like to stop the services, CTRL-C to exit the `bin/start-micr
 Once the cluster has started, you can navigate to [http://localhost:8888](http://localhost:8888).
 The [Druid router process](../development/router.md), which serves the Druid console, resides at this address.
 
-![Druid console](../tutorials/img/tutorial-quickstart-01.png "Druid console")
+![Druid console](../assets/tutorial-quickstart-01.png "Druid console")
 
 It takes a few seconds for all the Druid processes to fully start up. If you open the console immediately after starting the services, you may see some errors that you can safely ignore.
 

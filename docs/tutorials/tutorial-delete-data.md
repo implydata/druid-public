@@ -60,7 +60,7 @@ curl -X 'POST' -H 'Content-Type:application/json' -d '{ "interval" : "2015-09-12
 
 After that command completes, you should see that the segment for hour 18 and 19 have been disabled:
 
-![Segments 2](../tutorials/img/tutorial-deletion-02.png "Segments 2")
+![Segments 2](../assets/tutorial-deletion-02.png "Segments 2")
 
 Note that the hour 18 and 19 segments are still present in deep storage:
 
@@ -98,7 +98,7 @@ Let's disable some segments by their segmentID. This will again mark the segment
 
 In the [segments view](http://localhost:8888/unified-console.html#segments), click the arrow on the left side of one of the remaining segments to expand the segment entry:
 
-![Segments](../tutorials/img/tutorial-deletion-01.png "Segments")
+![Segments](../assets/tutorial-deletion-01.png "Segments")
 
 The top of the info box shows the full segment ID, e.g. `deletion-tutorial_2015-09-12T14:00:00.000Z_2015-09-12T15:00:00.000Z_2019-02-28T01:11:51.606Z` for the segment of hour 14.
 
@@ -122,7 +122,7 @@ curl -X 'POST' -H 'Content-Type:application/json' -d @quickstart/tutorial/deleti
 
 After that command completes, you should see that the segments for hour 13 and 14 have been disabled:
 
-![Segments 3](../tutorials/img/tutorial-deletion-03.png "Segments 3")
+![Segments 3](../assets/tutorial-deletion-03.png "Segments 3")
 
 Note that the hour 13 and 14 segments are still in deep storage:
 

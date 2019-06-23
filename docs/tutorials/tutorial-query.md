@@ -55,12 +55,12 @@ Let's look at the different ways to issue this query.
 
 You can issue the above query from the console.
 
-![Query autocomplete](../tutorials/img/tutorial-query-01.png "Query autocomplete")
+![Query autocomplete](../assets/tutorial-query-01.png "Query autocomplete")
 
 The console query view provides autocomplete together with inline function documentation.
 You can also configure extra context flags to be sent with the query from the more options menu.
 
-![Query options](../tutorials/img/tutorial-query-02.png "Query options")
+![Query options](../assets/tutorial-query-02.png "Query options")
 
 Note that the console will by default wrap your SQL queries in a limit so that you can issue queries like `SELECT * FROM wikipedia` without much hesitation - you can turn off this behaviour. 
 
@@ -167,7 +167,7 @@ FROM wikipedia WHERE "__time" BETWEEN TIMESTAMP '2015-09-12 00:00:00' AND TIMEST
 GROUP BY 1
 ```
 
-![Query example](../tutorials/img/tutorial-query-03.png "Query example")
+![Query example](../assets/tutorial-query-03.png "Query example")
 
 #### General group by
 
@@ -178,7 +178,7 @@ GROUP BY channel, page
 ORDER BY SUM(added) DESC
 ```
 
-![Query example](../tutorials/img/tutorial-query-04.png "Query example")
+![Query example](../assets/tutorial-query-04.png "Query example")
 
 #### Select raw data
 
@@ -188,14 +188,14 @@ FROM wikipedia WHERE "__time" BETWEEN TIMESTAMP '2015-09-12 02:00:00' AND TIMEST
 LIMIT 5
 ```
 
-![Query example](../tutorials/img/tutorial-query-05.png "Query example")
+![Query example](../assets/tutorial-query-05.png "Query example")
 
 ### Explain query plan
 
 Druid SQL has the ability to explain the query plan for a given query.
 In the console this functionality is accessible from the `...` button.
 
-![Explain query](../tutorials/img/tutorial-query-06.png "Explain query")
+![Explain query](../assets/tutorial-query-06.png "Explain query")
 
 If you are querying in other ways you can get the plan by prepending `EXPLAIN PLAN FOR ` to a Druid SQL query.
 
@@ -244,7 +244,7 @@ Here is a query that retrieves the 10 Wikipedia pages with the most page edits o
 
 Simply paste it into the console to switch the editor into JSON mode.
 
-![Native query](../tutorials/img/tutorial-query-07.png "Native query")
+![Native query](../assets/tutorial-query-07.png "Native query")
 
 
 ### Native queries over HTTP
