@@ -22,8 +22,7 @@ title: "Supervisor reference"
   ~ under the License.
   -->
 
-
-
+Supervisors TODO
 
 ## Supervisor types
 

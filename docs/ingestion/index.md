@@ -43,16 +43,16 @@ each method works, as well as configuration properties specific to that method, 
 
 ### Streaming
 
-|Method|Task or supervisor?|How it works|Query data immediately (real-time)?|Supported by data loader in [web console](../operations/druid-console.md)?|
-|------|-------------------|------------|-----------------------------------|----------------------------------------------------------------------------|
-|[Native batch](native-batch.html)|Task type `index` or `index_parallel`|Druid loads data directly from S3, HTTP, NFS, or other networked storage.|No|Yes|
-|[Hadoop-based](hadoop.html)|Task type `index_hadoop`|Druid launches Hadoop Map/Reduce jobs to load data files.|No|No|
+|Method|How it works|Exactly-once?|
+|------|------------|-------------|
 |[Kafka indexing service](../development/extensions-core/kafka-ingestion.md)|Supervisor type `kafka`|Druid reads directly from Apache Kafka.|Yes|No|
 |[Kinesis indexing service](../development/extensions-core/kinesis-ingestion.md)|Supervisor type `kinesis`|Druid reads directly from Amazon Kinesis.|Yes|No|
+|[Tranquility](../development/extensions-core/kinesis-ingestion.md)|Supervisor type `kinesis`|Druid reads directly from Amazon Kinesis.|Yes|No|
+|[Realtime nodes](realtime-node.md) (deprecated)|Supervisor type `kinesis`|Druid reads directly from Amazon Kinesis.|Yes|No|
 
 When loading from Kafka or Kinesis, you should use the appropriate supervisor-based indexing service.
 
-TODO(gianm): Something about tranquility; mention it but generally downplay and link offsite
+TODO(gianm): Fix up table
 
 ### Batch
 
@@ -166,7 +166,7 @@ timestamp                 srcIP         dstIP          packets     bytes
 2018-01-02T21:35:00Z      7.7.7.7       8.8.8.8            300      3000
 ```
 
-The rollup granularity is the minimum granularity you will be able to explore data at and events are floored to this granularity. 
+The rollup granularity is the minimum granularity you will be able to explore data at and events are floored to this granularity.
 Hence, Druid ingestion specs define this granularity as the `queryGranularity` of the data. The lowest supported `queryGranularity` is millisecond.
 
 The following links may be helpful in further understanding dimensions and metrics:
@@ -526,12 +526,12 @@ Fields "dim3", "ignore_me", and "metrica" will be automatically discovered becau
 Aggregators should use the metric column names as defined in the flattenSpec. Using the example above:
 
 ```json
-"metricsSpec" : [ 
+"metricsSpec" : [
 {
   "type" : "longSum",
   "name" : "path-metric-sum",
   "fieldName" : "path-metric"
-}, 
+},
 {
   "type" : "doubleSum",
   "name" : "hello-0-sum",
@@ -548,7 +548,7 @@ Aggregators should use the metric column names as defined in the flattenSpec. Us
 Note that:
 
 * For convenience, when defining a root-level field, it is possible to define only the field name, as a string, shown with "dim2" above.
-* Enabling 'useFieldDiscovery' will only autodetect fields at the root level with a single value (not a map or list), as well as fields referring to a list of single values. In the example above, "dim1", "dim2", "dim3", "ignore_me", "metrica", and "foo.bar" (at the root) would be automatically detected as columns. The "hello" field is a list of Doubles and will be autodiscovered, but note that the example ingests the individual list members as separate fields. The "world" field must be explicitly defined because its value is a map. The "mixarray" field, while similar to "hello", must also be explicitly defined because its last value is a map.  
+* Enabling 'useFieldDiscovery' will only autodetect fields at the root level with a single value (not a map or list), as well as fields referring to a list of single values. In the example above, "dim1", "dim2", "dim3", "ignore_me", "metrica", and "foo.bar" (at the root) would be automatically detected as columns. The "hello" field is a list of Doubles and will be autodiscovered, but note that the example ingests the individual list members as separate fields. The "world" field must be explicitly defined because its value is a map. The "mixarray" field, while similar to "hello", must also be explicitly defined because its last value is a map.
 * Duplicate field definitions are not allowed, an exception will be thrown.
 * If auto field discovery is enabled, any discovered field with the same name as one already defined in the field specs will be skipped and not added twice.
 * The JSON input must be a JSON object at the root, not an array. e.g., {"valid": "true"} and {"valid":[1,2,3]} are supported but [{"invalid": "true"}] and [1,2,3] are not.

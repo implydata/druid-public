@@ -22,7 +22,7 @@ title: "Task reference"
   ~ under the License.
   -->
 
-
+Tasks TODO
 
 ## Task locking and priority
 
@@ -291,7 +291,7 @@ Compaction tasks merge all segments of the given interval. Please see [Compactio
 
 ### Kill Task
 
-Kill tasks delete all information about a segment and removes it from deep storage. 
+Kill tasks delete all information about a segment and removes it from deep storage.
 
 Please see [Deleting Data](../ingestion/delete-data.md) for details.
 

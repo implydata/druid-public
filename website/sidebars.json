@@ -33,7 +33,8 @@
           "ingestion/hadoop",
           "development/extensions-core/kafka-ingestion",
           "development/extensions-core/kinesis-ingestion",
-          "ingestion/tranquility"
+          "ingestion/tranquility",
+          "ingestion/realtime-node"
         ]
       },
       "ingestion/tasks",

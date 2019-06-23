@@ -1,6 +1,6 @@
 ---
 id: realtime-node
-title: "Stream Pull Ingestion"
+title: "Realtime nodes"
 ---
 
 <!--
@@ -22,10 +22,7 @@ title: "Stream Pull Ingestion"
   ~ under the License.
   -->
 
-TODO(gianm): Fixup this page and link it in to the rest somehow
-
-> NOTE: Realtime processes are deprecated. Please use the [Kafka Indexing Service](../development/extensions-core/kafka-ingestion.md) for stream pull use cases instead.
-
+> NOTE: Realtime nodes are deprecated. Please use the [Kafka Indexing Service](../development/extensions-core/kafka-ingestion.md) for stream pull use cases instead.
 
 If you have an external service that you want to pull data from, you have two options. The simplest
 option is to set up a "copying" service that reads from the data source and writes to Apache Druid (incubating) using

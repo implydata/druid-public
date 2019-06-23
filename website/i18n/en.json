@@ -290,7 +290,7 @@
         "sidebar_label": "Native batch"
       },
       "ingestion/realtime-node": {
-        "title": "Stream Pull Ingestion"
+        "title": "Realtime nodes"
       },
       "ingestion/schema-design": {
         "title": "Schema design tips"
