@@ -22,8 +22,6 @@ title: "Data formats"
   ~ under the License.
   -->
 
-
-
 Apache Druid (incubating) can ingest denormalized data in JSON, CSV, or a delimited form such as TSV, or any custom format. While most examples in the documentation use data in JSON format, it is not difficult to configure Druid to ingest any other delimited data.
 We welcome any contributions to new formats.
 
@@ -67,7 +65,7 @@ Note that the CSV and TSV data do not contain column heads. This becomes importa
 
 ## Custom Formats
 
-Druid supports custom data formats and can use the `Regex` parser or the `JavaScript` parsers to parse these formats. Please note that using any of these parsers for 
+Druid supports custom data formats and can use the `Regex` parser or the `JavaScript` parsers to parse these formats. Please note that using any of these parsers for
 parsing data will not be as efficient as writing a native Java parser or using an external stream processor. We welcome contributions of new Parsers.
 
 ## Configuration
@@ -164,7 +162,7 @@ The `columns` field must be included and and ensure that the order of the fields
     "format" : "regex",
     "timestampSpec" : {
       "column" : "timestamp"
-    },        
+    },
     "dimensionsSpec" : {
       "dimensions" : [<your_list_of_dimensions>]
     },
@@ -173,8 +171,8 @@ The `columns` field must be included and and ensure that the order of the fields
   }
 ```
 
-The `columns` field must match the columns of your regex matching groups in the same order. If columns are not provided, default 
-columns names ("column_1", "column2", ... "column_n") will be assigned. Ensure that your column names include all your dimensions. 
+The `columns` field must match the columns of your regex matching groups in the same order. If columns are not provided, default
+columns names ("column_1", "column2", ... "column_n") will be assigned. Ensure that your column names include all your dimensions.
 
 ### JavaScript
 
@@ -183,7 +181,7 @@ columns names ("column_1", "column2", ... "column_n") will be assigned. Ensure t
     "format" : "javascript",
     "timestampSpec" : {
       "column" : "timestamp"
-    },        
+    },
     "dimensionsSpec" : {
       "dimensions" : ["page","language","user","unpatrolled","newPage","robot","anonymous","namespace","continent","country","region","city"]
     },

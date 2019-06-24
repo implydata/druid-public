@@ -241,13 +241,13 @@ like `MILLIS_TO_TIMESTAMP`, `TIME_FLOOR`, and others. If you're using native Dru
 
 ### Nested dimensions
 
-At the time of this writing, Druid does not support nested dimensions. Nested dimensions need to be flattened. For example, 
+At the time of this writing, Druid does not support nested dimensions. Nested dimensions need to be flattened. For example,
 if you have data of the following form:
- 
+
 ```
 {"foo":{"bar": 3}}
 ```
- 
+
 then before indexing it, you should transform it to:
 
 ```
@@ -266,7 +266,7 @@ ingested. They tell you the number of rows in the Druid datasource, which may be
 ingested.
 
 In this case, a count aggregator at _ingestion_ time can be used to count the number of events. However, it is important to note
-that when you query for this metric, you should use a `longSum` aggregator. A `count` aggregator at query time will return 
+that when you query for this metric, you should use a `longSum` aggregator. A `count` aggregator at query time will return
 the number of Druid rows for the time interval, which can be used to determine what the roll-up ratio was.
 
 To clarify with an example, if your ingestion spec contains:
@@ -294,16 +294,16 @@ You should query for the number of ingested rows with:
 
 ### Schema-less dimensions
 
-If the `dimensions` field is left empty in your ingestion spec, Druid will treat every column that is not the timestamp column, 
+If the `dimensions` field is left empty in your ingestion spec, Druid will treat every column that is not the timestamp column,
 a dimension that has been excluded, or a metric column as a dimension.
 
 Note that when using schema-less ingestion, all dimensions will be ingested as String-typed dimensions.
 
 ### Including the same column as a dimension and a metric
 
-One workflow with unique IDs is to be able to filter on a particular ID, while still being able to do fast unique counts on the ID column. 
-If you are not using schema-less dimensions, this use case is supported by setting the `name` of the metric to something different than the dimension. 
-If you are using schema-less dimensions, the best practice here is to include the same column twice, once as a dimension, and as a `hyperUnique` metric. This may involve 
+One workflow with unique IDs is to be able to filter on a particular ID, while still being able to do fast unique counts on the ID column.
+If you are not using schema-less dimensions, this use case is supported by setting the `name` of the metric to something different than the dimension.
+If you are using schema-less dimensions, the best practice here is to include the same column twice, once as a dimension, and as a `hyperUnique` metric. This may involve
 some work at ETL time.
 
 As an example, for schema-less dimensions, repeat the same column:
@@ -313,7 +313,7 @@ As an example, for schema-less dimensions, repeat the same column:
 ```
 
 and in your `metricsSpec`, include:
- 
+
 ```
 { "type" : "hyperUnique", "name" : "devices", "fieldName" : "device_id_met" }
 ```
