@@ -1,6 +1,6 @@
 ---
 id: papers-and-talks
-title: "Apache Druid (incubating) Papers"
+title: "Papers"
 ---
 
 <!--

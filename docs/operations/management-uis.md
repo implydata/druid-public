@@ -1,6 +1,6 @@
 ---
 id: management-uis
-title: "Apache Druid (incubating) Management UIs"
+title: "Management UIs"
 ---
 
 <!--

@@ -1,6 +1,6 @@
 ---
 id: druid-vs-redshift
-title: "Apache Druid (incubating) vs Redshift"
+title: "Apache Druid vs Redshift"
 ---
 
 <!--

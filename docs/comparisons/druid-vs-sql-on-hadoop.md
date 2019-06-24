@@ -1,6 +1,6 @@
 ---
 id: druid-vs-sql-on-hadoop
-title: "Apache Druid (incubating) vs SQL-on-Hadoop"
+title: "Apache Druid vs SQL-on-Hadoop"
 ---
 
 <!--

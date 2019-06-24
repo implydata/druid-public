@@ -1,6 +1,6 @@
 ---
 id: druid-console
-title: "Apache Druid (incubating) console"
+title: "Web console"
 ---
 
 <!--
@@ -46,7 +46,7 @@ The home view provides a high level overview of the cluster. Each card is clicka
 
 ## Data loader
 
-The data loader view allows you to load data by building an ingestion spec with a step-by-step wizard. 
+The data loader view allows you to load data by building an ingestion spec with a step-by-step wizard.
 
 ![data-loader-1](../assets/web-console-02-data-loader-1.png)
 

@@ -1,6 +1,6 @@
 ---
 id: architecture
-title: "Apache Druid (incubating) Design"
+title: "Design"
 ---
 
 <!--

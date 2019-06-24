@@ -1,6 +1,6 @@
 ---
 id: recommendations
-title: "Apache Druid (incubating) Recommendations"
+title: "Recommendations"
 ---
 
 <!--
@@ -74,7 +74,7 @@ Historical processes store large number of segments on Disk and support specifyi
 Timeseries and TopN queries are much more optimized and significantly faster than groupBy queries for their designed use cases. Issuing multiple topN or timeseries queries from your application can potentially be more efficient than a single groupBy query.
 
 
-Segments should generally be between 300MB-700MB in size. Too many small segments results in inefficient CPU utilizations and 
+Segments should generally be between 300MB-700MB in size. Too many small segments results in inefficient CPU utilizations and
 too many large segments impacts query performance, most notably with TopN queries.
 
 

@@ -1,6 +1,6 @@
 ---
 id: math-expr
-title: "Apache Druid (incubating) Expressions"
+title: "Expressions"
 ---
 
 <!--
@@ -25,7 +25,7 @@ title: "Apache Druid (incubating) Expressions"
 
 > This feature is still experimental. It has not been optimized for performance yet, and its implementation is known to
 >  have significant inefficiencies.
- 
+
 This expression language supports the following operators (listed in decreasing order of precedence).
 
 |Operators|Description|
@@ -161,7 +161,7 @@ See javadoc of java.lang.Math for detailed explanation for each function.
 |ulp|ulp(x) would return the size of an ulp of the argument x|
 
 
-## Array Functions 
+## Array Functions
 
 | function | description |
 | --- | --- |

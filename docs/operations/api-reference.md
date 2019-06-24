@@ -1,6 +1,6 @@
 ---
 id: api-reference
-title: "Apache Druid (incubating) API Reference"
+title: "API reference"
 ---
 
 <!--
@@ -208,7 +208,7 @@ Returns full segment metadata for a specific segment in the cluster.
 Return the tiers that a datasource exists in.
 
 #### Note for coordinator's POST and DELETE API's
-The segments would be enabled when these API's are called, but then can be disabled again by the coordinator if any dropRule matches. Segments enabled by these API's might not be loaded by historical processes if no loadRule matches.  If an indexing or kill task runs at the same time as these API's are invoked, the behavior is undefined. Some segments might be killed and others might be enabled. It's also possible that all segments might be disabled but at the same time, the indexing task is able to read data from those segments and succeed. 
+The segments would be enabled when these API's are called, but then can be disabled again by the coordinator if any dropRule matches. Segments enabled by these API's might not be loaded by historical processes if no loadRule matches.  If an indexing or kill task runs at the same time as these API's are invoked, the behavior is undefined. Some segments might be killed and others might be enabled. It's also possible that all segments might be disabled but at the same time, the indexing task is able to read data from those segments and succeed.
 
 Caution : Avoid using indexing or kill tasks and these API's at the same time for the same datasource and time chunk. (It's fine if the time chunks or datasource don't overlap)
 
@@ -226,7 +226,7 @@ Enables a segment of a datasource.
 
 * `/druid/coordinator/v1/datasources/{dataSourceName}/markUnused`
 
-Marks segments (un)used for a datasource by interval or set of segment Ids. 
+Marks segments (un)used for a datasource by interval or set of segment Ids.
 
 When marking used only segments that are not overshadowed will be updated.
 
@@ -292,7 +292,7 @@ Returns all rules for a specified datasource and includes default datasource.
 * `/druid/coordinator/v1/rules/{dataSourceName}/history?count=<n>`
 
  Returns last <n> entries of audit history of rules for a specified datasource.
- 
+
 ##### POST
 
 * `/druid/coordinator/v1/rules/{dataSourceName}`
@@ -389,7 +389,7 @@ Returns a list of server data objects in which each object has the following key
 
 ##### GET
 
-* `/druid/indexer/v1/leader` 
+* `/druid/indexer/v1/leader`
 
 Returns the current leader Overlord of the cluster. If you have multiple Overlords, just one is leading at any given time. The others are on standby.
 
@@ -399,7 +399,7 @@ This returns a JSON object with field "leader", either true or false. In additio
 server is the current leader and HTTP 404 if not. This is suitable for use as a load balancer status check if you
 only want the active leader to be considered in-service at the load balancer.
 
-#### Tasks 
+#### Tasks
 
 Note that all _interval_ URL parameters are ISO 8601 strings delimited by a `_` instead of a `/`
 (e.g., 2016-06-27_2016-06-28).
@@ -455,7 +455,7 @@ Retrieve a [task completion report](../ingestion/reports.md) for a task. Only wo
 
 ##### POST
 
-* `/druid/indexer/v1/task` 
+* `/druid/indexer/v1/task`
 
 Endpoint for submitting tasks and supervisor specs to the Overlord. Returns the taskId of the submitted task.
 

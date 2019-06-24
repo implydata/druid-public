@@ -1,6 +1,6 @@
 ---
 id: extensions
-title: "Apache Druid (incubating) extensions"
+title: "extensions"
 ---
 
 <!--

@@ -1,6 +1,6 @@
 ---
 id: metrics
-title: "Apache Druid (incubating) Metrics"
+title: "Metrics"
 ---
 
 <!--

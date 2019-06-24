@@ -1,6 +1,6 @@
 ---
 id: alerts
-title: "Apache Druid (incubating) Alerts"
+title: "Alerts"
 ---
 
 <!--

@@ -1,6 +1,6 @@
 ---
 id: processes
-title: "Apache Druid (incubating) Processes and Servers"
+title: "Processes and servers"
 ---
 
 <!--

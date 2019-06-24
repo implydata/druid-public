@@ -1,6 +1,6 @@
 ---
 id: plumber
-title: "Apache Druid (incubating) Plumbers"
+title: "Plumbers"
 ---
 
 <!--

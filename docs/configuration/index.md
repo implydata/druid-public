@@ -1,6 +1,6 @@
 ---
 id: index
-title: "Apache Druid (incubating) Configuration Reference"
+title: "Configuration reference"
 ---
 
 <!--
@@ -614,7 +614,7 @@ the following properties.
 
 ### Double Column storage
 
-Prior to version 0.13.0 Druid's storage layer used a 32-bit float representation to store columns created by the 
+Prior to version 0.13.0 Druid's storage layer used a 32-bit float representation to store columns created by the
 doubleSum, doubleMin, and doubleMax aggregators at indexing time.
 Starting from version 0.13.0 the default will be 64-bit floats for Double columns.
 Using 64-bit representation for double column will lead to avoid precesion loss at the cost of doubling the storage size of such columns.
@@ -1398,7 +1398,7 @@ See [cache configuration](#cache-configuration) for how to configure cache setti
 ## Cache Configuration
 
 This section describes caching configuration that is common to Broker, Historical, and MiddleManager/Peon processes.
- 
+
 Caching can optionally be enabled on the Broker, Historical, and MiddleManager/Peon processses. See [Broker](#broker-caching),
 [Historical](#Historical-caching), and [Peon](#peon-caching) configuration options for how to enable it for different processes.
 
@@ -1523,7 +1523,7 @@ This section describes configurations that control behavior of Druid's query typ
 ### GroupBy Query Config
 
 This section describes the configurations for groupBy queries. You can set the runtime properties in the `runtime.properties` file on Broker, Historical, and MiddleManager processes. You can set the query context parameters through the [query context](../querying/query-context.md).
-  
+
 #### Configurations for groupBy v2
 
 Supported runtime properties:
