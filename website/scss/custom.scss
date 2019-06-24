@@ -16,7 +16,13 @@
  * limitations under the License.
  */
 
-$link:              #4460de;
+$link: #4460de;
+
+@media only screen and (max-width: 1024px) {
+  .navigationSlider .slidingNav ul li:last-child {
+    padding-top: 8px;
+  }
+}
 
 .fixedHeaderContainer header img {
   position: absolute;
