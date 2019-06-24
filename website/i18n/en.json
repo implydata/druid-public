@@ -6,25 +6,25 @@
     "tagline": "A fast analytical database",
     "docs": {
       "comparisons/druid-vs-elasticsearch": {
-        "title": "Apache Druid (incubating) vs Elasticsearch"
+        "title": "Apache Druid vs Elasticsearch"
       },
       "comparisons/druid-vs-key-value": {
-        "title": "Apache Druid (incubating) vs. Key/Value Stores (HBase/Cassandra/OpenTSDB)"
+        "title": "Apache Druid vs. Key/Value Stores (HBase/Cassandra/OpenTSDB)"
       },
       "comparisons/druid-vs-kudu": {
-        "title": "Apache Druid (incubating) vs Kudu"
+        "title": "Apache Druid vs Kudu"
       },
       "comparisons/druid-vs-redshift": {
-        "title": "Apache Druid (incubating) vs Redshift"
+        "title": "Apache Druid vs Redshift"
       },
       "comparisons/druid-vs-spark": {
-        "title": "Apache Druid (incubating) vs Spark"
+        "title": "Apache Druid vs Spark"
       },
       "comparisons/druid-vs-sql-on-hadoop": {
-        "title": "Apache Druid (incubating) vs SQL-on-Hadoop"
+        "title": "Apache Druid vs SQL-on-Hadoop"
       },
       "configuration/index": {
-        "title": "Apache Druid (incubating) Configuration Reference"
+        "title": "Configuration reference"
       },
       "configuration/logging": {
         "title": "Logging"
@@ -45,7 +45,7 @@
         "title": "ZooKeeper"
       },
       "design/architecture": {
-        "title": "Apache Druid (incubating) Design"
+        "title": "Design"
       },
       "design/auth": {
         "title": "Authentication and Authorization"
@@ -75,10 +75,10 @@
         "title": "Peons"
       },
       "design/plumber": {
-        "title": "Apache Druid (incubating) Plumbers"
+        "title": "Plumbers"
       },
       "design/processes": {
-        "title": "Apache Druid (incubating) Processes and Servers"
+        "title": "Processes and servers"
       },
       "design/realtime": {
         "title": "Real-time Process"
@@ -245,7 +245,7 @@
         "title": "Test Stats Aggregators"
       },
       "development/extensions": {
-        "title": "Apache Druid (incubating) extensions"
+        "title": "extensions"
       },
       "development/geo": {
         "title": "Geographic Queries"
@@ -305,16 +305,16 @@
         "title": "Tranquility"
       },
       "misc/math-expr": {
-        "title": "Apache Druid (incubating) Expressions"
+        "title": "Expressions"
       },
       "misc/papers-and-talks": {
-        "title": "Apache Druid (incubating) Papers"
+        "title": "Papers"
       },
       "operations/alerts": {
-        "title": "Apache Druid (incubating) Alerts"
+        "title": "Alerts"
       },
       "operations/api-reference": {
-        "title": "Apache Druid (incubating) API Reference"
+        "title": "API reference"
       },
       "operations/basic-cluster-tuning": {
         "title": "Basic Cluster Tuning"
@@ -323,7 +323,7 @@
         "title": "Deep Storage Migration"
       },
       "operations/druid-console": {
-        "title": "Apache Druid (incubating) console"
+        "title": "Web console"
       },
       "operations/dump-segment": {
         "title": "DumpSegment tool"
@@ -347,13 +347,13 @@
         "title": "insert-segment-to-db Tool"
       },
       "operations/management-uis": {
-        "title": "Apache Druid (incubating) Management UIs"
+        "title": "Management UIs"
       },
       "operations/metadata-migration": {
         "title": "Metadata Migration"
       },
       "operations/metrics": {
-        "title": "Apache Druid (incubating) Metrics"
+        "title": "Metrics"
       },
       "operations/other-hadoop": {
         "title": "Working with different versions of Apache Hadoop"
@@ -365,7 +365,7 @@
         "title": "pull-deps Tool"
       },
       "operations/recommendations": {
-        "title": "Apache Druid (incubating) Recommendations"
+        "title": "Recommendations"
       },
       "operations/reset-cluster": {
         "title": "ResetCluster tool"
