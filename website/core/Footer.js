@@ -19,19 +19,6 @@
 const React = require('react');
 
 class Footer extends React.Component {
-  docUrl(doc, language) {
-    const baseUrl = this.props.config.baseUrl;
-    const docsUrl = this.props.config.docsUrl;
-    const docsPart = `${docsUrl ? `${docsUrl}/` : ''}`;
-    const langPart = `${language ? `${language}/` : ''}`;
-    return `${baseUrl}${docsPart}${langPart}${doc}`;
-  }
-
-  pageUrl(doc, language) {
-    const baseUrl = this.props.config.baseUrl;
-    return baseUrl + (language ? `${language}/` : '') + doc;
-  }
-
   render() {
     return (
       <footer className="nav-footer druid-footer" id="footer">
@@ -48,23 +35,43 @@ class Footer extends React.Component {
             </p>
           </div>
           <div className="text-center">
-            <a title="Join the user group" href="https://groups.google.com/forum/#!forum/druid-user"
-               target="_blank"><span className="fa fa-comments"/></a>&ensp;·&ensp;
-            <a title="Follow Druid" href="https://twitter.com/druidio" target="_blank"><span
-              className="fab fa-twitter"/></a>&ensp;·&ensp;
-            <a title="Download via Apache"
-               href="https://www.apache.org/dyn/closer.cgi?path=/incubator/druid/{{ site.druid_versions[0].versions[0].version }}/apache-druid-{{ site.druid_versions[0].versions[0].version }}-bin.tar.gz"
-               target="_blank"><span className="fas fa-feather"/></a>&ensp;·&ensp;
-            <a title="GitHub" href="https://github.com/apache/incubator-druid" target="_blank"><span
-              className="fab fa-github"/></a>
+            <a
+              title="Join the user group"
+              href="https://groups.google.com/forum/#!forum/druid-user"
+              target="_blank"
+            >
+              <span className="fa fa-comments" />
+            </a>
+            &ensp;·&ensp;
+            <a title="Follow Druid" href="https://twitter.com/druidio" target="_blank">
+              <span className="fab fa-twitter" />
+            </a>
+            &ensp;·&ensp;
+            <a
+              title="Download via Apache"
+              href="https://www.apache.org/dyn/closer.cgi?path=/incubator/druid/{{ site.druid_versions[0].versions[0].version }}/apache-druid-{{ site.druid_versions[0].versions[0].version }}-bin.tar.gz"
+              target="_blank"
+            >
+              <span className="fas fa-feather" />
+            </a>
+            &ensp;·&ensp;
+            <a title="GitHub" href="https://github.com/apache/incubator-druid" target="_blank">
+              <span className="fab fa-github" />
+            </a>
           </div>
           <div className="text-center license">
-            Copyright © 2019 <a href="https://www.apache.org/" target="_blank">Apache Software Foundation</a>.<br/>
-            Except where otherwise noted, licensed under <a rel="license"
-                                                            href="http://creativecommons.org/licenses/by-sa/4.0/">CC
-            BY-SA 4.0</a>.<br/>
-            Apache Druid, Druid, and the Druid logo are either registered trademarks or trademarks of The Apache
-            Software Foundation in the United States and other countries.
+            Copyright © 2019{' '}
+            <a href="https://www.apache.org/" target="_blank">
+              Apache Software Foundation
+            </a>
+            .<br />
+            Except where otherwise noted, licensed under{' '}
+            <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">
+              CC BY-SA 4.0
+            </a>
+            .<br />
+            Apache Druid, Druid, and the Druid logo are either registered trademarks or trademarks
+            of The Apache Software Foundation in the United States and other countries.
           </div>
         </div>
       </footer>

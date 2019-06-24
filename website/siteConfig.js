@@ -28,17 +28,15 @@ const siteConfig = {
   // Used for publishing and more
   projectName: 'Apache Druid',
   organizationName: 'Apache',
-  // For top-level user or org sites, the organization is still the same.
-  // e.g., for the https://JoelMarcey.github.io site, it would be set like...
-  //   organizationName: 'JoelMarcey'
 
   // For no header links in the top nav bar -> headerLinks: [],
   headerLinks: [
-    {page: 'index', label: 'Technology'},
-    {page: 'index', label: 'Use Cases'},
-    {page: 'index', label: 'Powered By'},
+    {href: '/technology', label: 'Technology'},
+    {href: '/use-cases', label: 'Use Cases'},
+    {href: '/druid-powered', label: 'Powered By'},
     {doc: 'design/index', label: 'Docs'},
-    {page: 'index', label: 'Community'},
+    {href: '/community/', label: 'Community'},
+    {href: 'https://www.apache.org', label: 'Apache'},
     {href: '/download.html', label: 'Download'},
   ],
 
@@ -80,7 +78,11 @@ const siteConfig = {
   docsSideNavCollapsible: true,
 
   // Add custom scripts here that would be placed in <script> tags.
-  scripts: ['https://buttons.github.io/buttons.js'],
+  scripts: [], // 'https://buttons.github.io/buttons.js'
+
+  stylesheets: [
+    "https://use.fontawesome.com/releases/v5.7.2/css/all.css"
+  ],
 
   // On page navigation for the current documentation page.
   onPageNav: 'separate',
@@ -88,8 +90,11 @@ const siteConfig = {
   cleanUrl: false,
 
   // Open Graph and Twitter card images.
-  ogImage: 'img/undraw_online.svg',
-  twitterImage: 'img/undraw_tweetstorm.svg',
+  ogImage: 'img/druid_nav.png',
+  twitterImage: 'img/druid_nav.png',
+
+  gaGtag: true,
+  gaTrackingId: 'UA-131010415-1',
 
   // Show documentation's last contributor's name.
   // enableUpdateBy: true,
