@@ -25,8 +25,7 @@ title: "Realtime Process Configuration"
 
 For general Apache Druid (incubating) Realtime Process information, see [here](../design/realtime.md).
 
-Runtime Configuration
----------------------
+## Runtime Configuration
 
 The realtime process uses several of the global configs in [Configuration](../configuration/index.md) and has the following set of configurations as well:
 
