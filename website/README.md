@@ -21,6 +21,9 @@ $ yarn
 ```sh
 # Start the site
 $ yarn start
+
+# Compile SCSS with
+$ yarn run compile-scss
 ```
 
 ## Directory Structure
