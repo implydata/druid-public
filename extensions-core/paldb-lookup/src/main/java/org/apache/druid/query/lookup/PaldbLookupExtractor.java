@@ -20,8 +20,10 @@
 package org.apache.druid.query.lookup;
 
 import com.linkedin.paldb.api.StoreReader;
+import org.apache.commons.lang.math.NumberUtils;
 import org.apache.druid.collections.LightPool;
 import org.apache.druid.common.config.NullHandling;
+import org.apache.druid.java.util.common.StringUtils;
 import org.apache.druid.java.util.common.logger.Logger;
 
 import javax.annotation.Nullable;
@@ -37,20 +39,26 @@ public class PaldbLookupExtractor extends LookupExtractor
 
   private final LightPool<StoreReader> readerPool;
   private final int index;
+  private final String type;
 
   public PaldbLookupExtractor(
       LightPool<StoreReader> readerPool,
-      int index
+      int index,
+      String type
   )
   {
     this.readerPool = readerPool;
     this.index = index;
+    this.type = type;
   }
 
   @Nullable
   @Override
   public String apply(@Nullable String key)
   {
+    if (NumberUtils.isNumber(key)) {
+      return applyNumeric(Long.parseLong(key));
+    }
     String keyEquivalent = NullHandling.nullToEmptyIfNeeded(key);
     if (keyEquivalent == null) {
       return null;
@@ -98,6 +106,43 @@ public class PaldbLookupExtractor extends LookupExtractor
     return NullHandling.emptyToNullIfNeeded(str);
   }
 
+  private String applyNumeric(long key)
+  {
+    StoreReader reader = null;
+    String value = null;
+    try {
+      reader = readerPool.take();
+      //reconstruct the actual key from given key and value index
+      long longKey = (key << 32) | (long) index;
+      switch (StringUtils.toLowerCase(type)) {
+        case "int":
+          int val = reader.get(longKey);
+          value = String.valueOf(val);
+          break;
+        case "long":
+          long longVal = reader.get(longKey);
+          value = String.valueOf(longVal);
+          break;
+        default:
+          value = reader.get(longKey);
+      }
+    }
+    catch (Exception e) {
+      LOG.error(
+          "Error occurred in paldb reader while reading key[%s] and value at index[%d]. Using null for the value.",
+          key,
+          index
+      );
+    }
+    finally {
+      if (reader != null) {
+        readerPool.giveBack(reader);
+      }
+    }
+    return NullHandling.emptyToNullIfNeeded(value);
+  }
+
+
   @Override
   public List<String> unapply(@Nullable String value)
   {
@@ -111,9 +156,19 @@ public class PaldbLookupExtractor extends LookupExtractor
       reader = readerPool.take();
       Iterable<Map.Entry<String, String[]>> list = reader.iterable();
       for (Map.Entry<String, String[]> entry : list) {
-        String[] val = entry.getValue();
-        if (Arrays.asList(val).contains(valueToLookup)) {
-          keys.add(entry.getKey());
+        Object val = entry.getValue();
+        if (val instanceof String[]) {
+          if (Arrays.asList((String[]) val).contains(valueToLookup)) {
+            keys.add(extractKey(entry.getKey()));
+          }
+        } else if (val instanceof String) {
+          if (valueToLookup.equals(val)) {
+            keys.add(extractKey(entry.getKey()));
+          }
+        } else if (val instanceof Long) {
+          if (valueToLookup.equals(val)) {
+            keys.add(extractKey(entry.getKey()));
+          }
         }
       }
     }
@@ -123,6 +178,18 @@ public class PaldbLookupExtractor extends LookupExtractor
       }
     }
     return keys;
+  }
+
+  // assuming key can be either long or string
+  private String extractKey(Object key)
+  {
+    if (key instanceof Long) {
+      long longKey = (long) key;
+      long k = (int) (longKey >> 32);
+      return String.valueOf(k);
+    } else {
+      return (String) key;
+    }
   }
 
   @Override

@@ -49,6 +49,8 @@ public class PaldbLookupExtractorFactory implements LookupExtractorFactory
   private final String filepath;
   @JsonProperty
   private final int index;
+  @JsonProperty
+  private final String type;
   private LightPool<StoreReader> readerPool;
   private final ReadWriteLock startStopSync = new ReentrantReadWriteLock();
   private final AtomicBoolean started = new AtomicBoolean(false);
@@ -65,11 +67,13 @@ public class PaldbLookupExtractorFactory implements LookupExtractorFactory
   public PaldbLookupExtractorFactory(
       @JsonProperty("filepath") String filepath,
       @JsonProperty("index") int index,
+      @JsonProperty("type") String type,
       @JacksonInject DruidProcessingConfig processingConfig
   )
   {
     this.filepath = Preconditions.checkNotNull(filepath);
     this.index = index;
+    this.type = type;
     this.extractorID = StringUtils.format("paldb-factory-%s", UUID.randomUUID().toString());
     this.processingConfig = processingConfig;
     //this.lookupIntrospectHandler = new PaldbLookupIntrospectHandler(this);
@@ -84,9 +88,16 @@ public class PaldbLookupExtractorFactory implements LookupExtractorFactory
     return filepath;
   }
 
+  @JsonProperty
   public int getIndex()
   {
     return index;
+  }
+
+  @JsonProperty
+  public String getType()
+  {
+    return type;
   }
 
   @Override
@@ -161,7 +172,7 @@ public class PaldbLookupExtractorFactory implements LookupExtractorFactory
       throw Throwables.propagate(e);
     }
     try {
-      return new PaldbLookupExtractor(readerPool, index)
+      return new PaldbLookupExtractor(readerPool, index, type)
       {
         @Override
         public byte[] getCacheKey()

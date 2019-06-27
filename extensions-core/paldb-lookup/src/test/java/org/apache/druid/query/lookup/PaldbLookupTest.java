@@ -45,12 +45,15 @@ public class PaldbLookupTest
   public static void setUpClass()
   {
     StoreWriter writer = PalDB.createWriter(new File("store.paldb"));
-    writer.put("foo", new String[]{"bar"});
-    writer.put("foo1", new String[]{"baz"});
-    writer.put("bat", new String[]{"abc", "xyz"});
+    long longKey1 = ((long) 16 << 32) | (long) 0;
+    long longKey2 = ((long) 32 << 32) | (long) 1;
+    long longKey3 = ((long) 48 << 32) | (long) 2;
+    writer.put(longKey1, "foo");
+    writer.put(longKey2, "bar");
+    writer.put(longKey3, 5000);
     writer.close();
     LightPool<StoreReader> readerPool = new LightPool<>(new StoreReaderGenerator("store.paldb"));
-    paldbLookup = new PaldbLookupExtractor(readerPool, 0);
+    paldbLookup = new PaldbLookupExtractor(readerPool, 0, "string");
   }
 
   @AfterClass
@@ -63,7 +66,8 @@ public class PaldbLookupTest
   @Test
   public void testApply() throws ExecutionException, InterruptedException
   {
-    Callable<String> task = () -> paldbLookup.apply("foo");
+    int key = 16;
+    Callable<String> task = () -> paldbLookup.apply(String.valueOf(key));
 
     ExecutorService exec = Executors.newFixedThreadPool(5);
     List<Future<String>> results = new ArrayList<>();
@@ -74,14 +78,14 @@ public class PaldbLookupTest
     exec.shutdown();
 
     for (Future<String> result : results) {
-      Assert.assertEquals("bar", result.get());
+      Assert.assertEquals("foo", result.get());
     }
   }
 
   @Test
   public void testUnApply() throws ExecutionException, InterruptedException
   {
-    Callable<List<String>> task = () -> paldbLookup.unapply("bar");
+    Callable<List<String>> task = () -> paldbLookup.unapply("foo");
     ExecutorService exec = Executors.newFixedThreadPool(5);
     List<Future<List<String>>> results = new ArrayList<>();
 
@@ -90,7 +94,7 @@ public class PaldbLookupTest
     }
     exec.shutdown();
     List<String> list = new ArrayList<>();
-    list.add("foo");
+    list.add("16");
     for (Future<List<String>> result : results) {
       Assert.assertEquals(list, result.get());
     }

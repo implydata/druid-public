@@ -201,7 +201,7 @@ public class GroupByLookupBenchmark
 
     LightPool<StoreReader> readerPool = new LightPool<>(new StoreReaderGenerator("lookup.paldb"));
     reader = PalDB.createReader(new File("lookup.paldb"));
-    LookupExtractor paldbExtractor = new PaldbLookupExtractor(readerPool, 0);
+    LookupExtractor paldbExtractor = new PaldbLookupExtractor(readerPool, 0, "string");
 
     { // basic.A
       QuerySegmentSpec intervalSpec = new MultipleIntervalSegmentSpec(Collections.singletonList(basicSchema.getDataInterval()));
