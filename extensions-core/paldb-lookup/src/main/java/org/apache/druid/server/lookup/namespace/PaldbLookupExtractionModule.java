@@ -30,6 +30,7 @@ import com.google.inject.Key;
 import com.google.inject.name.Names;
 import org.apache.druid.guice.ExpressionModule;
 import org.apache.druid.initialization.DruidModule;
+import org.apache.druid.java.util.common.logger.Logger;
 import org.apache.druid.query.lookup.PaldbLookupExtractorFactory;
 import org.apache.druid.query.lookup.PaldbLookupIntExprMacro;
 import org.apache.druid.query.lookup.PaldbLookupIntOperatorConversion;
@@ -39,6 +40,9 @@ import java.util.List;
 
 public class PaldbLookupExtractionModule implements DruidModule
 {
+
+  private static final Logger LOG = new Logger(PaldbLookupExtractionModule.class);
+
   @Inject
   private Injector injector;
 
@@ -54,9 +58,9 @@ public class PaldbLookupExtractionModule implements DruidModule
   @Override
   public void configure(Binder binder)
   {
+    SqlBindings.addOperatorConversion(binder, PaldbLookupIntOperatorConversion.class);
     if (isEnabled()) {
       ExpressionModule.addExprMacro(binder, PaldbLookupIntExprMacro.class);
-      SqlBindings.addOperatorConversion(binder, PaldbLookupIntOperatorConversion.class);
     }
   }
 
@@ -66,9 +70,12 @@ public class PaldbLookupExtractionModule implements DruidModule
 
     try {
       serviceName = injector.getInstance(Key.get(String.class, Names.named("serviceName")));
+      LOG.info("Registering service[%s]", serviceName);
     }
     catch (Exception e) {
-      return false;
+      LOG.error("Failed to register service");
+      throw new RuntimeException(e);
+      //return false;
     }
 
     if (ImmutableSet.of("druid/broker", "druid/historical").contains(serviceName)) {

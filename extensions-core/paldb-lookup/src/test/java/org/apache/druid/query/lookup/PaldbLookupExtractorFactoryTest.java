@@ -110,7 +110,7 @@ public class PaldbLookupExtractorFactoryTest
   {
     Injector injector = makeInjector(numProcessors, directSize, heapSize);
     DruidProcessingConfig config = injector.getInstance(DruidProcessingConfig.class);
-    final LookupExtractorFactory lookupFactory = new PaldbLookupExtractorFactory("store.paldb", 0, "string", config);
+    final LookupExtractorFactory lookupFactory = new PaldbLookupExtractorFactory("store.paldb", 0, config);
     Assert.assertTrue(lookupFactory.start());
     Assert.assertTrue(lookupFactory.close());
     Assert.assertTrue(lookupFactory.close());
@@ -143,7 +143,6 @@ public class PaldbLookupExtractorFactoryTest
     final LookupExtractorFactory lookupExtractorFactory = new PaldbLookupExtractorFactory(
         "store.paldb",
         0,
-        "string",
         config
     );
     Assert.assertTrue(lookupExtractorFactory.start());
@@ -161,7 +160,6 @@ public class PaldbLookupExtractorFactoryTest
     final LookupExtractorFactory lookupExtractorFactory = new PaldbLookupExtractorFactory(
         "store.paldb",
         0,
-        "string",
         config
     );
     Assert.assertTrue(lookupExtractorFactory.start());
@@ -178,7 +176,7 @@ public class PaldbLookupExtractorFactoryTest
   {
     Injector injector = makeInjector(numProcessors, directSize, heapSize);
     DruidProcessingConfig config = injector.getInstance(DruidProcessingConfig.class);
-    final LookupExtractorFactory factory = new PaldbLookupExtractorFactory("store.paldb", 0, "string", config);
+    final LookupExtractorFactory factory = new PaldbLookupExtractorFactory("store.paldb", 0, config);
     Assert.assertTrue(factory instanceof PaldbLookupExtractorFactory);
     Assert.assertTrue(factory.start());
     LookupExtractor lookupExtractor = factory.get();
@@ -193,7 +191,7 @@ public class PaldbLookupExtractorFactoryTest
   {
     Injector injector = makeInjector(numProcessors, directSize, heapSize);
     DruidProcessingConfig config = injector.getInstance(DruidProcessingConfig.class);
-    final LookupExtractorFactory factory = new PaldbLookupExtractorFactory("store.paldb", 0, "string", config);
+    final LookupExtractorFactory factory = new PaldbLookupExtractorFactory("store.paldb", 0, config);
     container = new LookupExtractorFactoryContainer("v0", factory);
     Assert.assertTrue(factory instanceof PaldbLookupExtractorFactory);
     final PaldbLookupExtractorFactory lookupFactory = (PaldbLookupExtractorFactory) factory;

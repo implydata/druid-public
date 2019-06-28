@@ -53,7 +53,7 @@ public class PaldbLookupTest
     writer.put(longKey3, 5000);
     writer.close();
     LightPool<StoreReader> readerPool = new LightPool<>(new StoreReaderGenerator("store.paldb"));
-    paldbLookup = new PaldbLookupExtractor(readerPool, 0, "string");
+    paldbLookup = new PaldbLookupExtractor(readerPool, 0);
   }
 
   @AfterClass

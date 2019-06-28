@@ -37,17 +37,14 @@ public class PaldbLookupExtractor extends LookupExtractor
 
   private final LightPool<StoreReader> readerPool;
   private final int index;
-  private final String type;
 
   public PaldbLookupExtractor(
       LightPool<StoreReader> readerPool,
-      int index,
-      String type
+      int index
   )
   {
     this.readerPool = readerPool;
     this.index = index;
-    this.type = type;
   }
 
   @Nullable
@@ -112,6 +109,7 @@ public class PaldbLookupExtractor extends LookupExtractor
       reader = readerPool.take();
       //reconstruct the actual key from given key and value index
       long longKey = (((long) key) << 32) | (long) index;
+      LOG.debug("longKey [%d]", longKey);
       return reader.getLong(longKey);
     }
     catch (Exception e) {

@@ -37,7 +37,7 @@ import javax.annotation.Nullable;
 public class PaldbLookupIntOperatorConversion implements SqlOperatorConversion
 {
   private static final SqlFunction SQL_FUNCTION = OperatorConversions
-      .operatorBuilder(StringUtils.toUpperCase(PaldbLookupIntExprMacro.FN_NAME))
+      .operatorBuilder(StringUtils.toLowerCase(PaldbLookupIntExprMacro.FN_NAME))
       .operandTypes(SqlTypeFamily.INTEGER, SqlTypeFamily.CHARACTER, SqlTypeFamily.CHARACTER)
       .returnType(SqlTypeName.BIGINT)
       .functionCategory(SqlFunctionCategory.STRING)
@@ -57,7 +57,7 @@ public class PaldbLookupIntOperatorConversion implements SqlOperatorConversion
         plannerContext,
         rowSignature,
         rexNode,
-        StringUtils.toUpperCase(PaldbLookupIntExprMacro.FN_NAME)
+        StringUtils.toLowerCase(PaldbLookupIntExprMacro.FN_NAME)
     );
   }
 }
