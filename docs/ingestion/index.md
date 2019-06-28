@@ -202,13 +202,13 @@ _ingestion spec_.
 
 Ingestion specs consists of three main components:
 
-- `dataSchema`, which configures the datasource name, input row parser, datasource schema, and treatment of the primary
-   timestamp. For more information, see the [parser](#parser), [primary timestamp](#primary-timestamp),
-   [transforms and filters](#transform), and [schema](#schema) sections on this page.
-- `ioConfig`, which influences how data is read from the source system. For more information, see the
+- `dataSchema`, which configures the [datasource name](#datasource), [input row parser](#parser),
+   [primary timestamp](#timestampspec), [flattening of nested data (if needed)](#flattenspec),
+   [dimensions](#dimensionsspec), [metrics](#metricsspec), and [transforms and filters (if needed)](#transformspec).
+- [`ioConfig`](#ioconfig), which influences how data is read from the source system. For more information, see the
    documentation for each [ingestion method](#connect).
-- `tuningConfig`, which controls various tuning parameters. For more information, see the [tuning](#tuning) and
-  [partitioning](#partitioning) sections on this page.
+- [`tuningConfig`](#tuningconfig), which controls various tuning parameters specific to each
+  [ingestion method](#ingestion-methods).
 
 Example ingestion spec for task type "index" (native batch):
 
@@ -423,6 +423,7 @@ An example `flattenSpec` is:
 "flattenSpec": {
   "useFieldDiscovery": true,
   "fields": [
+    { "name": "baz", "type": "root" },
     { "name": "foo_bar", "type": "path", "expr": "$.foo.bar" },
     { "name": "first_food", "type": "jq", "expr": ".thing.food[1]" }
   ]
@@ -448,163 +449,28 @@ A `flattenSpec` can have the following components:
 
 #### Field flattening specifications
 
-Each field in the `fields` list can be
+Each entry in the `fields` list can have the following components:
 
 | Field | Description | Default |
 |-------|-------------|---------|
-| type | Options are as follows:<br><br><ul><li>`root`, referring to a field at the root level of the record. Only really useful if `useFieldDiscovery` is false.</li><li>`path`, referring to a field using [JsonPath](https://github.com/jayway/JsonPath) notation. Supported by most data formats that offer nesting, including `avro`, `json`, `orc`, and `parquet`.</li><li>`jq`, referring to a field using [jq](https://github.com/eiiches/jackson-jq) notation. Only supported for the `json` format.</li></ul> | none (required) |
-| name | Name of the field after flattening. | none (required) |
-| expr | Expression for accessing the field while flattening. For type `path`, this should be [JsonPath](https://github.com/jayway/JsonPath). For type `jq`, this should be [jq](https://github.com/eiiches/jackson-jq) notation. For other types, this parameter is ignored. | none (required for types `path` and `jq`) |
+| type | Options are as follows:<br><br><ul><li>`root`, referring to a field at the root level of the record. Only really useful if `useFieldDiscovery` is false.</li><li>`path`, referring to a field using [JsonPath](https://github.com/jayway/JsonPath) notation. Supported by most data formats that offer nesting, including `avro`, `json`, `orc`, and `parquet`.</li><li>`jq`, referring to a field using [jackson-jq](https://github.com/eiiches/jackson-jq) notation. Only supported for the `json` format.</li></ul> | none (required) |
+| name | Name of the field after flattening. This name can be referred to by the [`timestampSpec`](#timestampspec), [`transformSpec`](#transformspec), [`dimensionsSpec`](#dimensionsSpec), and [`metricsSpec`](#metricsSpec).| none (required) |
+| expr | Expression for accessing the field while flattening. For type `path`, this should be [JsonPath](https://github.com/jayway/JsonPath). For type `jq`, this should be [jackson-jq](https://github.com/eiiches/jackson-jq) notation. For other types, this parameter is ignored. | none (required for types `path` and `jq`) |
 
-Suppose the event JSON has the following form:
+#### Notes on flattening
 
-```json
-{
- "timestamp": "2015-09-12T12:10:53.155Z",
- "dim1": "qwerty",
- "dim2": "asdf",
- "dim3": "zxcv",
- "ignore_me": "ignore this",
- "metrica": 9999,
- "foo": {"bar": "abc"},
- "foo.bar": "def",
- "nestmet": {"val": 42},
- "hello": [1.0, 2.0, 3.0, 4.0, 5.0],
- "mixarray": [1.0, 2.0, 3.0, 4.0, {"last": 5}],
- "world": [{"hey": "there"}, {"tree": "apple"}],
- "thing": {"food": ["sandwich", "pizza"]}
-}
-```
-
-The column "metrica" is a Long metric column, "hello" is an array of Double metrics, and "nestmet.val" is a nested Long metric. All other columns are dimensions.
-
-To flatten this JSON, the parseSpec could be defined as follows:
-
-```json
-"parseSpec": {
-  "format": "json",
-  "flattenSpec": {
-    "useFieldDiscovery": true,
-    "fields": [
-      {
-        "type": "root",
-        "name": "dim1"
-      },
-      "dim2",
-      {
-        "type": "path",
-        "name": "foo.bar",
-        "expr": "$.foo.bar"
-      },
-      {
-        "type": "root",
-        "name": "foo.bar"
-      },
-      {
-        "type": "path",
-        "name": "path-metric",
-        "expr": "$.nestmet.val"
-      },
-      {
-        "type": "path",
-        "name": "hello-0",
-        "expr": "$.hello[0]"
-      },
-      {
-        "type": "path",
-        "name": "hello-4",
-        "expr": "$.hello[4]"
-      },
-      {
-        "type": "path",
-        "name": "world-hey",
-        "expr": "$.world[0].hey"
-      },
-      {
-        "type": "path",
-        "name": "worldtree",
-        "expr": "$.world[1].tree"
-      },
-      {
-        "type": "path",
-        "name": "first-food",
-        "expr": "$.thing.food[0]"
-      },
-      {
-        "type": "path",
-        "name": "second-food",
-        "expr": "$.thing.food[1]"
-      },
-      {
-        "type": "jq",
-        "name": "first-food-by-jq",
-        "expr": ".thing.food[1]"
-      },
-      {
-        "type": "jq",
-        "name": "hello-total",
-        "expr": ".hello | sum"
-      }
-    ]
-  },
-  "dimensionsSpec" : {
-   "dimensions" : [],
-   "dimensionsExclusions": ["ignore_me"]
-  },
-  "timestampSpec" : {
-   "format" : "auto",
-   "column" : "timestamp"
-  }
-}
-```
-
-Fields "dim3", "ignore_me", and "metrica" will be automatically discovered because 'useFieldDiscovery' is true, so they have been omitted from the field spec list.
-
-"ignore_me" will be automatically discovered but excluded as specified by dimensionsExclusions.
-
-Aggregators should use the metric column names as defined in the flattenSpec. Using the example above:
-
-```json
-"metricsSpec" : [
-{
-  "type" : "longSum",
-  "name" : "path-metric-sum",
-  "fieldName" : "path-metric"
-},
-{
-  "type" : "doubleSum",
-  "name" : "hello-0-sum",
-  "fieldName" : "hello-0"
-},
-{
-  "type" : "longSum",
-  "name" : "metrica-sum",
-  "fieldName" : "metrica"
-}
-]
-```
-
-Note that:
-
-* For convenience, when defining a root-level field, it is possible to define only the field name, as a string, shown with "dim2" above.
-* Enabling 'useFieldDiscovery' will only autodetect fields at the root level with a single value (not a map or list), as well as fields referring to a list of single values. In the example above, "dim1", "dim2", "dim3", "ignore_me", "metrica", and "foo.bar" (at the root) would be automatically detected as columns. The "hello" field is a list of Doubles and will be autodiscovered, but note that the example ingests the individual list members as separate fields. The "world" field must be explicitly defined because its value is a map. The "mixarray" field, while similar to "hello", must also be explicitly defined because its last value is a map.
-* Duplicate field definitions are not allowed, an exception will be thrown.
-* If auto field discovery is enabled, any discovered field with the same name as one already defined in the field specs will be skipped and not added twice.
-* The JSON input must be a JSON object at the root, not an array. e.g., {"valid": "true"} and {"valid":[1,2,3]} are supported but [{"invalid": "true"}] and [1,2,3] are not.
-* [http://jsonpath.herokuapp.com/](http://jsonpath.herokuapp.com/) is useful for testing the path expressions.
-* jackson-jq supports subset of [./jq](https://stedolan.github.io/jq/) syntax.  Please refer jackson-jq document.
+* For convenience, when defining a root-level field, it is possible to define only the field name, as a string, instead of a JSON object. For example, `{"name": "baz", "type": "root"}` is equivalent to `"baz"`.
+* Enabling `useFieldDiscovery` will only autodetect "simple" fields at the root level that correspond to data types that Druid supports. This includes strings, numbers, and lists of strings or numbers. Other types will not be automatically detected, and must be specified explicitly in the `fields` list.
+* Duplicate field `name`s are not allowed. An exception will be thrown.
+* If `useFieldDiscovery` is enabled, any discovered field with the same name as one already defined in the `fields` list will be skipped, rather than added twice.
+* [http://jsonpath.herokuapp.com/](http://jsonpath.herokuapp.com/) is useful for testing `path`-type expressions.
+* jackson-jq supports a subset of the full [jq](https://stedolan.github.io/jq/) syntax.  Please refer to the [jackson-jq documentation](https://github.com/eiiches/jackson-jq) for details.
 
 ### `metricsSpec`
 
 The `metricsSpec` is located in `dataSchema` → `metricsSpec` and is a list of [aggregators](../querying/aggregations.md)
 to apply at ingestion time. This is most useful when [rollup](#rollup) is enabled, since it's how you configure
 ingestion-time aggregation.
-
-> Generally, when [rollup](#rollup) is disabled, you should have an empty `metricsSpec` (because without rollup,
-> Druid does not do any ingestion-time aggregation, so there is little reason to include an ingestion-time aggregator). However,
-> in some cases, it can still make sense to define metrics: for example, if you want to create a complex column as a way of
-> pre-computing part of an [approximate aggregation](../querying/aggregations.md#approximate-aggregations), this can only
-> be done by defining a metric in a `metricsSpec`.
 
 An example `metricsSpec` is:
 
@@ -616,6 +482,12 @@ An example `metricsSpec` is:
 ]
 ```
 
+> Generally, when [rollup](#rollup) is disabled, you should have an empty `metricsSpec` (because without rollup,
+> Druid does not do any ingestion-time aggregation, so there is little reason to include an ingestion-time aggregator). However,
+> in some cases, it can still make sense to define metrics: for example, if you want to create a complex column as a way of
+> pre-computing part of an [approximate aggregation](../querying/aggregations.md#approximate-aggregations), this can only
+> be done by defining a metric in a `metricsSpec`.
+
 ### `granularitySpec`
 
 The `granularitySpec` is located in `dataSchema` → `granularitySpec` and is responsible for configuring
@@ -623,7 +495,7 @@ the following operations:
 
 1. Partitioning a datasource into [time chunks](../design/architecture.html#datasources-and-segments) (via `segmentGranularity`).
 2. Truncating the timestamp, if desired (via `queryGranularity`).
-3. Specifying which time ranges of data should be ingested, for batch ingestion (via `intervals`).
+3. Specifying which time chunks of segments should be created, for batch ingestion (via `intervals`).
 4. Specifying whether ingestion-time [rollup](#rollup) should be used or not (via `rollup`).
 
 Other than `rollup`, these operations are all based on the [primary timestamp](#primary-timestamp).
@@ -649,17 +521,7 @@ A `granularitySpec` can have the following components:
 | segmentGranularity | [Time chunking](../design/architecture.html#datasources-and-segments) granularity for this datasource. Multiple segments can be created per time chunk. For example, when set to `day`, the events of the same day fall into the same time chunk which can be optionally further partitioned into multiple segments based on other configurations and input size. Any [query granularity](../querying/granularities.md) can be provided here.<br><br>Ignored if `type` is set to `arbitrary`.| `day` |
 | queryGranularity | The resolution of timestamp storage within each segment. This must be equal to, or finer, than `segmentGranularity`. This will be the finest granularity that you can query at and still receive sensible results, but note that you can still query at anything coarser than this granularity. E.g., a value of `minute` will mean that records will be stored at minutely granularity, and can be sensibly queried at any multiple of minutes (including minutely, 5-minutely, hourly, etc).<br><br>Any [query granularity](../querying/granularities.md) can be provided here. Use `none` to store timestamps as-is, without any truncation.| `none` |
 | rollup | Whether to use ingestion-time [rollup](#rollup) or not. | `true` |
-| intervals | A list of intervals describing what time chunks of segments should be created. If `type` is set to `uniform`, this list will be broken up <br><br>If specified, batch ingestion tasks may be able to skip a determining-partitions phase, which can result in faster ingestion. Batch ingestion tasks may also be able to request all their locks up-front instead of one by one. Batch ingestion tasks will thrown away any data not in the specified intervals.<br><br>Ignored for any form of streaming ingestion. | none |
-
-#### Arbitrary Granularity Spec
-
-This spec is used to generate segments with arbitrary intervals (it tries to create evenly sized segments). This spec is not supported for real-time processing.
-
-| Field | Type | Description | Required |
-|-------|------|-------------|----------|
-| queryGranularity | string | The minimum granularity to be able to query results at and the granularity of the data inside the segment. E.g. a value of "minute" will mean that data is aggregated at minutely granularity. That is, if there are collisions in the tuple (minute(timestamp), dimensions), then it will aggregate values together using the aggregators instead of storing individual rows. A granularity of 'NONE' means millisecond granularity. See [Granularity](../querying/granularities.md) for supported granularities.| no (default == 'NONE') |
-| rollup | boolean | rollup or not | no (default == true) |
-| intervals | JSON string array | A list of intervals for the raw data being ingested. Ignored for real-time ingestion. | no. If specified, Hadoop and native non-parallel batch ingestion tasks may skip determining partitions phase which results in faster ingestion; native parallel ingestion tasks can request all their locks up-front instead of one by one. Batch ingestion will thrown away any data not in the specified intervals. |
+| intervals | A list of intervals describing what time chunks of segments should be created. If `type` is set to `uniform`, this list will be broken up and rounded-off based on the `segmentGranularity`. If `type` is set to `arbitrary`, this list will be used as-is.<br><br>If `null` or not provided, batch ingestion tasks will generally determine which time chunks to output based on what timestamps are found in the input data.<br><br>If specified, batch ingestion tasks may be able to skip a determining-partitions phase, which can result in faster ingestion. Batch ingestion tasks may also be able to request all their locks up-front instead of one by one. Batch ingestion tasks will throw away any records with timestamps outside of the specified intervals.<br><br>Ignored for any form of streaming ingestion. | `null` |
 
 ### `transformSpec`
 
@@ -763,13 +625,4 @@ The `indexSpec` object can include the following properties:
 |longEncoding|Encoding format for long-typed columns. Applies regardless of whether they are dimensions or metrics. Options are `auto` or `longs`. `auto` encodes the values using offset or lookup table depending on column cardinality, and store them with variable size. `longs` stores the value as-is with 8 bytes each.|`longs`|
 
 Beyond these properties, each ingestion method has its own specific tuning properties. See the documentation for each
-ingestion method (below) for details.
-
-|Method|Tuning properties|
-|------|-----------------|
-|[Native batch](native-batch.html)|[Native batch tuning](native-batch.html#tuning)|
-|[Hadoop](hadoop.html)|[Hadoop tuning](hadoop.html#tuning)|
-|[Kafka indexing service](../development/extensions-core/kafka-ingestion.md)|[Kafka tuning](../development/extensions-core/kafka-ingestion.html#tuning)|
-|[Kinesis indexing service](../development/extensions-core/kinesis-ingestion.md)|[Kinesis tuning](../development/extensions-core/kinesis-ingestion.html#tuning)|
-
-
+[ingestion method](#ingestion-methods) for details.
