@@ -22,14 +22,26 @@ package org.apache.druid.server.lookup.namespace;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Binder;
+import com.google.inject.Inject;
+import com.google.inject.Injector;
+import com.google.inject.Key;
+import com.google.inject.name.Names;
+import org.apache.druid.guice.ExpressionModule;
 import org.apache.druid.initialization.DruidModule;
 import org.apache.druid.query.lookup.PaldbLookupExtractorFactory;
+import org.apache.druid.query.lookup.PaldbLookupIntExprMacro;
+import org.apache.druid.query.lookup.PaldbLookupIntOperatorConversion;
+import org.apache.druid.sql.guice.SqlBindings;
 
 import java.util.List;
 
 public class PaldbLookupExtractionModule implements DruidModule
 {
+  @Inject
+  private Injector injector;
+
   @Override
   public List<? extends Module> getJacksonModules()
   {
@@ -42,5 +54,28 @@ public class PaldbLookupExtractionModule implements DruidModule
   @Override
   public void configure(Binder binder)
   {
+    if (isEnabled()) {
+      ExpressionModule.addExprMacro(binder, PaldbLookupIntExprMacro.class);
+      SqlBindings.addOperatorConversion(binder, PaldbLookupIntOperatorConversion.class);
+    }
   }
+
+  private boolean isEnabled()
+  {
+    final String serviceName;
+
+    try {
+      serviceName = injector.getInstance(Key.get(String.class, Names.named("serviceName")));
+    }
+    catch (Exception e) {
+      return false;
+    }
+
+    if (ImmutableSet.of("druid/broker", "druid/historical").contains(serviceName)) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
 }

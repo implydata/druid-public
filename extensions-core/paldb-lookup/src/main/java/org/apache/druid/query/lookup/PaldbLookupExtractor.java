@@ -20,10 +20,8 @@
 package org.apache.druid.query.lookup;
 
 import com.linkedin.paldb.api.StoreReader;
-import org.apache.commons.lang.math.NumberUtils;
 import org.apache.druid.collections.LightPool;
 import org.apache.druid.common.config.NullHandling;
-import org.apache.druid.java.util.common.StringUtils;
 import org.apache.druid.java.util.common.logger.Logger;
 
 import javax.annotation.Nullable;
@@ -56,9 +54,6 @@ public class PaldbLookupExtractor extends LookupExtractor
   @Override
   public String apply(@Nullable String key)
   {
-    if (NumberUtils.isNumber(key)) {
-      return applyNumeric(Long.parseLong(key));
-    }
     String keyEquivalent = NullHandling.nullToEmptyIfNeeded(key);
     if (keyEquivalent == null) {
       return null;
@@ -106,40 +101,32 @@ public class PaldbLookupExtractor extends LookupExtractor
     return NullHandling.emptyToNullIfNeeded(str);
   }
 
-  private String applyNumeric(long key)
+  /**
+   * This method is *not* used when this class is used in LookupExtractor context, but is used directly in a sort
+   * of hacky way by PaldbLookupExprMacro.
+   */
+  public long applyIntToLong(int key)
   {
     StoreReader reader = null;
-    String value = null;
     try {
       reader = readerPool.take();
       //reconstruct the actual key from given key and value index
-      long longKey = (key << 32) | (long) index;
-      switch (StringUtils.toLowerCase(type)) {
-        case "int":
-          int val = reader.get(longKey);
-          value = String.valueOf(val);
-          break;
-        case "long":
-          long longVal = reader.get(longKey);
-          value = String.valueOf(longVal);
-          break;
-        default:
-          value = reader.get(longKey);
-      }
+      long longKey = (((long) key) << 32) | (long) index;
+      return reader.getLong(longKey);
     }
     catch (Exception e) {
       LOG.error(
-          "Error occurred in paldb reader while reading key[%s] and value at index[%d]. Using null for the value.",
+          "Error occurred in paldb reader while reading key[%s] and value at index[%d]. Using -1 for the value.",
           key,
           index
       );
+      return -1;
     }
     finally {
       if (reader != null) {
         readerPool.giveBack(reader);
       }
     }
-    return NullHandling.emptyToNullIfNeeded(value);
   }
 
 
