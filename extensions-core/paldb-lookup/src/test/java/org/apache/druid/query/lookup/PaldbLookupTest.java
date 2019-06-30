@@ -40,6 +40,7 @@ import java.util.concurrent.Future;
 public class PaldbLookupTest
 {
   static PaldbLookupExtractor paldbLookup;
+  private static LightPool<StoreReader> readerPool;
 
   @BeforeClass
   public static void setUpClass()
@@ -52,8 +53,7 @@ public class PaldbLookupTest
     writer.put(longKey2, "bar");
     writer.put(longKey3, 5000);
     writer.close();
-    LightPool<StoreReader> readerPool = new LightPool<>(new StoreReaderGenerator("store.paldb"));
-    paldbLookup = new PaldbLookupExtractor(readerPool, 0);
+    readerPool = new LightPool<>(new StoreReaderGenerator("store.paldb"));
   }
 
   @AfterClass
@@ -64,10 +64,31 @@ public class PaldbLookupTest
   }
 
   @Test
-  public void testApply() throws ExecutionException, InterruptedException
+  public void testApplyIntToLong() throws ExecutionException, InterruptedException
   {
+    paldbLookup = new PaldbLookupExtractor(readerPool, 2);
+    int key = 48;
+    Callable<Long> task = () -> paldbLookup.applyIntToLong(key);
+
+    ExecutorService exec = Executors.newFixedThreadPool(5);
+    List<Future<Long>> results = new ArrayList<>();
+
+    for (int i = 0; i < 100; i++) {
+      results.add(exec.submit(task));
+    }
+    exec.shutdown();
+
+    for (Future<Long> result : results) {
+      Assert.assertEquals(5000, (long)result.get());
+    }
+  }
+
+  @Test
+  public void testApplyIntToString() throws ExecutionException, InterruptedException
+  {
+    paldbLookup = new PaldbLookupExtractor(readerPool, 0);
     int key = 16;
-    Callable<String> task = () -> paldbLookup.apply(String.valueOf(key));
+    Callable<String> task = () -> paldbLookup.applyIntToString(key);
 
     ExecutorService exec = Executors.newFixedThreadPool(5);
     List<Future<String>> results = new ArrayList<>();
@@ -85,6 +106,7 @@ public class PaldbLookupTest
   @Test
   public void testUnApply() throws ExecutionException, InterruptedException
   {
+    paldbLookup = new PaldbLookupExtractor(readerPool, 0);
     Callable<List<String>> task = () -> paldbLookup.unapply("foo");
     ExecutorService exec = Executors.newFixedThreadPool(5);
     List<Future<List<String>>> results = new ArrayList<>();

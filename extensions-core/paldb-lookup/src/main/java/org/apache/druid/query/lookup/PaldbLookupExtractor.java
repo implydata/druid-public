@@ -19,6 +19,7 @@
 
 package org.apache.druid.query.lookup;
 
+import com.linkedin.paldb.api.NotFoundException;
 import com.linkedin.paldb.api.StoreReader;
 import org.apache.druid.collections.LightPool;
 import org.apache.druid.common.config.NullHandling;
@@ -105,12 +106,24 @@ public class PaldbLookupExtractor extends LookupExtractor
   public long applyIntToLong(int key)
   {
     StoreReader reader = null;
+    long actualKey = 0;
     try {
       reader = readerPool.take();
       //reconstruct the actual key from given key and value index
-      long longKey = (((long) key) << 32) | (long) index;
-      LOG.debug("longKey [%d]", longKey);
-      return reader.getLong(longKey);
+      actualKey = (((long) key) << 32) | (long) index;
+      LOG.debug("longKey [%d]", actualKey);
+      return reader.getLong(actualKey);
+    }
+    catch (ClassCastException e) {
+      if (e.getMessage().equals("java.lang.Integer cannot be cast to java.lang.Long")) {
+        try {
+          return reader.getInt(actualKey);
+        }
+        catch (NotFoundException e1) {
+          LOG.error(e1.getLocalizedMessage());
+        }
+      }
+      return -1;
     }
     catch (Exception e) {
       LOG.error(
@@ -118,7 +131,38 @@ public class PaldbLookupExtractor extends LookupExtractor
           key,
           index
       );
+      LOG.error(e.getLocalizedMessage());
       return -1;
+    }
+    finally {
+      if (reader != null) {
+        readerPool.giveBack(reader);
+      }
+    }
+  }
+
+  /**
+   * This method is *not* used when this class is used in LookupExtractor context, but is used directly in a sort
+   * of hacky way by PaldbLookupExprMacro.
+   */
+  public String applyIntToString(int key)
+  {
+    StoreReader reader = null;
+    try {
+      reader = readerPool.take();
+      //reconstruct the actual key from given key and value index
+      long longKey = (((long) key) << 32) | (long) index;
+      LOG.debug("longKey [%d]", longKey);
+      return reader.getString(longKey);
+    }
+    catch (Exception e) {
+      LOG.error(
+          "Error occurred in paldb reader while reading key[%s] and value at index[%d]. Using null for the value.",
+          key,
+          index
+      );
+      LOG.error(e.getLocalizedMessage());
+      return null;
     }
     finally {
       if (reader != null) {

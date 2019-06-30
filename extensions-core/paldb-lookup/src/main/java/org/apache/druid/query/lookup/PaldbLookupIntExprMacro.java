@@ -83,6 +83,8 @@ public class PaldbLookupIntExprMacro implements ExprMacroTable.ExprMacro
         switch (valueType) {
           case LONG:
             return ExprEval.of(getExtractor().applyIntToLong(key));
+          case STRING:
+            return ExprEval.of(getExtractor().applyIntToString(key));
           default:
             throw new IAE("Cannot handle valueType[%s]", valueType);
         }

@@ -24,7 +24,6 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Binder;
-import com.google.inject.Provider;
 import org.apache.druid.guice.ExpressionModule;
 import org.apache.druid.initialization.DruidModule;
 import org.apache.druid.java.util.common.logger.Logger;
@@ -53,14 +52,9 @@ public class PaldbLookupExtractionModule implements DruidModule
   public void configure(Binder binder)
   {
     SqlBindings.addOperatorConversion(binder, PaldbLookupIntOperatorConversion.class);
-    binder.bind(DruidService.class).toProvider(DruidServiceImpl.class).asEagerSingleton();
-    Provider<DruidServiceImpl> provider = binder.getProvider(DruidServiceImpl.class);
-    DruidServiceImpl druidService = provider.get(); //
-    LOG.info("druidServiceImpl [%s]", druidService);
-    String name = druidService.get().getServiceName();
-    if (isEnabled(name)) {
-      ExpressionModule.addExprMacro(binder, PaldbLookupIntExprMacro.class);
-    }
+    //TODO exclude this from other services except broker and historical
+    // workaround for now is to load paldb-lookup extn only on broker/historical
+    ExpressionModule.addExprMacro(binder, PaldbLookupIntExprMacro.class);
   }
 
   /*
