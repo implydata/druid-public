@@ -35,6 +35,17 @@ in [deep storage](../dependencies/deep-storage.md), they will be loaded by Histo
 how this works under the hood, see the [Storage design](../design/index.html#storage) section of Druid's design
 documentation.
 
+## How to use this documentation
+
+This **page you are currently reading** provides information about universal Druid ingestion concepts, and about
+configurations that are common to all [ingestion methods](#ingestion-methods).
+
+The **individual pages for each ingestion method** provide additional information about concepts and configurations
+that are unique to each ingestion method.
+
+We recommend reading (or at least skimming) this universal page first, and then referring to the page for the
+ingestion method or methods that you have chosen.
+
 ## Ingestion methods
 
 The table below lists Druid's most common data ingestion methods, along with comparisons to help you choose
@@ -43,16 +54,21 @@ each method works, as well as configuration properties specific to that method, 
 
 ### Streaming
 
-|Method|How it works|Exactly-once?|
-|------|------------|-------------|
-|[Kafka indexing service](../development/extensions-core/kafka-ingestion.md)|Supervisor type `kafka`|Druid reads directly from Apache Kafka.|Yes|No|
-|[Kinesis indexing service](../development/extensions-core/kinesis-ingestion.md)|Supervisor type `kinesis`|Druid reads directly from Amazon Kinesis.|Yes|No|
-|[Tranquility](../development/extensions-core/kinesis-ingestion.md)|Supervisor type `kinesis`|Druid reads directly from Amazon Kinesis.|Yes|No|
-|[Realtime nodes](realtime-node.md) (deprecated)|Supervisor type `kinesis`|Druid reads directly from Amazon Kinesis.|Yes|No|
+The most recommended, and most popular, method of streaming ingestion is the
+[Kafka indexing service](../development/extensions-core/kafka-ingestion.md) that reads directly from Kafka. The Kinesis
+indexing service also works well if you prefer Kinesis over Kafka. Tranquility is somewhat more flexible (it natively
+supports Spark Streaming, Flink, Samza, etc) but is not as robust (it cannot ingest late data, and it cannot offer
+exactly-once ingestion). For these reasons, when loading streaming data into Druid, we recommend using the native Kafka
+or Kinesis ingestion whenever possible.
 
-When loading from Kafka or Kinesis, you should use the appropriate supervisor-based indexing service.
+This table compares the available options:
 
-TODO(gianm): Fix up table
+|Method|How it works|Can ingest late data?|Exactly-once?|
+|------|------------|---------------------|-------------|
+|[Kafka indexing service](../development/extensions-core/kafka-ingestion.md)|Druid reads directly from Apache Kafka.|Yes|Yes|
+|[Kinesis indexing service](../development/extensions-core/kinesis-ingestion.md)|Druid reads directly from Amazon Kinesis.|Yes|Yes|
+|[Tranquility](tranquility.md)|Tranquility, a library that ships separately from Druid, is used to push data into Druid.|No (late data is dropped based on the `windowPeriod` config)|No|
+|[Realtime nodes](realtime-node.md) (deprecated)|Realtime nodes are standalone Druid processes that pull data from various streaming datasources. They are deprecated and will be removed in a future version.|No (late data is dropped based on the `windowPeriod` config)|No|
 
 ### Batch
 
@@ -60,17 +76,22 @@ When doing batch loads from files, you should use one-time tasks, and you have t
 single-task), `index_parallel` (native batch, parallel), or `index_hadoop` (Hadoop-based). The following table compares
 and contrasts the three batch ingestion options.
 
-|   |Task type `index_hadoop`|Task type `index_parallel`|Task type `index`|
-|---|------------|--------------|-----|
-| **Category** | [Hadoop-based](hadoop.html) | [Native batch](native-batch.html) | [Native batch](native-batch.html) |
-| **Parallel?** | Always parallel | Parallel if firehose is splittable | No |
-| **Append or overwrite?** | Overwrite only | Both supported | Both supported |
-| **External dependencies** | Hadoop (it internally submits Map/Reduce jobs) | None | None |
-| **Supported input locations** | Any Hadoop filesystem or Druid dataSource | Any [firehose](native-batch.md#firehoses) | Any [firehose](native-batch.md#firehoses) |
-| **Supported file formats** | Any Hadoop InputFormat | Currently text file formats (CSV, TSV, JSON) by default. Additional formats can be added though a [custom extension](../development/modules.md) implementing [`FiniteFirehoseFactory`](https://github.com/apache/incubator-druid/blob/master/core/src/main/java/org/apache/druid/data/input/FiniteFirehoseFactory.java) | Currently text file formats (CSV, TSV, JSON) by default. Additional formats can be added though a [custom extension](../development/modules.md) implementing [`FiniteFirehoseFactory`](https://github.com/apache/incubator-druid/blob/master/core/src/main/java/org/apache/druid/data/input/FiniteFirehoseFactory.java) |
-| **Supported [rollup modes](#rollup)** | Perfect rollup | Best-effort rollup | Both perfect and best-effort rollup |
-| **Supported partitioning methods** | [Hash-based or range partitioning](hadoop.html#partitioning-specification) | N/A | Hash-based partitioning (when `forceGuaranteedRollup` = true) |
-| **Saving parse exceptions in ingestion report** | Currently not supported | Currently not supported | Supported |
+In general, we recommend native batch whenever it meets your needs, since the setup is simpler (it does not depend on
+an external Hadoop cluster). However, there are still scenarios where Hadoop-based batch ingestion is the right choice,
+especially due to its support for custom partitioning options and reading binary data formats.
+
+This table compares the available options:
+
+|   |Task type `index`|Task type `index_parallel`|Task type `index_hadoop`|
+|---|-----|--------------|------------|
+| **Method** | [Native batch](native-batch.html) | [Native batch](native-batch.html) | [Hadoop-based](hadoop.html) |
+| **Automatically parallel?** | No. Each task is single-threaded. | Yes, if firehose is splittable. See [firehose documentation](native-batch.md#firehoses) for details. | Yes, always. |
+| **Can append or overwrite?** | Yes, both. | Yes, both. | Overwrite only. |
+| **External dependencies** | None. | None. | Hadoop cluster (Druid submits Map/Reduce jobs). |
+| **Input locations** | Any [firehose](native-batch.md#firehoses). | Any [firehose](native-batch.md#firehoses). | Any Hadoop FileSystem or Druid datasource. |
+| **File formats** | Text file formats (CSV, TSV, JSON). Support for binary formats is coming in a future release.<br><br>Additional formats can be added though a [custom extension](../development/modules.md) implementing [`FiniteFirehoseFactory`](https://github.com/apache/incubator-druid/blob/master/core/src/main/java/org/apache/druid/data/input/FiniteFirehoseFactory.java). | Text file formats (CSV, TSV, JSON). Support for binary formats is coming in a future release.<br><br>Additional formats can be added though a [custom extension](../development/modules.md) implementing [`FiniteFirehoseFactory`](https://github.com/apache/incubator-druid/blob/master/core/src/main/java/org/apache/druid/data/input/FiniteFirehoseFactory.java). | Any Hadoop InputFormat. |
+| **[Rollup modes](#rollup)** | Perfect if `forceGuaranteedRollup` = true in the [`tuningConfig`](native-batch.md#tuningconfig).| Only best-effort. Support for perfect rollup is coming in a future release. | Always perfect. |
+| **Partitioning options** | Hash-based partitioning is supported when `forceGuaranteedRollup` = true in the [`tuningConfig`](native-batch.md#tuningconfig). | None. Support for partitioning is coming in a future release. | Hash-based or range-based partitioning via [`partitionsSpec`](hadoop.html#partitioning-specification). |
 
 ## Primary timestamp
 
@@ -150,7 +171,7 @@ The perfect roll-up mode encompasses an additional preprocessing step to determi
 
 On the contrary, the best-effort roll-up mode doesn't require any preprocessing step, but the size of ingested data might be larger than that of the perfect roll-up. All types of [streaming indexing (e.g., kafka indexing service)](../ingestion/stream-ingestion.md) run with this mode.
 
-Finally, the [native index task](../ingestion/native_tasks.md) supports both modes and you can choose either one which fits to your application.
+Finally, the [native index task](native-batch.md) supports both modes and you can choose either one which fits to your application.
 
 ## Partitioning
 
@@ -594,7 +615,7 @@ properties apply to all [ingestion methods](#ingestion-methods), but most are sp
 ingestion method. An example `tuningConfig` that sets all of the shared, common properties to their defaults
 is:
 
-```
+```plaintext
 "tuningConfig": {
   "type": "<ingestion-method-specific type code>",
   "maxRowsInMemory": 1000000,
@@ -604,7 +625,8 @@ is:
     "dimensionCompression": "lz4",
     "metricCompression": "lz4",
     "longEncoding": "longs"
-  }
+  },
+  <other ingestion-method-specific properties>
 }
 ```
 
@@ -614,6 +636,7 @@ is:
 |maxRowsInMemory|The maximum number of records to store in memory before persisting to disk. Note that this is the number of rows post-rollup, and so it may not be equal to the number of input records. Ingested records will be persisted to disk when either `maxRowsInMemory` or `maxBytesInMemory` are reached (whichever happens first).|`1000000`|
 |maxBytesInMemory|The maximum aggregate size of records, in bytes, to store in the JVM heap before persisting. This is based on a rough estimate of memory usage. Ingested records will be persisted to disk when either `maxRowsInMemory` or `maxBytesInMemory` are reached (whichever happens first).<br /><br />Setting maxBytesInMemory to -1 disables this check, meaning Druid will rely entirely on maxRowsInMemory to control memory usage. Setting it to zero means the default value will be used (one-sixth of JVM heap size).<br /><br />Note that the estimate of memory usage is designed to be an overestimate, and can be especially high when using complex ingest-time aggregators, including sketches. If this causes your indexing workloads to persist to disk too often, you can set maxBytesInMemory to -1 and rely on maxRowsInMemory instead.|One-sixth of max JVM heap size|
 |indexSpec|Tune how data is indexed. See below for more information.|See table below|
+|Other properties|Each ingestion method has its own list of additional tuning properties. See the documentation for each method for a full list: [Kafka indexing service](../development/extensions-core/kafka-ingestion.md#tuningconfig), [Kinesis indexing service](../development/extensions-core/kinesis-ingestion.md#tuningconfig), [Native batch](native-batch.md#tuningconfig), and [Hadoop-based](hadoop.md#tuningconfig).||
 
 The `indexSpec` object can include the following properties:
 
