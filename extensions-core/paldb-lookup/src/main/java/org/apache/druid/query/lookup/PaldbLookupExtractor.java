@@ -151,9 +151,12 @@ public class PaldbLookupExtractor extends LookupExtractor
     try {
       reader = readerPool.take();
       //reconstruct the actual key from given key and value index
+      LOG.debug("key[%d] index[%d]", key, index);
       long longKey = (((long) key) << 32) | (long) index;
       LOG.debug("longKey [%d]", longKey);
-      return reader.getString(longKey);
+      String str = reader.getString(longKey);
+      LOG.debug("str[%s]", str);
+      return str;
     }
     catch (Exception e) {
       LOG.error(

@@ -79,7 +79,7 @@ public class PaldbLookupTest
     exec.shutdown();
 
     for (Future<Long> result : results) {
-      Assert.assertEquals(5000, (long)result.get());
+      Assert.assertEquals(5000, (long) result.get());
     }
   }
 
