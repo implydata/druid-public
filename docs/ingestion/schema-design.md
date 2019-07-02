@@ -22,20 +22,20 @@ title: "Schema design tips"
   ~ under the License.
   -->
 
+## Druid's data model
 
-This page is meant to assist users in designing a schema for data to be ingested in Apache Druid (incubating). Druid offers a unique data
-modeling system that bears similarity to both relational and timeseries models. The key factors are:
+For general information, check out the documentation on [Druid's data model](index.md#druid-s-data-model) on the main
+ingestion overview page. The rest of this page discusses tips for users coming from other kinds of systems, as well as
+general tips and common practices.
 
 * Druid data is stored in [datasources](index.html#datasources), which are similar to tables in a traditional RDBMS.
 * Druid datasources can be ingested with or without [rollup](#rollup). With rollup enabled, Druid partially aggregates your data during ingestion, potentially reducing its row count, decreasing storage footprint, and improving query performance. With rollup disabled, Druid stores one row for each row in your input data, without any pre-aggregation.
 * Every row in Druid must have a timestamp. Data is always partitioned by time, and every query has a time filter. Query results can also be broken down by time buckets like minutes, hours, days, and so on.
 * All columns in Druid datasources, other than the timestamp column, are either dimensions or metrics. This follows the [standard naming convention](https://en.wikipedia.org/wiki/Online_analytical_processing#Overview_of_OLAP_systems) of OLAP data.
 * Typical production datasources have tens to hundreds of columns.
-* [Dimension columns](ingestion-spec.html#dimensions) are stored as-is, so they can be filtered on, grouped by, or aggregated at query time. They are always single Strings, [arrays of Strings](../querying/multi-value-dimensions.md), single Longs, single Doubles or single Floats.
-* Metric columns are stored [pre-aggregated](../querying/aggregations.md), so they can only be aggregated at query time (not filtered or grouped by). They are often stored as numbers (integers or floats) but can also be stored as complex objects like [HyperLogLog sketches or approximate quantile sketches](../querying/aggregations.html#approx). Metrics can be configured at ingestion time even when rollup is disabled, but are most useful when rollup is enabled.
+* [Dimension columns](index.md#dimensions) are stored as-is, so they can be filtered on, grouped by, or aggregated at query time. They are always single Strings, [arrays of Strings](../querying/multi-value-dimensions.md), single Longs, single Doubles or single Floats.
+* [Metric columns](#index.md#metrics) are stored [pre-aggregated](../querying/aggregations.md), so they can only be aggregated at query time (not filtered or grouped by). They are often stored as numbers (integers or floats) but can also be stored as complex objects like [HyperLogLog sketches or approximate quantile sketches](../querying/aggregations.html#approx). Metrics can be configured at ingestion time even when rollup is disabled, but are most useful when rollup is enabled.
 
-The rest of this page discusses tips for users coming from other kinds of systems, as well as general tips and
-common practices.
 
 ## If you're coming from a...
 
@@ -135,50 +135,14 @@ query performance boosts.
 
 ### Rollup
 
-Druid can roll up data as it is ingested to minimize the amount of raw data that needs to be stored. Rollup is
-a form of summarization or pre-aggregation. Columns stored in a Druid datasource are split into _dimensions_ and
-_measures_. When rollup is enabled, any number of rows that have identical dimensions to each other (including an
-identical timestamp after `queryGranularity`-based truncation has been applied) can be collapsed into a single row in
-Druid.
-
-In practice, rolling up data can dramatically reduce the size of data that needs to be stored, reducing row counts
-by potentially orders of magnitude. This storage reduction does come at a cost: as we roll up data, we lose the ability
-to query individual events.
-
-You can measure the rollup ratio of a datasource by comparing the number of rows in Druid with the number of ingested
-events. One way to do this is with a [Druid SQL](../querying/sql.md) query like:
-
-```
--- "* 1.0" so we get decimal rather than integer division
-SELECT SUM("event_count") / COUNT(*) * 1.0 FROM datasource
-```
-
-In this case, `event_count` was a "count" type metric specified at ingestion time. See
-[Counting the number of ingested events](#counting) below for more details about how counting works when rollup is
-enabled.
-
-Tips for maximizing rollup:
-
-- Generally, the fewer dimensions you have, and the lower the cardinality of your dimensions, the better rollup ratios
-you will achieve.
-- Use [sketches](#sketches) to avoid storing high cardinality dimensions, which harm rollup ratios.
-- Adjusting `queryGranularity` at ingestion time (for example, using `PT5M` instead of `PT1M`) increases the
-likelihood of two rows in Druid having matching timestamps, and can improve your rollup ratios.
-- It can be beneficial to load the same data into more than one Druid datasource. Some users choose to create a "full"
-datasource that has rollup disabled (or enabled, but with a minimal rollup ratio) and an "abbreviated" datasource that
-has fewer dimensions and a higher rollup ratio. When queries only involve dimensions in the "abbreviated" set, using
-that datasource leads to much faster query times. This can often be done with just a small increase in storage
-footprint, since abbreviated datasources tend to be substantially smaller.
-
-For more details about how rollup works and how to configure it, see the [ingestion overview](index.html#rollup).
-
-
+Druid can roll up data as it is ingested to minimize the amount of raw data that needs to be stored. This is a form
+of summarization or pre-aggregation. For more details, see the [Rollup](index.md#rollup) section of the ingestion
+documentation.
 
 ### Partitioning and sorting
 
 Optimally partitioning and sorting your data can have substantial impact on footprint and performance. For more details,
-see the [Partitioning](index.html#partitioning) section of the data loading documentation.
-
+see the [Partitioning](index.md#partitioning) section of the ingestion documentation.
 
 
 ### Sketches for high cardinality columns

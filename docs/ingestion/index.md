@@ -93,7 +93,14 @@ This table compares the available options:
 | **[Rollup modes](#rollup)** | Perfect if `forceGuaranteedRollup` = true in the [`tuningConfig`](native-batch.md#tuningconfig).| Only best-effort. Support for perfect rollup is coming in a future release. | Always perfect. |
 | **Partitioning options** | Hash-based partitioning is supported when `forceGuaranteedRollup` = true in the [`tuningConfig`](native-batch.md#tuningconfig). | None. Support for partitioning is coming in a future release. | Hash-based or range-based partitioning via [`partitionsSpec`](hadoop.html#partitioning-specification). |
 
-## Primary timestamp
+## Druid's data model
+
+### Datasources
+
+Druid data is stored in [datasources](index.html#datasources), which are similar to tables in a traditional RDBMS. Druid
+offers a unique data modeling system that bears similarity to both relational and timeseries models.
+
+### Primary timestamp
 
 Druid schemas must always include a primary timestamp. The primary timestamp is used for
 [partitioning and sorting](#partitioning) your data. Druid queries are able to rapidly identify and retrieve data
@@ -107,18 +114,63 @@ The primary timestamp is parsed based on the [`timestampSpec`](#timestampspec). 
 Regardless of which input field the primary timestamp is read from, it will always be stored as a column named `__time`
 in your Druid datasource.
 
-## Dimensions
+### Dimensions
 
 TODO(gianm)
 
-## Metrics
+### Metrics
 
 TODO(gianm)
 
 ## Rollup
 
-Druid is able to summarize raw data at ingestion time using a process we refer to as "roll-up".
-Roll-up is a first-level aggregation operation over a selected set of "dimensions", where a set of "metrics" are aggregated.
+### Why use rollup?
+
+Druid can roll up data as it is ingested to minimize the amount of raw data that needs to be stored. Rollup is
+a form of summarization or pre-aggregation. When rollup is enabled, any rows that have identical [dimensions](#dimensions)
+to each other (including an identical [timestamp](#primary-timestamp), subject to
+[`queryGranularity`-based truncation](#granularityspec)) can be collapsed, or _rolled up_, into a single row in Druid.
+
+In practice, rolling up data can dramatically reduce the size of data that needs to be stored, reducing row counts
+by potentially orders of magnitude. This storage reduction does come at a cost: as we roll up data, we lose the ability
+to query individual events.
+
+### How to enable rollup
+
+Rollup is controlled by the `rollup` setting in the [`granularitySpec`](#granularityspec). By default, it is `true`
+(enabled). Set this to `false` if you want Druid to store each record as-is, without any rollup summarization.
+
+### Maximizing rollup ratio
+
+You can measure the rollup ratio of a datasource by comparing the number of rows in Druid with the number of ingested
+events. The higher this number, the more benefit you are gaining from rollup. One way to do this is with a
+[Druid SQL](../querying/sql.md) query like:
+
+```sql
+SELECT SUM("event_count") / COUNT(*) * 1.0 FROM datasource
+```
+
+In this query, `event_count` should refer to a "count" type metric specified at ingestion time. See
+[Counting the number of ingested events](schema-design.md#counting) on the "Schema design" page for more details about
+how counting works when rollup is enabled.
+
+Tips for maximizing rollup:
+
+- Generally, the fewer dimensions you have, and the lower the cardinality of your dimensions, the better rollup ratios
+you will achieve.
+- Use [sketches](#sketches) to avoid storing high cardinality dimensions, which harm rollup ratios.
+- Adjusting `queryGranularity` at ingestion time (for example, using `PT5M` instead of `PT1M`) increases the
+likelihood of two rows in Druid having matching timestamps, and can improve your rollup ratios.
+- It can be beneficial to load the same data into more than one Druid datasource. Some users choose to create a "full"
+datasource that has rollup disabled (or enabled, but with a minimal rollup ratio) and an "abbreviated" datasource that
+has fewer dimensions and a higher rollup ratio. When queries only involve dimensions in the "abbreviated" set, using
+that datasource leads to much faster query times. This can often be done with just a small increase in storage
+footprint, since abbreviated datasources tend to be substantially smaller.
+- If you are using a [best-effort rollup](#best-effort-rollup) ingestion configuration that does not guarantee perfect
+rollup, you can potentially improve your rollup ratio by switching to a guaranteed perfect rollup option, or by
+[reindexing](data-management.md#compaction-and-reindexing) your data in the background after initial ingestion.
+
+### Example of rollup
 
 Suppose we have the following raw data, representing total packet/byte counts in particular seconds for traffic between a source and destination. The `srcIP` and `dstIP` fields are dimensions, while `packets` and `bytes` are metrics.
 
@@ -135,13 +187,43 @@ timestamp                 srcIP         dstIP          packets     bytes
 2018-01-02T21:35:45Z      7.7.7.7       8.8.8.8            300      3000
 ```
 
-If we ingest this data into Druid with a `queryGranularity` of `minute` (which will floor timestamps to minutes), the roll-up operation is equivalent to the following pseudocode:
+If we ingest this data into Druid with the following [`dataSchema`](#ingestion-specs):
 
 ```
-GROUP BY TRUNCATE(timestamp, MINUTE), srcIP, dstIP :: SUM(packets), SUM(bytes)
+"dataSchema": {
+  "dataSource": "netflow",
+  "parser": {
+    "type": "string",
+    "parseSpec": {
+      "format": "json",
+      "timestampSpec": {
+        "column": "timestamp",
+        "format": "auto"
+      },
+      "dimensionsSpec": {
+        "dimensions": [ "srcIP", "dstIP" ]
+      }
+    }
+  },
+  "metricsSpec": [
+    { "type": "longSum", "name": "packets", "fieldName": "packets" },
+    { "type": "longSum", "name": "bytes", "fieldName": "bytes" }
+  ],
+  "granularitySpec": {
+    "segmentGranularity": "hour",
+    "queryGranularity": "minute",
+    "rollup": true
+  }
+}
 ```
 
-After the data above is aggregated during roll-up, the following rows will be ingested:
+Then the roll-up operation is equivalent to the following pseudocode:
+
+```
+GROUP BY FLOOR(timestamp TO MINUTE), srcIP, dstIP :: SUM(packets), SUM(bytes)
+```
+
+And so the following rows will be stored in Druid:
 
 ```
 timestamp                 srcIP         dstIP          packets     bytes
@@ -152,26 +234,30 @@ timestamp                 srcIP         dstIP          packets     bytes
 2018-01-02T21:35:00Z      7.7.7.7       8.8.8.8            300      3000
 ```
 
-The rollup granularity is the minimum granularity you will be able to explore data at and events are floored to this granularity.
-Hence, Druid ingestion specs define this granularity as the `queryGranularity` of the data. The lowest supported `queryGranularity` is millisecond.
+### Best-effort rollup
 
-The following links may be helpful in further understanding dimensions and metrics:
+Some Druid ingestion methods guarantee _perfect rollup_, meaning that input data are perfectly aggregated at ingestion
+time. Others offer _best-effort rollup_, meaming that input data might not be perfectly aggregated and thus there could
+be multiple segments holding rows with the same timestamp and dimension values.
 
-* [https://en.wikipedia.org/wiki/Dimension_(data_warehouse)](https://en.wikipedia.org/wiki/Dimension_(data_warehouse))
+In general, ingestion methods that offer best-effort rollup do this because they are either parallelizing ingestion
+without a shuffling step (which would be required for perfect rollup), or because they are finalizing and publishing
+segments before all data for a time chunk has been received, which we call _incremental publishing_. In both of these
+cases, records may end up in different segments that are received by different, non-shuffling tasks cannot be rolled
+up together. All types of streaming ingestion run in this mode.
 
-* [https://en.wikipedia.org/wiki/Measure_(data_warehouse)](https://en.wikipedia.org/wiki/Measure_(data_warehouse))
+Ingestion methods that guarantee perfect rollup do it with an additional preprocessing step to determine intervals
+and partitioning before the actual data ingestion stage. This preprocessing step scans the entire input dataset, which
+generally increases the time required for ingestion, but provides information necessary for perfect rollup.
 
-For tips on how to use rollup in your Druid schema designs, see the [schema design](schema-design.html#rollup) page.
+The following table shows how each method handles rollup:
 
-### Roll-up modes
-
-Druid supports two roll-up modes, i.e., _perfect roll-up_ and _best-effort roll-up_. In the perfect roll-up mode, Druid guarantees that input data are perfectly aggregated at ingestion time. Meanwhile, in the best-effort roll-up, input data might not be perfectly aggregated and thus there can be multiple segments holding the rows which should belong to the same segment with the perfect roll-up since they have the same dimension value and their timestamps fall into the same interval.
-
-The perfect roll-up mode encompasses an additional preprocessing step to determine intervals and shardSpecs before actual data ingestion if they are not specified in the ingestionSpec. This preprocessing step usually scans the entire input data which might increase the ingestion time. The [Hadoop indexing task](../ingestion/hadoop.md) always runs with this perfect roll-up mode.
-
-On the contrary, the best-effort roll-up mode doesn't require any preprocessing step, but the size of ingested data might be larger than that of the perfect roll-up. All types of [streaming indexing (e.g., kafka indexing service)](../ingestion/stream-ingestion.md) run with this mode.
-
-Finally, the [native index task](native-batch.md) supports both modes and you can choose either one which fits to your application.
+|Method|How it works|
+|------|------------|
+|[Native batch](native-batch.html)|`index_parallel` type is best-effort. `index` type may be either perfect or best-effort, based on configuration.|
+|[Hadoop](hadoop.html)|Always perfect.|
+|[Kafka indexing service](../development/extensions-core/kafka-ingestion.md)|Always best-effort.|
+|[Kinesis indexing service](../development/extensions-core/kinesis-ingestion.md)|Always best-effort.|
 
 ## Partitioning
 
@@ -212,6 +298,8 @@ Kafka) then you can use [reindexing techniques](data-management.html#compaction-
 is initially ingested. This is a powerful technique: you can use it to ensure that any data older than a certain
 threshold is optimally partitioned, even as you continuously add new data from a stream.
 
+The following table shows how each ingestion method handles partitioning:
+
 |Method|How it works|
 |------|------------|
 |[Native batch](native-batch.html)|`index` (non-parallel) tasks partition input files based on the `partitionDimensions` and `forceGuaranteedRollup` tuning configs. `index_parallel` tasks do not currently support user-defined partitioning.|
@@ -223,6 +311,9 @@ threshold is optimally partitioned, even as you continuously add new data from a
 > approach and works very well when the number of datasources does not lead to excessive per-datasource overheads. If
 > you go with this approach, then you can ignore this section, since it is describing how to set up partitioning
 > _within a single datasource_.
+>
+> For more details on splitting data up into separate datasources, and potential operational considerations, refer
+> to the [Multitenancy considerations](../querying/multitenancy.md) page.
 
 ## Ingestion specs
 
@@ -548,8 +639,8 @@ A `granularitySpec` can have the following components:
 | Field | Description | Default |
 |-------|-------------|---------|
 | type | Either `uniform` or `arbitrary`. In most cases you want to use `uniform`.| `uniform` |
-| segmentGranularity | [Time chunking](../design/architecture.html#datasources-and-segments) granularity for this datasource. Multiple segments can be created per time chunk. For example, when set to `day`, the events of the same day fall into the same time chunk which can be optionally further partitioned into multiple segments based on other configurations and input size. Any [query granularity](../querying/granularities.md) can be provided here.<br><br>Ignored if `type` is set to `arbitrary`.| `day` |
-| queryGranularity | The resolution of timestamp storage within each segment. This must be equal to, or finer, than `segmentGranularity`. This will be the finest granularity that you can query at and still receive sensible results, but note that you can still query at anything coarser than this granularity. E.g., a value of `minute` will mean that records will be stored at minutely granularity, and can be sensibly queried at any multiple of minutes (including minutely, 5-minutely, hourly, etc).<br><br>Any [query granularity](../querying/granularities.md) can be provided here. Use `none` to store timestamps as-is, without any truncation.| `none` |
+| segmentGranularity | [Time chunking](../design/architecture.html#datasources-and-segments) granularity for this datasource. Multiple segments can be created per time chunk. For example, when set to `day`, the events of the same day fall into the same time chunk which can be optionally further partitioned into multiple segments based on other configurations and input size. Any [granularity](../querying/granularities.md) can be provided here.<br><br>Ignored if `type` is set to `arbitrary`.| `day` |
+| queryGranularity | The resolution of timestamp storage within each segment. This must be equal to, or finer, than `segmentGranularity`. This will be the finest granularity that you can query at and still receive sensible results, but note that you can still query at anything coarser than this granularity. E.g., a value of `minute` will mean that records will be stored at minutely granularity, and can be sensibly queried at any multiple of minutes (including minutely, 5-minutely, hourly, etc).<br><br>Any [granularity](../querying/granularities.md) can be provided here. Use `none` to store timestamps as-is, without any truncation.| `none` |
 | rollup | Whether to use ingestion-time [rollup](#rollup) or not. | `true` |
 | intervals | A list of intervals describing what time chunks of segments should be created. If `type` is set to `uniform`, this list will be broken up and rounded-off based on the `segmentGranularity`. If `type` is set to `arbitrary`, this list will be used as-is.<br><br>If `null` or not provided, batch ingestion tasks will generally determine which time chunks to output based on what timestamps are found in the input data.<br><br>If specified, batch ingestion tasks may be able to skip a determining-partitions phase, which can result in faster ingestion. Batch ingestion tasks may also be able to request all their locks up-front instead of one by one. Batch ingestion tasks will throw away any records with timestamps outside of the specified intervals.<br><br>Ignored for any form of streaming ingestion. | `null` |
 
