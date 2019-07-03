@@ -72,8 +72,8 @@ This table compares the available options:
 
 ### Batch
 
-When doing batch loads from files, you should use one-time tasks, and you have three options: `index` (native batch,
-single-task), `index_parallel` (native batch, parallel), or `index_hadoop` (Hadoop-based). The following table compares
+When doing batch loads from files, you should use one-time tasks, and you have three options: `index` (native batch;
+single-task), `index_parallel` (native batch; parallel), or `index_hadoop` (Hadoop-based). The following table compares
 and contrasts the three batch ingestion options.
 
 In general, we recommend native batch whenever it meets your needs, since the setup is simpler (it does not depend on
@@ -110,9 +110,11 @@ and time-based retention rules.
 
 The primary timestamp is parsed based on the [`timestampSpec`](#timestampspec). In addition, the
 [`granularitySpec`](#granularityspec) controls other important operations that are based on the primary timestamp.
-
 Regardless of which input field the primary timestamp is read from, it will always be stored as a column named `__time`
 in your Druid datasource.
+
+If you have more than one timestamp column, you can store the others as
+[secondary timestamp](schema-design.md#secondary-timestamps).
 
 ### Dimensions
 
