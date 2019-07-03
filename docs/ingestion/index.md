@@ -114,7 +114,7 @@ Regardless of which input field the primary timestamp is read from, it will alwa
 in your Druid datasource.
 
 If you have more than one timestamp column, you can store the others as
-[secondary timestamp](schema-design.md#secondary-timestamps).
+[secondary timestamps](schema-design.md#secondary-timestamps).
 
 ### Dimensions
 
