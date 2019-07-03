@@ -157,3 +157,19 @@ matrix:
           echo $v dmesg ======================== ;
           docker exec -it druid-$v sh -c 'dmesg | tail -3' ;
           done
+
+      # run inspections
+    - sudo: required
+      services:
+        - docker
+      env:
+        - NAME="intellij inspections"
+        - DOCKER_IP=127.0.0.1
+      before_script:
+        - docker build -t druid/inspections "$TRAVIS_BUILD_DIR/inspections"
+      script:
+        - docker run --rm -v $TRAVIS_BUILD_DIR:/project druid/inspections /project/pom.xml /project/.idea/inspectionProfiles/Druid.xml /project/inspections/results
+      after_failure:
+        - for v in "$TRAVIS_BUILD_DIR/inspections/results/*.xml" ; do
+          echo $v logtail ======================== ; tail -100 $v ;
+          done

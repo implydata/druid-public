@@ -1,0 +1,45 @@
+<application>
+  <component name="ProjectJdkTable">
+    <jdk version="2">
+      <name value="1.8" />
+      <type value="JavaSDK" />
+      <version value="1.8" />
+      <homePath value="/usr/local/openjdk-8" />
+      <roots>
+        <annotationsPath>
+          <root type="composite">
+            <root url="jar://$APPLICATION_HOME_DIR$/lib/jdkAnnotations.jar!/" type="simple" />
+          </root>
+        </annotationsPath>
+        <classPath>
+          <root type="composite">
+            <root type="simple" url="jar:///usr/local/openjdk-8/jre/lib/charsets.jar!/" />
+            <root type="simple" url="jar:///usr/local/openjdk-8/jre/lib/ext/cldrdata.jar!/" />
+            <root type="simple" url="jar:///usr/local/openjdk-8/jre/lib/ext/dnsns.jar!/" />
+            <root type="simple" url="jar:///usr/local/openjdk-8/jre/lib/ext/jaccess.jar!/" />
+            <root type="simple" url="jar:///usr/local/openjdk-8/jre/lib/ext/localedata.jar!/" />
+            <root type="simple" url="jar:///usr/local/openjdk-8/jre/lib/ext/nashorn.jar!/" />
+            <root type="simple" url="jar:///usr/local/openjdk-8/jre/lib/ext/sunec.jar!/" />
+            <root type="simple" url="jar:///usr/local/openjdk-8/jre/lib/ext/sunjce_provider.jar!/" />
+            <root type="simple" url="jar:///usr/local/openjdk-8/jre/lib/ext/sunpkcs11.jar!/" />
+            <root type="simple" url="jar:///usr/local/openjdk-8/jre/lib/ext/zipfs.jar!/" />
+            <root type="simple" url="jar:///usr/local/openjdk-8/jre/lib/jce.jar!/" />
+            <root type="simple" url="jar:///usr/local/openjdk-8/jre/lib/jsse.jar!/" />
+            <root type="simple" url="jar:///usr/local/openjdk-8/jre/lib/management-agent.jar!/" />
+            <root type="simple" url="jar:///usr/local/openjdk-8/jre/lib/resources.jar!/" />
+            <root type="simple" url="jar:///usr/local/openjdk-8/jre/lib/rt.jar!/" />
+          </root>
+        </classPath>
+        <javadocPath>
+          <root type="composite" />
+        </javadocPath>
+        <sourcePath>
+          <root type="composite">
+            <root type="simple" url="jar:///usr/local/openjdk-8/src.zip!/" />
+          </root>
+        </sourcePath>
+      </roots>
+      <additional />
+    </jdk>
+  </component>
+</application>
