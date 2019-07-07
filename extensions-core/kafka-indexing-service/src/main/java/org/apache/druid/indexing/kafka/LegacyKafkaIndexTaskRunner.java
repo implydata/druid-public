@@ -38,6 +38,7 @@ import org.apache.druid.indexer.IngestionState;
 import org.apache.druid.indexer.TaskStatus;
 import org.apache.druid.indexing.common.IngestionStatsAndErrorsTaskReport;
 import org.apache.druid.indexing.common.IngestionStatsAndErrorsTaskReportData;
+import org.apache.druid.indexing.common.LockGranularity;
 import org.apache.druid.indexing.common.TaskRealtimeMetricsMonitorBuilder;
 import org.apache.druid.indexing.common.TaskReport;
 import org.apache.druid.indexing.common.TaskToolbox;
@@ -201,7 +202,8 @@ public class LegacyKafkaIndexTaskRunner extends SeekableStreamIndexTaskRunner<In
         authorizerMapper,
         chatHandlerProvider,
         savedParseExceptions,
-        rowIngestionMetersFactory
+        rowIngestionMetersFactory,
+        LockGranularity.TIME_CHUNK
     );
     this.task = task;
     this.ioConfig = task.getIOConfig();
@@ -299,7 +301,7 @@ public class LegacyKafkaIndexTaskRunner extends SeekableStreamIndexTaskRunner<In
       final String topic = ioConfig.getStartSequenceNumbers().getStream();
 
       // Start up, set up initial offsets.
-      final Object restoredMetadata = driver.startJob();
+      final Object restoredMetadata = driver.startJob(null);
       if (restoredMetadata == null) {
         nextOffsets.putAll(ioConfig.getStartSequenceNumbers().getPartitionSequenceNumberMap());
       } else {
@@ -503,7 +505,7 @@ public class LegacyKafkaIndexTaskRunner extends SeekableStreamIndexTaskRunner<In
         status = Status.PUBLISHING;
       }
 
-      final TransactionalSegmentPublisher publisher = (segments, commitMetadata) -> {
+      final TransactionalSegmentPublisher publisher = (segmentsToBeOverwritten, segments, commitMetadata) -> {
         final SeekableStreamEndSequenceNumbers<Integer, Long> finalPartitions = toolbox.getObjectMapper().convertValue(
             ((Map) Preconditions.checkNotNull(commitMetadata, "commitMetadata")).get(METADATA_NEXT_PARTITIONS),
             toolbox.getObjectMapper()
@@ -524,13 +526,13 @@ public class LegacyKafkaIndexTaskRunner extends SeekableStreamIndexTaskRunner<In
         final SegmentTransactionalInsertAction action;
 
         if (ioConfig.isUseTransaction()) {
-          action = new SegmentTransactionalInsertAction(
+          action = SegmentTransactionalInsertAction.appendAction(
               segments,
               new KafkaDataSourceMetadata(ioConfig.getStartSequenceNumbers()),
               new KafkaDataSourceMetadata(finalPartitions)
           );
         } else {
-          action = new SegmentTransactionalInsertAction(segments, null, null);
+          action = SegmentTransactionalInsertAction.appendAction(segments, null, null);
         }
 
         log.info("Publishing with isTransaction[%s].", ioConfig.isUseTransaction());

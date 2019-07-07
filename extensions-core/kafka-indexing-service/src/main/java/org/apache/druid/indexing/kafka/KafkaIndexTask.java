@@ -138,7 +138,8 @@ public class KafkaIndexTask extends SeekableStreamIndexTask<Integer, Long>
           authorizerMapper,
           chatHandlerProvider,
           savedParseExceptions,
-          rowIngestionMetersFactory
+          rowIngestionMetersFactory,
+          lockGranularityToUse
       );
     } else {
       //noinspection unchecked

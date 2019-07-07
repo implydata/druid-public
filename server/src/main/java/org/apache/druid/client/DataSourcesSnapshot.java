@@ -104,7 +104,8 @@ public class DataSourcesSnapshot
     final List<SegmentId> overshadowedSegments = new ArrayList<>();
     for (DataSegment dataSegment : segments) {
       final VersionedIntervalTimeline<String, DataSegment> timeline = timelines.get(dataSegment.getDataSource());
-      if (timeline != null && timeline.isOvershadowed(dataSegment.getInterval(), dataSegment.getVersion())) {
+      if (timeline != null
+          && timeline.isOvershadowed(dataSegment.getInterval(), dataSegment.getVersion(), dataSegment)) {
         overshadowedSegments.add(dataSegment.getId());
       }
     }

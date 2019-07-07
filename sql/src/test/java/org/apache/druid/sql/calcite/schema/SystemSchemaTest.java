@@ -258,8 +258,7 @@ public class SystemSchemaTest extends CalciteTestBase
       ImmutableList.of("met1", "met2"),
       null,
       1,
-      53000L,
-      DataSegment.PruneLoadSpecHolder.DEFAULT
+      53000L
   );
   private final DataSegment publishedSegment2 = new DataSegment(
       "wikipedia2",
@@ -270,8 +269,7 @@ public class SystemSchemaTest extends CalciteTestBase
       ImmutableList.of("met1", "met2"),
       null,
       1,
-      83000L,
-      DataSegment.PruneLoadSpecHolder.DEFAULT
+      83000L
   );
   private final DataSegment publishedSegment3 = new DataSegment(
       "wikipedia3",
@@ -282,8 +280,7 @@ public class SystemSchemaTest extends CalciteTestBase
       ImmutableList.of("met1", "met2"),
       null,
       1,
-      47000L,
-      DataSegment.PruneLoadSpecHolder.DEFAULT
+      47000L
   );
 
   private final DataSegment segment1 = new DataSegment(
@@ -295,8 +292,7 @@ public class SystemSchemaTest extends CalciteTestBase
       ImmutableList.of("met1", "met2"),
       null,
       1,
-      100L,
-      DataSegment.PruneLoadSpecHolder.DEFAULT
+      100L
   );
   private final DataSegment segment2 = new DataSegment(
       "test2",
@@ -307,8 +303,7 @@ public class SystemSchemaTest extends CalciteTestBase
       ImmutableList.of("met1", "met2"),
       null,
       1,
-      100L,
-      DataSegment.PruneLoadSpecHolder.DEFAULT
+      100L
   );
   private final DataSegment segment3 = new DataSegment(
       "test3",
@@ -319,8 +314,7 @@ public class SystemSchemaTest extends CalciteTestBase
       ImmutableList.of("met1", "met2"),
       new NumberedShardSpec(2, 3),
       1,
-      100L,
-      DataSegment.PruneLoadSpecHolder.DEFAULT
+      100L
   );
   private final DataSegment segment4 = new DataSegment(
       "test4",
@@ -331,8 +325,7 @@ public class SystemSchemaTest extends CalciteTestBase
       ImmutableList.of("met1", "met2"),
       null,
       1,
-      100L,
-      DataSegment.PruneLoadSpecHolder.DEFAULT
+      100L
   );
   private final DataSegment segment5 = new DataSegment(
       "test5",
@@ -343,8 +336,7 @@ public class SystemSchemaTest extends CalciteTestBase
       ImmutableList.of("met1", "met2"),
       null,
       1,
-      100L,
-      DataSegment.PruneLoadSpecHolder.DEFAULT
+      100L
   );
 
   final List<DataSegment> realtimeSegments = ImmutableList.of(segment2, segment4, segment5);

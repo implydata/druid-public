@@ -400,16 +400,16 @@ public class SQLMetadataSegmentManager implements MetadataSegmentManager
       Batch batch = handle.createBatch();
       segments
           .stream()
-          .map(segment -> segment.getId())
-          .filter(segmentId -> !versionedIntervalTimeline.isOvershadowed(
-              segmentId.getInterval(),
-              segmentId.getVersion()
+          .filter(segment -> !versionedIntervalTimeline.isOvershadowed(
+              segment.getInterval(),
+              segment.getVersion(),
+              segment
           ))
-          .forEach(segmentId -> batch.add(
+          .forEach(segment -> batch.add(
               StringUtils.format(
                   "UPDATE %s SET used=true WHERE id = '%s'",
                   getSegmentsTable(),
-                  segmentId
+                  segment.getId()
               )
           ));
       return batch.execute().length;
