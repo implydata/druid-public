@@ -30,7 +30,7 @@
     <parent>
         <artifactId>druid</artifactId>
         <groupId>org.apache.druid</groupId>
-        <version>0.15.0-iap-segment-locking1</version>
+        <version>0.15.0-iap-segment-locking2-SNAPSHOT</version>
     </parent>
 
     <dependencies>
