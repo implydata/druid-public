@@ -28,6 +28,7 @@ import com.google.common.io.Files;
 import com.google.common.primitives.Ints;
 import com.google.inject.Inject;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.time.StopWatch;
 import org.apache.druid.common.config.NullHandling;
 import org.apache.druid.io.ZeroCopyByteArrayOutputStream;
 import org.apache.druid.java.util.common.DateTimes;
@@ -478,6 +479,13 @@ public class IndexMergerV9 implements IndexMerger
     progress.startSection(section);
     long startTime = System.currentTimeMillis();
 
+    log.info("MERGEDEBUG NumAdapters: " + adapters.size());
+    log.info("MERGEDEBUG NumMergers: " + mergers.size());
+    log.info("MERGEDEBUG NumMetricWriters: " + metricWriters.size());
+    log.info("MERGEDEBUG timeAndDimsIterator class: " + timeAndDimsIterator.getClass());
+
+    StopWatch rowNumConversionStopWatch = new StopWatch();
+    rowNumConversionStopWatch.start();
     List<IntBuffer> rowNumConversions = null;
     int rowCount = 0;
     if (fillRowNumConversions) {
@@ -488,17 +496,57 @@ public class IndexMergerV9 implements IndexMerger
         rowNumConversions.add(IntBuffer.wrap(arr));
       }
     }
+    rowNumConversionStopWatch.stop();
+    log.info("MERGEDEBUG rowNumConversion time: " + rowNumConversionStopWatch.getNanoTime());
+
+    StopWatch timeSerializeStopWatch = new StopWatch();
+    timeSerializeStopWatch.start();
+    timeSerializeStopWatch.suspend();
+
+    StopWatch metricWritersStopWatch = new StopWatch();
+    metricWritersStopWatch.start();
+    metricWritersStopWatch.suspend();
+
+    StopWatch procMergedRowStopWatch = new StopWatch();
+    procMergedRowStopWatch.start();
+    procMergedRowStopWatch.suspend();
+
+    StopWatch rowCombiningIteratorStopWatch = new StopWatch();
+    rowCombiningIteratorStopWatch.start();
+    rowCombiningIteratorStopWatch.suspend();
+
+    StopWatch rowCombiningIteratorStopWatch2 = new StopWatch();
+    rowCombiningIteratorStopWatch2.start();
+    rowCombiningIteratorStopWatch2.suspend();
+
+    StopWatch rowCombiningIteratorStopWatchLoop = new StopWatch();
+    rowCombiningIteratorStopWatchLoop.start();
+    rowCombiningIteratorStopWatchLoop.suspend();
+
+    StopWatch mergingRowIteratorStopWatch = new StopWatch();
+    mergingRowIteratorStopWatch.start();
+    mergingRowIteratorStopWatch.suspend();
+
+    StopWatch mergingRowIteratorStopWatch2 = new StopWatch();
+    mergingRowIteratorStopWatch2.start();
+    mergingRowIteratorStopWatch2.suspend();
 
     long time = System.currentTimeMillis();
     while (timeAndDimsIterator.moveToNext()) {
       progress.progress();
+
+      timeSerializeStopWatch.resume();
       TimeAndDimsPointer timeAndDims = timeAndDimsIterator.getPointer();
       timeWriter.serialize(timeAndDims.timestampSelector);
+      timeSerializeStopWatch.suspend();
 
+      metricWritersStopWatch.resume();
       for (int metricIndex = 0; metricIndex < timeAndDims.getNumMetrics(); metricIndex++) {
         metricWriters.get(metricIndex).serialize(timeAndDims.getMetricSelector(metricIndex));
       }
+      metricWritersStopWatch.suspend();
 
+      procMergedRowStopWatch.resume();
       for (int dimIndex = 0; dimIndex < timeAndDims.getNumDimensions(); dimIndex++) {
         DimensionMerger merger = mergers.get(dimIndex);
         if (merger.canSkip()) {
@@ -506,36 +554,47 @@ public class IndexMergerV9 implements IndexMerger
         }
         merger.processMergedRow(timeAndDims.getDimensionSelector(dimIndex));
       }
+      procMergedRowStopWatch.suspend();
 
       if (timeAndDimsIterator instanceof RowCombiningTimeAndDimsIterator) {
         RowCombiningTimeAndDimsIterator comprisedRows = (RowCombiningTimeAndDimsIterator) timeAndDimsIterator;
 
+        rowCombiningIteratorStopWatchLoop.resume();
         for (int originalIteratorIndex = comprisedRows.nextCurrentlyCombinedOriginalIteratorIndex(0);
              originalIteratorIndex >= 0;
              originalIteratorIndex =
                  comprisedRows.nextCurrentlyCombinedOriginalIteratorIndex(originalIteratorIndex + 1)) {
 
+          rowCombiningIteratorStopWatch.resume();
           IntBuffer conversionBuffer = rowNumConversions.get(originalIteratorIndex);
           int minRowNum = comprisedRows.getMinCurrentlyCombinedRowNumByOriginalIteratorIndex(originalIteratorIndex);
           int maxRowNum = comprisedRows.getMaxCurrentlyCombinedRowNumByOriginalIteratorIndex(originalIteratorIndex);
+          rowCombiningIteratorStopWatch.suspend();
 
+          rowCombiningIteratorStopWatch2.resume();
           for (int rowNum = minRowNum; rowNum <= maxRowNum; rowNum++) {
             while (conversionBuffer.position() < rowNum) {
               conversionBuffer.put(INVALID_ROW);
             }
             conversionBuffer.put(rowCount);
           }
+          rowCombiningIteratorStopWatch2.suspend();
 
         }
-
+        rowCombiningIteratorStopWatchLoop.suspend();
       } else if (timeAndDimsIterator instanceof MergingRowIterator) {
+        mergingRowIteratorStopWatch.resume();
         RowPointer rowPointer = (RowPointer) timeAndDims;
         IntBuffer conversionBuffer = rowNumConversions.get(rowPointer.getIndexNum());
         int rowNum = rowPointer.getRowNum();
+        mergingRowIteratorStopWatch.suspend();
+
+        mergingRowIteratorStopWatch2.resume();
         while (conversionBuffer.position() < rowNum) {
           conversionBuffer.put(INVALID_ROW);
         }
         conversionBuffer.put(rowCount);
+        mergingRowIteratorStopWatch2.suspend();
       } else {
         if (fillRowNumConversions) {
           throw new IllegalStateException(
@@ -549,11 +608,38 @@ public class IndexMergerV9 implements IndexMerger
         time = System.currentTimeMillis();
       }
     }
+    rowNumConversionStopWatch.reset();
+    rowNumConversionStopWatch.start();
     if (rowNumConversions != null) {
       for (IntBuffer rowNumConversion : rowNumConversions) {
         rowNumConversion.rewind();
       }
     }
+    rowNumConversionStopWatch.stop();
+
+    timeSerializeStopWatch.stop();
+    metricWritersStopWatch.stop();
+    procMergedRowStopWatch.stop();
+    rowCombiningIteratorStopWatchLoop.stop();
+    rowCombiningIteratorStopWatch.stop();
+    rowCombiningIteratorStopWatch2.stop();
+    mergingRowIteratorStopWatch.stop();
+    mergingRowIteratorStopWatch2.stop();
+
+    log.info("MERGEDEBUG rowNumConversions rewind time: " + rowNumConversionStopWatch.getNanoTime());
+    log.info("MERGEDEBUG time serialize time: " + timeSerializeStopWatch.getNanoTime());
+    log.info("MERGEDEBUG metric writers time: " + metricWritersStopWatch.getNanoTime());
+    log.info("MERGEDEBUG process merged row time: " + procMergedRowStopWatch.getNanoTime());
+    if (timeAndDimsIterator instanceof RowCombiningTimeAndDimsIterator) {
+      log.info("MERGEDEBUG row combining iterator total loop time: " + rowCombiningIteratorStopWatchLoop.getNanoTime());
+      log.info("MERGEDEBUG row combining iterator time: " + rowCombiningIteratorStopWatch.getNanoTime());
+      log.info("MERGEDEBUG row combining iterator2 time: " + rowCombiningIteratorStopWatch2.getNanoTime());
+    }
+    if (timeAndDimsIterator instanceof MergingRowIterator) {
+      log.info("MERGEDEBUG merging row iterator time: " + mergingRowIteratorStopWatch.getNanoTime());
+      log.info("MERGEDEBUG merging row iterator2 time: " + mergingRowIteratorStopWatch2.getNanoTime());
+    }
+
     log.info("completed walk through of %,d rows in %,d millis.", rowCount, System.currentTimeMillis() - startTime);
     progress.stopSection(section);
     return rowNumConversions;
