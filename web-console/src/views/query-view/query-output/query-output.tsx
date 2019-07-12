@@ -16,11 +16,12 @@
  * limitations under the License.
  */
 
+import { Popover } from '@blueprintjs/core';
 import React from 'react';
 import ReactTable from 'react-table';
 
-import { TableCell } from '../../../components';
 import { HeaderRows } from '../../../utils';
+import { basicActionsToMenu } from '../../../utils/basic-action';
 
 import './query-output.scss';
 
@@ -28,12 +29,16 @@ export interface QueryOutputProps {
   loading: boolean;
   result: HeaderRows | null;
   error: string | null;
+  handleSQLAction: (row: string, header: string, action: string, direction?: boolean) => void;
+  sorted: { id: string; desc: boolean }[];
 }
 
 export class QueryOutput extends React.PureComponent<QueryOutputProps> {
+  constructor(props: QueryOutputProps, context: any) {
+    super(props, context);
+  }
   render() {
-    const { result, loading, error } = this.props;
-
+    const { result, loading, error, handleSQLAction, sorted } = this.props;
     return (
       <div className="query-output">
         <ReactTable
@@ -43,9 +48,52 @@ export class QueryOutput extends React.PureComponent<QueryOutputProps> {
           sortable={false}
           columns={(result ? result.header : []).map((h: any, i) => {
             return {
-              Header: h,
+              Header: () => {
+                const actions = basicActionsToMenu([
+                  {
+                    title: 'Exclude ' + h,
+                    onAction: () => handleSQLAction('', h, 'exclude column'),
+                  },
+                  {
+                    title: 'Order by ' + h,
+                    onAction: () => handleSQLAction('', h, 'order by'),
+                  },
+                ]);
+                return (
+                  <Popover className={'clickable-cell'} content={actions ? actions : <a>Filter</a>}>
+                    {h}
+                  </Popover>
+                );
+              },
+              headerClassName: sorted.map(sorted => {
+                if (sorted.id === h) {
+                  return sorted.desc ? '-sort-desc' : '-sort-asc';
+                }
+                return '';
+              })[0],
               accessor: String(i),
-              Cell: row => <TableCell value={row.value} />,
+              Cell: row => {
+                const value = row.value;
+                const actions = basicActionsToMenu([
+                  {
+                    title: 'Exclude ' + value,
+                    onAction: () => handleSQLAction(row.value, h, 'exclude'),
+                  },
+                  {
+                    title: 'Filter by ' + h + ' = ' + value,
+                    onAction: () => handleSQLAction(row.value, h, 'filter'),
+                  },
+                ]);
+                const popover = (
+                  <Popover className={'clickable-cell'} content={actions ? actions : <a>Filter</a>}>
+                    {value}
+                  </Popover>
+                );
+                if (value) {
+                  return popover;
+                }
+                return value;
+              },
             };
           })}
         />

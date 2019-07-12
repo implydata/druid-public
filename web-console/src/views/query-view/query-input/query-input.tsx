@@ -32,6 +32,7 @@ import { SQL_CONSTANTS, SQL_DYNAMICS, SQL_EXPRESSION_PARTS, SQL_KEYWORDS } from 
 import './query-input.scss';
 
 const langTools = ace.acequire('ace/ext/language_tools');
+const { Parser } = require('node-sql-parser');
 
 export interface QueryInputProps {
   queryString: string;

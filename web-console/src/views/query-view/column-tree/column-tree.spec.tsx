@@ -27,6 +27,8 @@ describe('column tree', () => {
   it('matches snapshot', () => {
     const columnTree = (
       <ColumnTree
+        defaultTable={'wikipedia'}
+        defaultSchema={'sys'}
         columnMetadataLoading={false}
         columnMetadata={
           [
