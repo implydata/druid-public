@@ -72,6 +72,10 @@ export interface HomeViewState {
   middleManagerCountLoading: boolean;
   middleManagerCount: number;
   middleManagerCountError: string | null;
+
+  lookupsCountLoading: boolean;
+  lookupsCount: number;
+  lookupsCountError: string | null;
 }
 
 export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
@@ -82,6 +86,7 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
   private taskQueryManager: QueryManager<string, any>;
   private dataServerQueryManager: QueryManager<string, any>;
   private middleManagerQueryManager: QueryManager<string, any>;
+  private lookupsQueryManager: QueryManager<string, any>;
 
   constructor(props: HomeViewProps, context: any) {
     super(props, context);
@@ -117,7 +122,11 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
 
       middleManagerCountLoading: false,
       middleManagerCount: 0,
-      middleManagerCountError: null
+      middleManagerCountError: null,
+
+      lookupsCountLoading: false,
+      lookupsCount: 0,
+      lookupsCountError: null,
     };
   }
 
@@ -125,7 +134,7 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
     const { noSqlMode } = this.props;
 
     this.statusQueryManager = new QueryManager({
-      processQuery: async (query) => {
+      processQuery: async query => {
         const statusResp = await axios.get('/status');
         return statusResp.data;
       },
@@ -133,9 +142,9 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
         this.setState({
           statusLoading: loading,
           status: result,
-          statusError: error
+          statusError: error,
         });
-      }
+      },
     });
 
     this.statusQueryManager.runQuery(`dummy`);
@@ -143,7 +152,7 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
     // -------------------------
 
     this.datasourceQueryManager = new QueryManager({
-      processQuery: async (query) => {
+      processQuery: async query => {
         let datasources: string[];
         if (!noSqlMode) {
           datasources = await queryDruidSql({ query });
@@ -157,9 +166,9 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
         this.setState({
           datasourceCountLoading: loading,
           datasourceCount: result,
-          datasourceCountError: error
+          datasourceCountError: error,
         });
-      }
+      },
     });
 
     this.datasourceQueryManager.runQuery(`SELECT datasource FROM sys.segments GROUP BY 1`);
@@ -167,12 +176,11 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
     // -------------------------
 
     this.segmentQueryManager = new QueryManager({
-      processQuery: async (query) => {
+      processQuery: async query => {
         if (!noSqlMode) {
           const segments = await queryDruidSql({ query });
           return getHeadProp(segments, 'count') || 0;
         } else {
-
           const loadstatusResp = await axios.get('/druid/coordinator/v1/loadstatus?simple');
           const loadstatus = loadstatusResp.data;
           const unavailableSegmentNum = Object.keys(loadstatus).reduce((sum, key) => {
@@ -187,15 +195,14 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
 
           return availableSegmentNum + unavailableSegmentNum;
         }
-
       },
       onStateChange: ({ result, loading, error }) => {
         this.setState({
           segmentCountLoading: loading,
           segmentCount: result,
-          segmentCountError: error
+          segmentCountError: error,
         });
-      }
+      },
     });
 
     this.segmentQueryManager.runQuery(`SELECT COUNT(*) as "count" FROM sys.segments`);
@@ -209,17 +216,17 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
         const suspendedSupervisorCount = data.filter((d: any) => d.spec.suspended === true).length;
         return {
           runningSupervisorCount,
-          suspendedSupervisorCount
+          suspendedSupervisorCount,
         };
       },
-      onStateChange: ({result, loading, error}) => {
+      onStateChange: ({ result, loading, error }) => {
         this.setState({
           runningSupervisorCount: result ? result.runningSupervisorCount : 0,
           suspendedSupervisorCount: result ? result.suspendedSupervisorCount : 0,
           supervisorCountLoading: loading,
-          supervisorCountError: error
+          supervisorCountError: error,
         });
-      }
+      },
     });
 
     this.supervisorQueryManager.runQuery('dummy');
@@ -227,8 +234,8 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
     // -------------------------
 
     this.taskQueryManager = new QueryManager({
-      processQuery: async (query) => {
-        let taskCountsFromQuery: {status: string, count: number}[] = [];
+      processQuery: async query => {
+        let taskCountsFromQuery: { status: string; count: number }[] = [];
         if (!noSqlMode) {
           taskCountsFromQuery = await queryDruidSql({ query });
         } else {
@@ -237,17 +244,23 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
           const waitingTasksResp = await axios.get('/druid/indexer/v1/waitingTasks');
           const pendingTasksResp = await axios.get('/druid/indexer/v1/pendingTasks');
           taskCountsFromQuery.push(
-            {status: 'SUCCESS', count: completeTasksResp.data.filter((d: any) => d.status === 'SUCCESS').length},
-            {status: 'FAILED', count: completeTasksResp.data.filter((d: any) => d.status === 'FAILED').length},
-            {status: 'RUNNING', count: runningTasksResp.data.length},
-            {status: 'WAITING', count: waitingTasksResp.data.length},
-            {status: 'PENDING', count: pendingTasksResp.data.length}
+            {
+              status: 'SUCCESS',
+              count: completeTasksResp.data.filter((d: any) => d.status === 'SUCCESS').length,
+            },
+            {
+              status: 'FAILED',
+              count: completeTasksResp.data.filter((d: any) => d.status === 'FAILED').length,
+            },
+            { status: 'RUNNING', count: runningTasksResp.data.length },
+            { status: 'WAITING', count: waitingTasksResp.data.length },
+            { status: 'PENDING', count: pendingTasksResp.data.length },
           );
         }
         const taskCounts = taskCountsFromQuery.reduce((acc: any, curr: any) => {
           const status = curr.status.toLowerCase();
           const property = `${status}TaskCount`;
-          return {...acc, [property]: curr.count};
+          return { ...acc, [property]: curr.count };
         }, {});
         return taskCounts;
       },
@@ -259,9 +272,9 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
           runningTaskCount: result ? result.runningTaskCount : 0,
           pendingTaskCount: result ? result.pendingTaskCount : 0,
           waitingTaskCount: result ? result.waitingTaskCount : 0,
-          taskCountError: error
+          taskCountError: error,
         });
-      }
+      },
     });
 
     this.taskQueryManager.runQuery(`SELECT
@@ -273,7 +286,7 @@ GROUP BY 1`);
     // -------------------------
 
     this.dataServerQueryManager = new QueryManager({
-      processQuery: async (query) => {
+      processQuery: async query => {
         const getDataServerNum = async () => {
           const allServerResp = await axios.get('/druid/coordinator/v1/servers?simple');
           const allServers = allServerResp.data;
@@ -292,17 +305,19 @@ GROUP BY 1`);
         this.setState({
           dataServerCountLoading: loading,
           dataServerCount: result,
-          dataServerCountError: error
+          dataServerCountError: error,
         });
-      }
+      },
     });
 
-    this.dataServerQueryManager.runQuery(`SELECT COUNT(*) as "count" FROM sys.servers WHERE "server_type" = 'historical'`);
+    this.dataServerQueryManager.runQuery(
+      `SELECT COUNT(*) as "count" FROM sys.servers WHERE "server_type" = 'historical'`,
+    );
 
     // -------------------------
 
     this.middleManagerQueryManager = new QueryManager({
-      processQuery: async (query) => {
+      processQuery: async query => {
         const middleManagerResp = await axios.get('/druid/indexer/v1/workers');
         const middleManagerCount: number = middleManagerResp.data.length;
         return middleManagerCount;
@@ -311,13 +326,37 @@ GROUP BY 1`);
         this.setState({
           middleManagerCountLoading: loading,
           middleManagerCount: result,
-          middleManagerCountError: error
+          middleManagerCountError: error,
         });
-      }
+      },
     });
 
     this.middleManagerQueryManager.runQuery(`dummy`);
+
+    // -------------------------
+    this.lookupsQueryManager = new QueryManager({
+      processQuery: async (query: string) => {
+        const resp = await axios.get('/druid/coordinator/v1/lookups/status');
+        const data = resp.data;
+        console.log();
+        const lookupsCount = Object.keys(resp.data.__default).length;
+        return {
+          lookupsCount,
+        };
+      },
+      onStateChange: ({ result, loading, error }) => {
+        this.setState({
+          lookupsCount: result ? result.lookupsCount : 0,
+          supervisorCountLoading: loading,
+          supervisorCountError: error,
+        });
+      },
+    });
+
+    this.lookupsQueryManager.runQuery('dummy');
   }
+
+
 
   componentWillUnmount(): void {
     this.statusQueryManager.terminate();
@@ -329,88 +368,138 @@ GROUP BY 1`);
   }
 
   renderCard(cardOptions: CardOptions): JSX.Element {
-    return <a href={cardOptions.href} target={cardOptions.href[0] === '/' ? '_blank' : undefined}>
-      <Card className="status-card" interactive>
-        <H5><Icon color="#bfccd5" icon={cardOptions.icon}/>&nbsp;{cardOptions.title}</H5>
-        {cardOptions.loading ? <p>Loading...</p> : (cardOptions.error ? `Error: ${cardOptions.error}` : cardOptions.content)}
-      </Card>
-    </a>;
+    return (
+      <a href={cardOptions.href} target={cardOptions.href[0] === '/' ? '_blank' : undefined}>
+        <Card className="status-card" interactive>
+          <H5>
+            <Icon color="#bfccd5" icon={cardOptions.icon} />
+            &nbsp;{cardOptions.title}
+          </H5>
+          {cardOptions.loading ? (
+            <p>Loading...</p>
+          ) : cardOptions.error ? (
+            `Error: ${cardOptions.error}`
+          ) : (
+            cardOptions.content
+          )}
+        </Card>
+      </a>
+    );
   }
 
   render() {
     const state = this.state;
 
-    return <div className="home-view app-view">
-      {this.renderCard({
-        href: UrlBaser.base('/status'),
-        icon: IconNames.GRAPH,
-        title: 'Status',
-        loading: state.statusLoading,
-        content: state.status ? `Apache Druid is running version ${state.status.version}` : '',
-        error: state.statusError
-      })}
+    return (
+      <div className="home-view app-view">
+        {this.renderCard({
+          href: UrlBaser.base('/status'),
+          icon: IconNames.GRAPH,
+          title: 'Status',
+          loading: state.statusLoading,
+          content: state.status ? `Apache Druid is running version ${state.status.version}` : '',
+          error: state.statusError,
+        })}
 
-      {this.renderCard({
-        href: '#datasources',
-        icon: IconNames.MULTI_SELECT,
-        title: 'Datasources',
-        loading: state.datasourceCountLoading,
-        content: pluralIfNeeded(state.datasourceCount, 'datasource'),
-        error: state.datasourceCountError
-      })}
+        {this.renderCard({
+          href: '#datasources',
+          icon: IconNames.MULTI_SELECT,
+          title: 'Datasources',
+          loading: state.datasourceCountLoading,
+          content: pluralIfNeeded(state.datasourceCount, 'datasource'),
+          error: state.datasourceCountError,
+        })}
 
-      {this.renderCard({
-        href: '#segments',
-        icon: IconNames.STACKED_CHART,
-        title: 'Segments',
-        loading: state.segmentCountLoading,
-        content: pluralIfNeeded(state.segmentCount, 'segment'),
-        error: state.datasourceCountError
-      })}
+        {this.renderCard({
+          href: '#segments',
+          icon: IconNames.STACKED_CHART,
+          title: 'Segments',
+          loading: state.segmentCountLoading,
+          content: pluralIfNeeded(state.segmentCount, 'segment'),
+          error: state.datasourceCountError,
+        })}
 
-      {this.renderCard({
-        href: '#tasks',
-        icon: IconNames.LIST_COLUMNS,
-        title: 'Supervisors',
-        loading: state.supervisorCountLoading,
-        content: <>
-            {!Boolean(state.runningSupervisorCount + state.suspendedSupervisorCount) && <p>0 supervisors</p>}
-            {Boolean(state.runningSupervisorCount) && <p>{pluralIfNeeded(state.runningSupervisorCount, 'running supervisor')}</p>}
-            {Boolean(state.suspendedSupervisorCount) && <p>{pluralIfNeeded(state.suspendedSupervisorCount, 'suspended supervisor')}</p>}
-          </>,
-        error: state.supervisorCountError
-      })}
+        {this.renderCard({
+          href: '#tasks',
+          icon: IconNames.LIST_COLUMNS,
+          title: 'Supervisors',
+          loading: state.supervisorCountLoading,
+          content: (
+            <>
+              {!Boolean(state.runningSupervisorCount + state.suspendedSupervisorCount) && (
+                <p>0 supervisors</p>
+              )}
+              {Boolean(state.runningSupervisorCount) && (
+                <p>{pluralIfNeeded(state.runningSupervisorCount, 'running supervisor')}</p>
+              )}
+              {Boolean(state.suspendedSupervisorCount) && (
+                <p>{pluralIfNeeded(state.suspendedSupervisorCount, 'suspended supervisor')}</p>
+              )}
+            </>
+          ),
+          error: state.supervisorCountError,
+        })}
 
-      {this.renderCard({
-        href: '#tasks',
-        icon: IconNames.GANTT_CHART,
-        title: 'Tasks',
-        loading: state.taskCountLoading,
-        content: <>
-          {Boolean(state.runningTaskCount) && <p>{pluralIfNeeded(state.runningTaskCount, 'running task')}</p>}
-          {Boolean(state.pendingTaskCount) && <p>{pluralIfNeeded(state.pendingTaskCount, 'pending task')}</p>}
-          {Boolean(state.successTaskCount) && <p>{pluralIfNeeded(state.successTaskCount, 'successful task')}</p>}
-          {Boolean(state.waitingTaskCount) && <p>{pluralIfNeeded(state.waitingTaskCount, 'waiting task')}</p>}
-          {Boolean(state.failedTaskCount) && <p>{pluralIfNeeded(state.failedTaskCount, 'failed task')}</p>}
-          {!(Boolean(state.runningTaskCount) || Boolean(state.pendingTaskCount) || Boolean(state.successTaskCount) ||
-            Boolean(state.waitingTaskCount) || Boolean(state.failedTaskCount)) &&
-            <p>There are no tasks</p>
-          }
-          </>,
-        error: state.taskCountError
-      })}
+        {this.renderCard({
+          href: '#tasks',
+          icon: IconNames.GANTT_CHART,
+          title: 'Tasks',
+          loading: state.taskCountLoading,
+          content: (
+            <>
+              {Boolean(state.runningTaskCount) && (
+                <p>{pluralIfNeeded(state.runningTaskCount, 'running task')}</p>
+              )}
+              {Boolean(state.pendingTaskCount) && (
+                <p>{pluralIfNeeded(state.pendingTaskCount, 'pending task')}</p>
+              )}
+              {Boolean(state.successTaskCount) && (
+                <p>{pluralIfNeeded(state.successTaskCount, 'successful task')}</p>
+              )}
+              {Boolean(state.waitingTaskCount) && (
+                <p>{pluralIfNeeded(state.waitingTaskCount, 'waiting task')}</p>
+              )}
+              {Boolean(state.failedTaskCount) && (
+                <p>{pluralIfNeeded(state.failedTaskCount, 'failed task')}</p>
+              )}
+              {!(
+                Boolean(state.runningTaskCount) ||
+                Boolean(state.pendingTaskCount) ||
+                Boolean(state.successTaskCount) ||
+                Boolean(state.waitingTaskCount) ||
+                Boolean(state.failedTaskCount)
+              ) && <p>There are no tasks</p>}
+            </>
+          ),
+          error: state.taskCountError,
+        })}
 
-      {this.renderCard({
-        href: '#servers',
-        icon: IconNames.DATABASE,
-        title: 'Data servers',
-        loading: state.dataServerCountLoading || state.middleManagerCountLoading,
-        content: <>
-          <p>{pluralIfNeeded(state.dataServerCount, 'historical')}</p>
-          <p>{pluralIfNeeded(state.middleManagerCount, 'middlemanager')}</p>
-        </>,
-        error: state.dataServerCountError
-      })}
-    </div>;
+        {this.renderCard({
+          href: '#servers',
+          icon: IconNames.DATABASE,
+          title: 'Data servers',
+          loading: state.dataServerCountLoading || state.middleManagerCountLoading,
+          content: (
+            <>
+              <p>{pluralIfNeeded(state.dataServerCount, 'historical')}</p>
+              <p>{pluralIfNeeded(state.middleManagerCount, 'middlemanager')}</p>
+            </>
+          ),
+          error: state.dataServerCountError,
+        })}
+        {this.renderCard({
+          href: '#lookups',
+          icon: IconNames.PROPERTIES,
+          title: 'Lookups',
+          loading: state.lookupsCountLoading,
+          content: (
+            <>
+              <p>{pluralIfNeeded(state.lookupsCount, 'lookup')}</p>
+            </>
+          ),
+          error: state.lookupsCountError,
+        })}
+      </div>
+    );
   }
 }

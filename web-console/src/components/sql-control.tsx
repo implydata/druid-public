@@ -16,15 +16,7 @@
  * limitations under the License.
  */
 
-import {
-  Button,
-  ButtonGroup,
-  Intent,
-  Menu,
-  MenuItem,
-  Popover,
-  Position
-} from '@blueprintjs/core';
+import { Button, ButtonGroup, Intent, Menu, MenuItem, Popover, Position } from '@blueprintjs/core';
 import { IconNames } from '@blueprintjs/icons';
 import axios from 'axios';
 import * as ace from 'brace';
@@ -38,7 +30,7 @@ import * as React from 'react';
 import AceEditor from 'react-ace';
 import * as ReactDOMServer from 'react-dom/server';
 
-import { SQLFunctionDoc } from '../../lib/sql-function-doc';
+import { SQL_FUNCTIONS } from '../../lib/sql-function-doc';
 import { AppToaster } from '../singletons/toaster';
 import { DRUID_DOCS_RUNE, DRUID_DOCS_SQL } from '../variables';
 
@@ -80,7 +72,7 @@ export class SqlControl extends React.Component<SqlControlProps, SqlControlState
       autoComplete: true,
       autoCompleteLoading: false,
       bypassCache: false,
-      wrapQuery: true
+      wrapQuery: true,
     };
   }
 
@@ -98,56 +90,64 @@ export class SqlControl extends React.Component<SqlControlProps, SqlControlState
         const state = editor.session.getState(pos.row);
         let keywordCompletions = session.$mode.getCompletions(state, session, pos, prefix);
         keywordCompletions = keywordCompletions.map((d: any) => {
-          return Object.assign(d, {name: d.name.toUpperCase(), value: d.value.toUpperCase()});
+          return Object.assign(d, { name: d.name.toUpperCase(), value: d.value.toUpperCase() });
         });
         return callback(null, keywordCompletions);
-      }
+      },
     };
-    langTools.setCompleters([langTools.snippetCompleter, langTools.textCompleter, keywordCompleter]);
-  }
+    langTools.setCompleters([
+      langTools.snippetCompleter,
+      langTools.textCompleter,
+      keywordCompleter,
+    ]);
+  };
 
   private addDatasourceAutoCompleter = async (): Promise<any> => {
-    const datasourceResp = await axios.post('/druid/v2/sql', { query: `SELECT datasource FROM sys.segments GROUP BY 1`});
+    const datasourceResp = await axios.post('/druid/v2/sql', {
+      query: `SELECT datasource FROM sys.segments GROUP BY 1`,
+    });
     const datasourceList: any[] = datasourceResp.data.map((d: any) => {
       const datasourceName: string = d.datasource;
       return {
         value: datasourceName,
         score: 50,
-        meta: 'datasource'
+        meta: 'datasource',
       };
     });
 
     const completer = {
       getCompletions: (editor: any, session: any, pos: any, prefix: any, callback: any) => {
         callback(null, datasourceList);
-      }
+      },
     };
 
     langTools.addCompleter(completer);
-  }
+  };
 
   private addColumnNameAutoCompleter = async (): Promise<any> => {
-    const columnNameResp = await axios.post('/druid/v2/sql', {query: `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'druid'`});
+    const columnNameResp = await axios.post('/druid/v2/sql', {
+      query: `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'druid'`,
+    });
     const columnNameList: any[] = columnNameResp.data.map((d: any) => {
       const columnName: string = d.COLUMN_NAME;
       return {
         value: columnName,
         score: 50,
-        meta: 'column'
+        meta: 'column',
       };
     });
 
     const completer = {
       getCompletions: (editor: any, session: any, pos: any, prefix: any, callback: any) => {
         callback(null, columnNameList);
-      }
+      },
     };
 
     langTools.addCompleter(completer);
-  }
+  };
 
   private addFunctionAutoCompleter = (): void => {
-    const functionList: any[] = SQLFunctionDoc.map((entry: any) => {
+    const functionList: any[] = SQL_FUNCTIONS.map((entry: any) => {
       let funcName: string = entry.syntax.replace(/\(.*\)/, '()');
       if (!funcName.includes('(')) funcName = funcName.substr(0, 10);
       return {
@@ -158,11 +158,11 @@ export class SqlControl extends React.Component<SqlControlProps, SqlControlState
         description: entry.description,
         completer: {
           insertMatch: (editor: any, data: any) => {
-            editor.completer.insertMatch({value: data.caption});
+            editor.completer.insertMatch({ value: data.caption });
             const pos = editor.getCursorPosition();
             editor.gotoLine(pos.row + 1, pos.column - 1);
-          }
-        }
+          },
+        },
       };
     });
 
@@ -173,22 +173,28 @@ export class SqlControl extends React.Component<SqlControlProps, SqlControlState
       getDocTooltip: (item: any) => {
         if (item.meta === 'function') {
           const functionName = item.caption.slice(0, -2);
-          item.docHTML = ReactDOMServer.renderToStaticMarkup((
+          item.docHTML = ReactDOMServer.renderToStaticMarkup(
             <div className="function-doc">
-              <div className="function-doc-name"><b>{functionName}</b></div>
-              <hr/>
-              <div><b>Syntax:</b></div>
+              <div className="function-doc-name">
+                <b>{functionName}</b>
+              </div>
+              <hr />
+              <div>
+                <b>Syntax:</b>
+              </div>
               <div>{item.syntax}</div>
-              <br/>
-              <div><b>Description:</b></div>
+              <br />
+              <div>
+                <b>Description:</b>
+              </div>
               <div>{item.description}</div>
-            </div>
-          ));
+            </div>,
+          );
         }
-      }
+      },
     };
     langTools.addCompleter(completer);
-  }
+  };
 
   private addCompleters = async () => {
     try {
@@ -199,10 +205,10 @@ export class SqlControl extends React.Component<SqlControlProps, SqlControlState
     } catch (e) {
       AppToaster.show({
         message: 'Failed to load SQL auto completer',
-        intent: Intent.DANGER
+        intent: Intent.DANGER,
       });
     }
-  }
+  };
 
   componentDidMount(): void {
     this.addCompleters();
@@ -210,53 +216,50 @@ export class SqlControl extends React.Component<SqlControlProps, SqlControlState
 
   private handleChange = (newValue: string): void => {
     this.setState({
-      query: newValue
+      query: newValue,
     });
-  }
+  };
 
   private onRunClick = () => {
     const { onRun } = this.props;
     const { query, bypassCache, wrapQuery } = this.state;
     onRun(query, bypassCache, wrapQuery);
-  }
+  };
 
   renderExtraMenu(isRune: boolean) {
     const { onExplain } = this.props;
     const { query, autoComplete, bypassCache, wrapQuery } = this.state;
 
-    return <Menu>
-      <MenuItem
-        icon={IconNames.HELP}
-        text="Docs"
-        href={isRune ? DRUID_DOCS_RUNE : DRUID_DOCS_SQL}
-        target="_blank"
-      />
-      {
-        !isRune &&
-        <>
-          <MenuItem
-            icon={IconNames.CLEAN}
-            text="Explain"
-            onClick={() => onExplain(query)}
-          />
-          <MenuCheckbox
-            checked={wrapQuery}
-            label="Wrap query with limit"
-            onChange={() => this.setState({wrapQuery: !wrapQuery})}
-          />
-          <MenuCheckbox
-            checked={autoComplete}
-            label="Auto complete"
-            onChange={() => this.setState({autoComplete: !autoComplete})}
-          />
-        </>
-      }
-      <MenuCheckbox
-        checked={bypassCache}
-        label="Bypass cache"
-        onChange={() => this.setState({bypassCache: !bypassCache})}
-      />
-    </Menu>;
+    return (
+      <Menu>
+        <MenuItem
+          icon={IconNames.HELP}
+          text="Docs"
+          href={isRune ? DRUID_DOCS_RUNE : DRUID_DOCS_SQL}
+          target="_blank"
+        />
+        {!isRune && (
+          <>
+            <MenuItem icon={IconNames.CLEAN} text="Explain" onClick={() => onExplain(query)} />
+            <MenuCheckbox
+              checked={wrapQuery}
+              label="Wrap query with limit"
+              onChange={() => this.setState({ wrapQuery: !wrapQuery })}
+            />
+            <MenuCheckbox
+              checked={autoComplete}
+              label="Auto complete"
+              onChange={() => this.setState({ autoComplete: !autoComplete })}
+            />
+          </>
+        )}
+        <MenuCheckbox
+          checked={bypassCache}
+          label="Bypass cache"
+          onChange={() => this.setState({ bypassCache: !bypassCache })}
+        />
+      </Menu>
+    );
   }
 
   render() {
@@ -265,46 +268,50 @@ export class SqlControl extends React.Component<SqlControlProps, SqlControlState
     const isRune = query.trim().startsWith('{');
 
     // Set the key in the AceEditor to force a rebind and prevent an error that happens otherwise
-    return <div className="sql-control">
-      <AceEditor
-        key={isRune ? 'hjson' : 'sql'}
-        mode={isRune ? 'hjson' : 'sql'}
-        theme="solarized_dark"
-        name="ace-editor"
-        onChange={this.handleChange}
-        focus
-        fontSize={14}
-        width="100%"
-        height="30vh"
-        showPrintMargin={false}
-        value={query}
-        editorProps={{
-          $blockScrolling: Infinity
-        }}
-        setOptions={{
-          enableBasicAutocompletion: isRune ? false : autoComplete,
-          enableLiveAutocompletion: isRune ? false : autoComplete,
-          showLineNumbers: true,
-          tabSize: 2
-        }}
-      />
-      <div className="buttons">
-        <ButtonGroup>
-          <Button
-            icon={IconNames.CARET_RIGHT}
-            onClick={this.onRunClick}
-            text={isRune ? 'Rune' : (wrapQuery ? 'Run with limit' : 'Run as is')}
-            disabled={isRune && !validHjson(query)}
-          />
-          <Popover position={Position.BOTTOM_LEFT} content={this.renderExtraMenu(isRune)}>
-            <Button icon={IconNames.MORE}/>
-          </Popover>
-        </ButtonGroup>
-        {
-          queryElapsed &&
-          <span className="query-elapsed"> Last query took {(queryElapsed / 1000).toFixed(2)} seconds</span>
-        }
+    return (
+      <div className="sql-control">
+        <AceEditor
+          key={isRune ? 'hjson' : 'sql'}
+          mode={isRune ? 'hjson' : 'sql'}
+          theme="solarized_dark"
+          name="ace-editor"
+          onChange={this.handleChange}
+          focus
+          fontSize={14}
+          width="100%"
+          height="30vh"
+          showPrintMargin={false}
+          value={query}
+          editorProps={{
+            $blockScrolling: Infinity,
+          }}
+          setOptions={{
+            enableBasicAutocompletion: isRune ? false : autoComplete,
+            enableLiveAutocompletion: isRune ? false : autoComplete,
+            showLineNumbers: true,
+            tabSize: 2,
+          }}
+        />
+        <div className="buttons">
+          <ButtonGroup>
+            <Button
+              icon={IconNames.CARET_RIGHT}
+              onClick={this.onRunClick}
+              text={isRune ? 'Rune' : wrapQuery ? 'Run with limit' : 'Run as is'}
+              disabled={isRune && !validHjson(query)}
+            />
+            <Popover position={Position.BOTTOM_LEFT} content={this.renderExtraMenu(isRune)}>
+              <Button icon={IconNames.MORE} />
+            </Popover>
+          </ButtonGroup>
+          {queryElapsed && (
+            <span className="query-elapsed">
+              {' '}
+              Last query took {(queryElapsed / 1000).toFixed(2)} seconds
+            </span>
+          )}
+        </div>
       </div>
-    </div>;
+    );
   }
 }
