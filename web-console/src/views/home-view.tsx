@@ -338,7 +338,6 @@ GROUP BY 1`);
       processQuery: async (query: string) => {
         const resp = await axios.get('/druid/coordinator/v1/lookups/status');
         const data = resp.data;
-        console.log();
         const lookupsCount = Object.keys(resp.data.__default).length;
         return {
           lookupsCount,
