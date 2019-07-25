@@ -29,7 +29,7 @@
 
     <groupId>org.apache.druid</groupId>
     <artifactId>druid</artifactId>
-    <version>0.15.0-incubating-iap4</version>
+    <version>0.15.0-incubating-iap4-hdp264</version>
     <packaging>pom</packaging>
 
     <name>Druid</name>
