@@ -24,7 +24,13 @@ import { QueryOutput } from './query-output';
 describe('query output', () => {
   it('matches snapshot', () => {
     const queryOutput = (
-      <QueryOutput sorted={[{id: 'type', desc: false}]} loading={false} result={null} error="lol" handleSQLAction={() => {}} />
+      <QueryOutput
+        sorted={[{ id: 'type', desc: false }]}
+        loading={false}
+        result={null}
+        error="lol"
+        handleSQLAction={() => {}}
+      />
     );
 
     const { container } = render(queryOutput);
