@@ -162,8 +162,8 @@ export interface QueryViewState {
   loadingExplain: boolean;
   explainError: Error | null;
 
-  defaultSchema: string;
-  defaultTable: string;
+  defaultSchema?: string;
+  defaultTable?: string;
   sorted: { id: string; desc: boolean }[];
 }
 
@@ -216,6 +216,21 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
 
   constructor(props: QueryViewProps, context: any) {
     super(props, context);
+
+    const queryString = props.initQuery || localStorageGet(LocalStorageKeys.QUERY_KEY) || '';
+
+    let defaultTable: string | undefined;
+    let defaultSchema: string | undefined;
+    let sorted: { id: string; desc: boolean }[] | undefined;
+    try {
+      const ast = parser(queryString);
+      console.log(ast);
+      console.log(ast.getFromNameSpace(), ast.getFromName());
+      defaultTable = ast.getFromName();
+      defaultSchema = ast.getFromNameSpace();
+      sorted = ast.getSorted();
+    } catch {}
+
     this.state = {
       queryString: props.initQuery || localStorageGet(LocalStorageKeys.QUERY_KEY) || '',
       queryContext: {},
@@ -234,9 +249,9 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
       explainResult: null,
       explainError: null,
 
-      defaultSchema: '',
-      defaultTable: '',
-      sorted: [{ id: '', desc: false }],
+      defaultSchema,
+      defaultTable,
+      sorted: sorted || [{ id: '', desc: false }],
     };
 
     this.metadataQueryManager = new QueryManager({
@@ -359,15 +374,6 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
           explainError: error !== null ? new Error(error) : null,
         });
       },
-    });
-
-    const ast = parser(this.state.queryString);
-    console.log(ast);
-    console.log(ast.getFromNameSpace(), ast.getFromName());
-    this.setState({
-      defaultTable: ast.getFromName(),
-      defaultSchema: ast.getFromNameSpace(),
-      sorted: ast.getSorted(),
     });
   }
 
@@ -552,7 +558,12 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
   //
   private handleSQLAction = (row: string, header: string, action: string): void => {
     const { queryString } = this.state;
-    let ast = parser(queryString);
+    let ast: any;
+    try {
+      ast = parser(queryString);
+    } catch {
+      return;
+    }
     console.log(ast);
     switch (action) {
       case 'order by': {

@@ -30,8 +30,8 @@ export interface ColumnTreeProps {
   columnMetadataLoading: boolean;
   columnMetadata: ColumnMetadata[] | null;
   onQueryStringChange: (queryString: string) => void;
-  defaultSchema: string;
-  defaultTable: string;
+  defaultSchema?: string;
+  defaultTable?: string;
 }
 
 export interface ColumnTreeState {
@@ -97,30 +97,37 @@ export class ColumnTree extends React.PureComponent<ColumnTreeProps, ColumnTreeS
   }
 
   setParsedTreeIndex() {
+    const { defaultTable, defaultSchema } = this.props;
     const { columnTree, selectedTreeIndex } = this.state;
-    const { defaultTable } = this.props;
     if (columnTree) {
-      let parsedTreeIndex = columnTree
-        .map(function(x) {
-          return x.id;
-        })
-        .indexOf(this.props.defaultSchema);
+      let parsedTreeIndex = -1;
+      if (defaultSchema) {
+        parsedTreeIndex = columnTree
+          .map(function(x) {
+            return x.id;
+          })
+          .indexOf(defaultSchema);
+      }
       if (parsedTreeIndex === -1) {
         parsedTreeIndex = 0;
       }
       if (selectedTreeIndex === -1) {
         this.setState({ selectedTreeIndex: parsedTreeIndex });
-        const treeNodes = columnTree[parsedTreeIndex].childNodes;
-        if (treeNodes) {
-          const nodeIndex = treeNodes
+      }
+      const treeNodes = columnTree[parsedTreeIndex].childNodes;
+      if (treeNodes) {
+        let nodeIndex = -1;
+        if (defaultTable) {
+          nodeIndex = treeNodes
             .map(node => {
               return node.id;
             })
             .indexOf(defaultTable);
-          if (nodeIndex > -1) {
-          }
-          this.handleNodeExpand(treeNodes[nodeIndex]);
         }
+
+        if (nodeIndex > -1) {
+        }
+        this.handleNodeExpand(treeNodes[nodeIndex]);
       }
     }
   }
@@ -163,7 +170,6 @@ export class ColumnTree extends React.PureComponent<ColumnTreeProps, ColumnTreeS
     const { columnTree, selectedTreeIndex } = this.state;
     if (!columnTree) return null;
     if (!columnTree) return null;
-    this.setParsedTreeIndex();
     const currentSchemaSubtree =
       columnTree[selectedTreeIndex > -1 ? selectedTreeIndex : 0].childNodes;
     if (!currentSchemaSubtree) return null;
