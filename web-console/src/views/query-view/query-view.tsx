@@ -229,7 +229,9 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
       defaultTable = ast.getFromName();
       defaultSchema = ast.getFromNameSpace();
       sorted = ast.getSorted();
-    } catch {}
+    } catch (e) {
+      console.log(e);
+    }
 
     this.state = {
       queryString: props.initQuery || localStorageGet(LocalStorageKeys.QUERY_KEY) || '',
@@ -713,7 +715,7 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
       defaultTable,
       defaultSchema,
     } = this.state;
-
+    console.log(defaultSchema, defaultTable);
     return (
       <div
         className={classNames('query-view app-view', { 'hide-column-tree': columnMetadataError })}

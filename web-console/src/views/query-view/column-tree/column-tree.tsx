@@ -38,37 +38,62 @@ export interface ColumnTreeState {
   prevColumnMetadata: ColumnMetadata[] | null;
   columnTree: ITreeNode[] | null;
   selectedTreeIndex: number;
+  expandedNode: number;
 }
 
 export class ColumnTree extends React.PureComponent<ColumnTreeProps, ColumnTreeState> {
   static getDerivedStateFromProps(props: ColumnTreeProps, state: ColumnTreeState) {
-    const { columnMetadata } = props;
-
+    const { columnMetadata, defaultSchema, defaultTable } = props;
     if (columnMetadata && columnMetadata !== state.prevColumnMetadata) {
+      const columnTree = groupBy(
+        columnMetadata,
+        r => r.TABLE_SCHEMA,
+        (metadata, schema): ITreeNode => ({
+          id: schema,
+          label: schema,
+          childNodes: groupBy(
+            metadata,
+            r => r.TABLE_NAME,
+            (metadata, table) => ({
+              id: table,
+              icon: IconNames.TH,
+              label: table,
+              childNodes: metadata.map(columnData => ({
+                id: columnData.COLUMN_NAME,
+                icon: ColumnTree.dataTypeToIcon(columnData.DATA_TYPE),
+                label: columnData.COLUMN_NAME,
+              })),
+            }),
+          ),
+        }),
+      );
+
+      let selectedTreeIndex = -1;
+      let expandedNode = -1;
+      if (defaultSchema && columnTree) {
+        selectedTreeIndex = columnTree
+          .map(function(x) {
+            return x.id;
+          })
+          .indexOf(defaultSchema);
+      }
+      if (selectedTreeIndex > -1) {
+        const treeNodes = columnTree[selectedTreeIndex].childNodes;
+        if (treeNodes) {
+          if (defaultTable) {
+            expandedNode = treeNodes
+              .map(node => {
+                return node.id;
+              })
+              .indexOf(defaultTable);
+          }
+        }
+      }
       return {
         prevColumnMetadata: columnMetadata,
-        columnTree: groupBy(
-          columnMetadata,
-          r => r.TABLE_SCHEMA,
-          (metadata, schema): ITreeNode => ({
-            id: schema,
-            label: schema,
-            childNodes: groupBy(
-              metadata,
-              r => r.TABLE_NAME,
-              (metadata, table) => ({
-                id: table,
-                icon: IconNames.TH,
-                label: table,
-                childNodes: metadata.map(columnData => ({
-                  id: columnData.COLUMN_NAME,
-                  icon: ColumnTree.dataTypeToIcon(columnData.DATA_TYPE),
-                  label: columnData.COLUMN_NAME,
-                })),
-              }),
-            ),
-          }),
-        ),
+        columnTree,
+        selectedTreeIndex,
+        expandedNode,
       };
     }
     return null;
@@ -86,50 +111,14 @@ export class ColumnTree extends React.PureComponent<ColumnTreeProps, ColumnTreeS
         return IconNames.HELP;
     }
   }
-
   constructor(props: ColumnTreeProps, context: any) {
     super(props, context);
     this.state = {
       prevColumnMetadata: null,
       columnTree: null,
       selectedTreeIndex: -1,
+      expandedNode: -1,
     };
-  }
-
-  setParsedTreeIndex() {
-    const { defaultTable, defaultSchema } = this.props;
-    const { columnTree, selectedTreeIndex } = this.state;
-    if (columnTree) {
-      let parsedTreeIndex = -1;
-      if (defaultSchema) {
-        parsedTreeIndex = columnTree
-          .map(function(x) {
-            return x.id;
-          })
-          .indexOf(defaultSchema);
-      }
-      if (parsedTreeIndex === -1) {
-        parsedTreeIndex = 0;
-      }
-      if (selectedTreeIndex === -1) {
-        this.setState({ selectedTreeIndex: parsedTreeIndex });
-      }
-      const treeNodes = columnTree[parsedTreeIndex].childNodes;
-      if (treeNodes) {
-        let nodeIndex = -1;
-        if (defaultTable) {
-          nodeIndex = treeNodes
-            .map(node => {
-              return node.id;
-            })
-            .indexOf(defaultTable);
-        }
-
-        if (nodeIndex > -1) {
-        }
-        this.handleNodeExpand(treeNodes[nodeIndex]);
-      }
-    }
   }
 
   renderSchemaSelector() {
@@ -166,14 +155,15 @@ export class ColumnTree extends React.PureComponent<ColumnTreeProps, ColumnTreeS
         </div>
       );
     }
-
-    const { columnTree, selectedTreeIndex } = this.state;
+    const { columnTree, selectedTreeIndex, expandedNode } = this.state;
     if (!columnTree) return null;
     if (!columnTree) return null;
     const currentSchemaSubtree =
       columnTree[selectedTreeIndex > -1 ? selectedTreeIndex : 0].childNodes;
     if (!currentSchemaSubtree) return null;
-
+    if (expandedNode > -1) {
+      currentSchemaSubtree[expandedNode].isExpanded = true;
+    }
     return (
       <div className="column-tree">
         {this.renderSchemaSelector()}
