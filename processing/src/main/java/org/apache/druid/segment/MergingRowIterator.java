@@ -20,6 +20,7 @@
 package org.apache.druid.segment;
 
 import it.unimi.dsi.fastutil.objects.ObjectHeaps;
+import org.apache.commons.lang3.time.StopWatch;
 import org.apache.druid.java.util.common.io.Closer;
 
 import javax.annotation.Nullable;
@@ -75,6 +76,8 @@ final class MergingRowIterator implements RowIterator
   @Nullable
   private RowIterator lastMarkedHead = null;
 
+  private boolean useDebugs = false;
+
   MergingRowIterator(List<TransformableRowIterator> iterators)
   {
     iterators.forEach(closer::register);
@@ -111,6 +114,10 @@ final class MergingRowIterator implements RowIterator
   @Override
   public boolean moveToNext()
   {
+    if (useDebugs) {
+      return moveToNextDebug();
+    }
+
     if (pQueueSize == 0) {
       if (first) {
         first = false;
@@ -174,6 +181,100 @@ final class MergingRowIterator implements RowIterator
     }
   }
 
+  public void enableDebug()
+  {
+    useDebugs = true;
+  }
+
+  public boolean moveToNextDebug()
+  {
+    StopWatch mergingIteratorMoveToNextTotalSW = new StopWatch();
+    StopWatch mergingIteratorMoveToNextSW1 = new StopWatch();
+    StopWatch mergingIteratorMoveToNextSW2 = new StopWatch();
+    StopWatch mergingIteratorMoveToNextSW3 = new StopWatch();
+    StopWatch mergingIteratorMoveToNextSW4 = new StopWatch();
+
+    mergingIteratorMoveToNextTotalSW.resume();
+    if (pQueueSize == 0) {
+      if (first) {
+        first = false;
+        return false;
+      }
+      throw new IllegalStateException("Don't call moveToNext() after it returned false once");
+    }
+    if (first) {
+      first = false;
+      return true;
+    }
+
+    mergingIteratorMoveToNextSW1.resume();
+    RowIterator head = pQueue[0];
+    if (!changedSinceMark) {
+      // lastMarkedHead field allows small optimization: avoiding many re-marks of the rows of the head iterator,
+      // if it has many elements with equal dimensions.
+      //noinspection ObjectEquality: checking specifically if lastMarkedHead and head is the same object
+      if (lastMarkedHead != head) {
+        head.mark();
+        lastMarkedHead = head;
+      }
+    }
+    mergingIteratorMoveToNextSW1.suspend();
+
+    mergingIteratorMoveToNextSW2.resume();
+    boolean headUsedToBeEqualToChild = equalToChild[0];
+    if (head.moveToNext()) {
+      mergingIteratorMoveToNextSW3.resume();
+      if (sinkHeap(0) == 0) { // The head iterator didn't change
+        if (!changedSinceMark && head.hasTimeAndDimsChangedSinceMark()) {
+          changedSinceMark = true;
+        }
+      } else { // The head iterator changed
+        // If the head iterator changed, the changedSinceMark property could still be "unchanged", if there were several
+        // iterators pointing to equal "time and dims", that is what the following line checks:
+        changedSinceMark |= !headUsedToBeEqualToChild;
+      }
+      mergingIteratorMoveToNextSW3.suspend();
+      mergingIteratorMoveToNextSW2.suspend();
+      return true;
+    } else {
+      mergingIteratorMoveToNextSW4.resume();
+      pQueueSize--;
+      if (pQueueSize > 0) {
+        pQueue[0] = pQueue[pQueueSize];
+        pQueue[pQueueSize] = null;
+
+        // The head iterator is going to change, so the changedSinceMark property could still be "unchanged", if there
+        // were several iterators pointing to equal "time and dims", that is what the following line checks:
+        changedSinceMark |= !headUsedToBeEqualToChild;
+
+        int parentOfLast = (pQueueSize - 1) >> 1;
+        // This sinkHeap() call is guaranteed to not move any heap elements, but it is used as a shortcut to fix the
+        // equalToChild[parentOfLast] status, as a side-effect. equalToChild[parentOfLast] could have changed, e. g. if
+        // the last element was equal to parentOfLast, and parentOfLast had only one child, or the other child is
+        // different. In this case, equalToChild[parentOfLast] is going to be changed from true to false, because the
+        // last element is now moved to the head. equalToChild[parentOfLast] must have correct value before the
+        // sinkHeap(0) call a few lines below, because it's an assumed invariant of sinkHeap().
+        sinkHeap(parentOfLast);
+        sinkHeap(0);
+
+        mergingIteratorMoveToNextSW4.suspend();
+        mergingIteratorMoveToNextSW2.suspend();
+        mergingIteratorMoveToNextTotalSW.suspend();
+        return true;
+      } else {
+        // Don't clear pQueue[0], to conform to RowIterator.getPointer() specification.
+        // Don't care about changedSinceMark, because according to the RowIterator specification the behaviour of
+        // hasTimeAndDimsChangedSinceMark() is undefined now.
+
+        mergingIteratorMoveToNextSW4.suspend();
+        mergingIteratorMoveToNextSW2.suspend();
+        mergingIteratorMoveToNextTotalSW.suspend();
+        return false;
+      }
+    }
+  }
+
+
   @Override
   public void mark()
   {
@@ -196,6 +297,11 @@ final class MergingRowIterator implements RowIterator
    */
   private int sinkHeap(int i)
   {
+    StopWatch sinkHeapSW = new StopWatch();
+
+    if (useDebugs) {
+      sinkHeapSW.resume();
+    }
     final RowIterator iteratorToSink = pQueue[i];
     while (true) {
       int left = (i << 1) + 1;
@@ -233,6 +339,9 @@ final class MergingRowIterator implements RowIterator
     }
     equalToChild[i] = false; // Since we exited from the above loop, there are no more children
     pQueue[i] = iteratorToSink;
+    if (useDebugs) {
+      sinkHeapSW.suspend();
+    }
     return i;
   }
 
