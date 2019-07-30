@@ -241,6 +241,7 @@ final class RowCombiningTimeAndDimsIterator implements TimeAndDimsIterator
     clearCombinedRowsInfo();
     if (nextRowPointer == null) {
       currentTimeAndDimsPointer = null;
+      moveToNextTotalSW.suspend();
       return false;
     }
     // This line implicitly uses the property of RowIterator.getPointer() (see [*] below), that it's still valid after
