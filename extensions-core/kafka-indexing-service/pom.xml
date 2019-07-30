@@ -29,7 +29,7 @@
   <parent>
     <groupId>org.apache.druid</groupId>
     <artifactId>druid</artifactId>
-    <version>0.14.0-incubating-iap8-mergedebug</version>
+    <version>0.14.0-incubating-iap8-mergedebug2</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
