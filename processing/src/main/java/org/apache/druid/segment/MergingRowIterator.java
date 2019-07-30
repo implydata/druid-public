@@ -22,6 +22,7 @@ package org.apache.druid.segment;
 import it.unimi.dsi.fastutil.objects.ObjectHeaps;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.druid.java.util.common.io.Closer;
+import org.apache.druid.java.util.common.logger.Logger;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -45,6 +46,8 @@ import java.util.stream.IntStream;
  */
 final class MergingRowIterator implements RowIterator
 {
+  private static final Logger log = new Logger(MergingRowIterator.class);
+
   private static final Comparator<RowIterator> ROW_ITERATOR_COMPARATOR =
       Comparator.comparing(RowIterator::getPointer);
 
@@ -77,6 +80,12 @@ final class MergingRowIterator implements RowIterator
   private RowIterator lastMarkedHead = null;
 
   private boolean useDebugs = false;
+
+  StopWatch mergingIteratorMoveToNextTotalSW = new StopWatch();
+  StopWatch mergingIteratorMoveToNextSW1 = new StopWatch();
+  StopWatch mergingIteratorMoveToNextSW2 = new StopWatch();
+  StopWatch mergingIteratorMoveToNextSW3 = new StopWatch();
+  StopWatch mergingIteratorMoveToNextSW4 = new StopWatch();
 
   MergingRowIterator(List<TransformableRowIterator> iterators)
   {
@@ -183,16 +192,42 @@ final class MergingRowIterator implements RowIterator
 
   public void enableDebug()
   {
+    mergingIteratorMoveToNextTotalSW.start();
+    mergingIteratorMoveToNextTotalSW.suspend();
+
+    mergingIteratorMoveToNextSW1.start();
+    mergingIteratorMoveToNextSW1.suspend();
+
+    mergingIteratorMoveToNextSW2.start();
+    mergingIteratorMoveToNextSW2.suspend();
+
+    mergingIteratorMoveToNextSW3.start();
+    mergingIteratorMoveToNextSW3.suspend();
+
+    mergingIteratorMoveToNextSW4.start();
+    mergingIteratorMoveToNextSW4.suspend();
+
     useDebugs = true;
+  }
+
+  public void logDebugs()
+  {
+    mergingIteratorMoveToNextTotalSW.stop();
+    mergingIteratorMoveToNextSW1.stop();
+    mergingIteratorMoveToNextSW2.stop();
+    mergingIteratorMoveToNextSW3.stop();
+    mergingIteratorMoveToNextSW4.stop();
+
+    log.info("MERGEDEBUG2 mergingIteratorMoveToNextTotalSW: " + mergingIteratorMoveToNextTotalSW.getNanoTime());
+    log.info("MERGEDEBUG2 mergingIteratorMoveToNextSW1: " + mergingIteratorMoveToNextSW1.getNanoTime());
+    log.info("MERGEDEBUG2 mergingIteratorMoveToNextSW2: " + mergingIteratorMoveToNextSW2.getNanoTime());
+    log.info("MERGEDEBUG2 mergingIteratorMoveToNextSW3: " + mergingIteratorMoveToNextSW3.getNanoTime());
+    log.info("MERGEDEBUG2 mergingIteratorMoveToNextSW4: " + mergingIteratorMoveToNextSW4.getNanoTime());
   }
 
   public boolean moveToNextDebug()
   {
-    StopWatch mergingIteratorMoveToNextTotalSW = new StopWatch();
-    StopWatch mergingIteratorMoveToNextSW1 = new StopWatch();
-    StopWatch mergingIteratorMoveToNextSW2 = new StopWatch();
-    StopWatch mergingIteratorMoveToNextSW3 = new StopWatch();
-    StopWatch mergingIteratorMoveToNextSW4 = new StopWatch();
+
 
     mergingIteratorMoveToNextTotalSW.resume();
     if (pQueueSize == 0) {

@@ -20,6 +20,7 @@
 package org.apache.druid.segment;
 
 import org.apache.commons.lang3.time.StopWatch;
+import org.apache.druid.java.util.common.logger.Logger;
 import org.apache.druid.query.aggregation.AggregateCombiner;
 import org.apache.druid.query.aggregation.AggregatorFactory;
 
@@ -37,6 +38,8 @@ import java.util.Objects;
  */
 final class RowCombiningTimeAndDimsIterator implements TimeAndDimsIterator
 {
+  private static final Logger log = new Logger(RowCombiningTimeAndDimsIterator.class);
+
   private static final int MIN_CURRENTLY_COMBINED_ROW_NUM_UNSET_VALUE = -1;
 
   private final MergingRowIterator mergingIterator;
@@ -99,6 +102,16 @@ final class RowCombiningTimeAndDimsIterator implements TimeAndDimsIterator
   @Nullable
   private RowPointer nextRowPointer;
 
+  StopWatch clearCombinedRowsInfoTotalLoopSW = new StopWatch();
+  StopWatch clearCombinedRowsInfoClearSW = new StopWatch();
+  StopWatch moveToNextTotalSW = new StopWatch();
+  StopWatch startNewTimeAndDimsSW = new StopWatch();
+  StopWatch mergingIteratorTotalSW = new StopWatch();
+  StopWatch combineToCurrentTimeAndDimsSW1 = new StopWatch();
+  StopWatch combineToCurrentTimeAndDimsSW2 = new StopWatch();
+  StopWatch resetCombinedMetricsSW = new StopWatch();
+  StopWatch foldMetricsSW = new StopWatch();
+
   RowCombiningTimeAndDimsIterator(
       List<TransformableRowIterator> originalIterators,
       AggregatorFactory[] metricAggs,
@@ -108,6 +121,25 @@ final class RowCombiningTimeAndDimsIterator implements TimeAndDimsIterator
     int numCombinedIterators = originalIterators.size();
     mergingIterator = new MergingRowIterator(originalIterators);
     mergingIterator.enableDebug();
+
+    clearCombinedRowsInfoTotalLoopSW.start();
+    clearCombinedRowsInfoTotalLoopSW.suspend();
+    clearCombinedRowsInfoClearSW.start();
+    clearCombinedRowsInfoClearSW.suspend();
+    moveToNextTotalSW.start();
+    moveToNextTotalSW.suspend();
+    startNewTimeAndDimsSW.start();
+    startNewTimeAndDimsSW.suspend();
+    mergingIteratorTotalSW.start();
+    mergingIteratorTotalSW.suspend();
+    combineToCurrentTimeAndDimsSW1.start();
+    combineToCurrentTimeAndDimsSW1.suspend();
+    combineToCurrentTimeAndDimsSW2.start();
+    combineToCurrentTimeAndDimsSW2.suspend();
+    resetCombinedMetricsSW.start();
+    resetCombinedMetricsSW.suspend();
+    foldMetricsSW.start();
+    foldMetricsSW.suspend();
 
     markedRowPointersOfOriginalIterators = new TimeAndDimsPointer[numCombinedIterators];
     Arrays.setAll(
@@ -150,14 +182,38 @@ final class RowCombiningTimeAndDimsIterator implements TimeAndDimsIterator
     }
   }
 
+  public void logDebugs()
+  {
+    clearCombinedRowsInfoTotalLoopSW.stop();
+    clearCombinedRowsInfoClearSW.stop();
+    moveToNextTotalSW.stop();
+    startNewTimeAndDimsSW.stop();
+    mergingIteratorTotalSW.stop();
+    combineToCurrentTimeAndDimsSW1.stop();
+    combineToCurrentTimeAndDimsSW2.stop();
+    resetCombinedMetricsSW.stop();
+    foldMetricsSW.stop();
+
+    log.info("MERGEDEBUG2 clearCombinedRowsInfoTotalLoopSW: " + clearCombinedRowsInfoTotalLoopSW.getNanoTime());
+    log.info("MERGEDEBUG2 clearCombinedRowsInfoClearSW: " + clearCombinedRowsInfoClearSW.getNanoTime());
+    log.info("MERGEDEBUG2 moveToNextTotalSW: " + moveToNextTotalSW.getNanoTime());
+    log.info("MERGEDEBUG2 startNewTimeAndDimsSW: " + startNewTimeAndDimsSW.getNanoTime());
+    log.info("MERGEDEBUG2 mergingIteratorTotalSW: " + mergingIteratorTotalSW.getNanoTime());
+    log.info("MERGEDEBUG2 combineToCurrentTimeAndDimsSW1: " + combineToCurrentTimeAndDimsSW1.getNanoTime());
+    log.info("MERGEDEBUG2 combineToCurrentTimeAndDimsSW2: " + combineToCurrentTimeAndDimsSW2.getNanoTime());
+    log.info("MERGEDEBUG2 resetCombinedMetricsSW: " + resetCombinedMetricsSW.getNanoTime());
+    log.info("MERGEDEBUG2 foldMetricsSW: " + foldMetricsSW.getNanoTime());
+
+    mergingIterator.logDebugs();
+  }
+
   /**
    * Clear the info about which rows (in which original iterators and which row nums within them) were combined on
    * the previous step.
    */
   private void clearCombinedRowsInfo()
   {
-    StopWatch clearCombinedRowsInfoTotalLoopSW = new StopWatch();
-    StopWatch clearCombinedRowsInfoClearSW = new StopWatch();
+
 
     clearCombinedRowsInfoTotalLoopSW.resume();
     for (int originalIteratorIndex = indexesOfCurrentlyCombinedOriginalIterators.nextSetBit(0);
@@ -180,9 +236,7 @@ final class RowCombiningTimeAndDimsIterator implements TimeAndDimsIterator
   @Override
   public boolean moveToNext()
   {
-    StopWatch moveToNextTotalSW = new StopWatch();
-    StopWatch startNewTimeAndDimsSW = new StopWatch();
-    StopWatch mergingIteratorTotalSW = new StopWatch();
+
 
     moveToNextTotalSW.resume();
 
@@ -245,8 +299,6 @@ final class RowCombiningTimeAndDimsIterator implements TimeAndDimsIterator
 
   private void combineToCurrentTimeAndDims(RowPointer rowPointer)
   {
-    StopWatch combineToCurrentTimeAndDimsSW1 = new StopWatch();
-    StopWatch combineToCurrentTimeAndDimsSW2 = new StopWatch();
 
     combineToCurrentTimeAndDimsSW1.resume();
     int soleCurrentPointSourceOriginalIteratorIndex = this.soleCurrentPointSourceOriginalIteratorIndex;
@@ -275,7 +327,6 @@ final class RowCombiningTimeAndDimsIterator implements TimeAndDimsIterator
 
   private void resetCombinedMetrics(TimeAndDimsPointer currentRowPointer)
   {
-    StopWatch resetCombinedMetricsSW = new StopWatch();
 
     resetCombinedMetricsSW.resume();
     for (int metricIndex = 0; metricIndex < combinedMetricSelectors.length; metricIndex++) {
@@ -286,7 +337,6 @@ final class RowCombiningTimeAndDimsIterator implements TimeAndDimsIterator
 
   private void foldMetrics(RowPointer rowPointer)
   {
-    StopWatch foldMetricsSW = new StopWatch();
 
     foldMetricsSW.resume();
     for (int metricIndex = 0; metricIndex < combinedMetricSelectors.length; metricIndex++) {

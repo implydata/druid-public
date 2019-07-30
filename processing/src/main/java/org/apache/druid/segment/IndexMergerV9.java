@@ -634,6 +634,7 @@ public class IndexMergerV9 implements IndexMerger
       log.info("MERGEDEBUG row combining iterator total loop time: " + rowCombiningIteratorStopWatchLoop.getNanoTime());
       log.info("MERGEDEBUG row combining iterator time: " + rowCombiningIteratorStopWatch.getNanoTime());
       log.info("MERGEDEBUG row combining iterator2 time: " + rowCombiningIteratorStopWatch2.getNanoTime());
+      ((RowCombiningTimeAndDimsIterator) timeAndDimsIterator).logDebugs();
     }
     if (timeAndDimsIterator instanceof MergingRowIterator) {
       log.info("MERGEDEBUG merging row iterator time: " + mergingRowIteratorStopWatch.getNanoTime());
