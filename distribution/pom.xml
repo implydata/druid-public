@@ -30,7 +30,7 @@
     <parent>
         <artifactId>druid</artifactId>
         <groupId>org.apache.druid</groupId>
-        <version>0.14.0-incubating-iap8-mergedebug2</version>
+        <version>0.14.0-incubating-iap8-mergedebug3</version>
     </parent>
 
     <dependencies>
