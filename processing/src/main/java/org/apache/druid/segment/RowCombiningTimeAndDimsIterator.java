@@ -236,8 +236,6 @@ final class RowCombiningTimeAndDimsIterator implements TimeAndDimsIterator
   @Override
   public boolean moveToNext()
   {
-
-
     moveToNextTotalSW.resume();
 
     clearCombinedRowsInfo();
@@ -260,6 +258,8 @@ final class RowCombiningTimeAndDimsIterator implements TimeAndDimsIterator
     while (mergingIterator.moveToNext()) {
       if (mergingIterator.hasTimeAndDimsChangedSinceMark()) {
         nextRowPointer = mergingIterator.getPointer(); // [*]
+        mergingIteratorTotalSW.suspend();
+        moveToNextTotalSW.suspend();
         return true;
       } else {
         combineToCurrentTimeAndDims(mergingIterator.getPointer());

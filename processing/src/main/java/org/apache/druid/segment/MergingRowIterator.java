@@ -86,6 +86,7 @@ final class MergingRowIterator implements RowIterator
   StopWatch mergingIteratorMoveToNextSW2 = new StopWatch();
   StopWatch mergingIteratorMoveToNextSW3 = new StopWatch();
   StopWatch mergingIteratorMoveToNextSW4 = new StopWatch();
+  StopWatch sinkHeapSW = new StopWatch();
 
   MergingRowIterator(List<TransformableRowIterator> iterators)
   {
@@ -207,6 +208,9 @@ final class MergingRowIterator implements RowIterator
     mergingIteratorMoveToNextSW4.start();
     mergingIteratorMoveToNextSW4.suspend();
 
+    sinkHeapSW.start();
+    sinkHeapSW.suspend();
+
     useDebugs = true;
   }
 
@@ -217,28 +221,30 @@ final class MergingRowIterator implements RowIterator
     mergingIteratorMoveToNextSW2.stop();
     mergingIteratorMoveToNextSW3.stop();
     mergingIteratorMoveToNextSW4.stop();
+    sinkHeapSW.stop();
 
     log.info("MERGEDEBUG2 mergingIteratorMoveToNextTotalSW: " + mergingIteratorMoveToNextTotalSW.getNanoTime());
     log.info("MERGEDEBUG2 mergingIteratorMoveToNextSW1: " + mergingIteratorMoveToNextSW1.getNanoTime());
     log.info("MERGEDEBUG2 mergingIteratorMoveToNextSW2: " + mergingIteratorMoveToNextSW2.getNanoTime());
     log.info("MERGEDEBUG2 mergingIteratorMoveToNextSW3: " + mergingIteratorMoveToNextSW3.getNanoTime());
     log.info("MERGEDEBUG2 mergingIteratorMoveToNextSW4: " + mergingIteratorMoveToNextSW4.getNanoTime());
+    log.info("MERGEDEBUG2 sinkHeapSW: " + sinkHeapSW.getNanoTime());
   }
 
   public boolean moveToNextDebug()
   {
-
-
     mergingIteratorMoveToNextTotalSW.resume();
     if (pQueueSize == 0) {
       if (first) {
         first = false;
+        mergingIteratorMoveToNextTotalSW.suspend();
         return false;
       }
       throw new IllegalStateException("Don't call moveToNext() after it returned false once");
     }
     if (first) {
       first = false;
+      mergingIteratorMoveToNextTotalSW.suspend();
       return true;
     }
 
@@ -268,6 +274,7 @@ final class MergingRowIterator implements RowIterator
         // iterators pointing to equal "time and dims", that is what the following line checks:
         changedSinceMark |= !headUsedToBeEqualToChild;
       }
+      mergingIteratorMoveToNextTotalSW.suspend();
       mergingIteratorMoveToNextSW3.suspend();
       mergingIteratorMoveToNextSW2.suspend();
       return true;
@@ -332,8 +339,6 @@ final class MergingRowIterator implements RowIterator
    */
   private int sinkHeap(int i)
   {
-    StopWatch sinkHeapSW = new StopWatch();
-
     if (useDebugs) {
       sinkHeapSW.resume();
     }
@@ -361,11 +366,17 @@ final class MergingRowIterator implements RowIterator
       if (parentDiff == 0) {
         equalToChild[i] = true;
         pQueue[i] = iteratorToSink;
+        if (useDebugs) {
+          sinkHeapSW.suspend();
+        }
         return i;
       }
       if (parentDiff < 0) {
         equalToChild[i] = false;
         pQueue[i] = iteratorToSink;
+        if (useDebugs) {
+          sinkHeapSW.suspend();
+        }
         return i;
       }
       equalToChild[i] = childrenDiff == 0 || equalToChild[child];
