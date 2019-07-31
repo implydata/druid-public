@@ -127,7 +127,7 @@ export class ColumnTree extends React.PureComponent<ColumnTreeProps, ColumnTreeS
     return (
       <HTMLSelect
         className="schema-selector"
-        value={selectedTreeIndex > -1 ? selectedTreeIndex : 0}
+        value={selectedTreeIndex > -1 ? selectedTreeIndex : undefined}
         onChange={this.handleSchemaSelectorChange}
         fill
         minimal
@@ -143,7 +143,7 @@ export class ColumnTree extends React.PureComponent<ColumnTreeProps, ColumnTreeS
   }
 
   private handleSchemaSelectorChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    this.setState({ selectedTreeIndex: Number(e.target.value) });
+    this.setState({ selectedTreeIndex: Number(e.target.value), expandedNode: -1 });
   };
 
   render() {
@@ -182,8 +182,8 @@ export class ColumnTree extends React.PureComponent<ColumnTreeProps, ColumnTreeS
   private handleNodeClick = (nodeData: ITreeNode, nodePath: number[]) => {
     const { onQueryStringChange } = this.props;
     const { columnTree, selectedTreeIndex } = this.state;
+    this.setState({ expandedNode: -1 });
     if (!columnTree) return;
-
     switch (nodePath.length) {
       case 1: // Datasource
         const tableSchema = columnTree[selectedTreeIndex].label;
@@ -226,6 +226,7 @@ ORDER BY "Count" DESC`);
   };
 
   private handleNodeCollapse = (nodeData: ITreeNode) => {
+    this.setState({ expandedNode: -1 });
     nodeData.isExpanded = false;
     this.bounceState();
   };

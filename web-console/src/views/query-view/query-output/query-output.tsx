@@ -30,7 +30,7 @@ export interface QueryOutputProps {
   result: HeaderRows | null;
   error: string | null;
   handleSQLAction: (row: string, header: string, action: string, direction?: boolean) => void;
-  sorted: { id: string; desc: boolean }[];
+  sorted?: { id: string; desc: boolean }[];
 }
 
 export class QueryOutput extends React.PureComponent<QueryOutputProps> {
@@ -51,43 +51,47 @@ export class QueryOutput extends React.PureComponent<QueryOutputProps> {
               Header: () => {
                 const actions = basicActionsToMenu([
                   {
-                    title: 'Exclude ' + h,
+                    title: `Remove '${h}'`,
                     onAction: () => handleSQLAction('', h, 'exclude column'),
                   },
                   {
-                    title: 'Order by ' + h,
+                    title: `Order by '${h}'`,
                     onAction: () => handleSQLAction('', h, 'order by'),
                   },
                 ]);
                 return (
                   <Popover className={'clickable-cell'} content={actions ? actions : <a>Filter</a>}>
-                    {h}
+                    <div>{h}</div>
                   </Popover>
                 );
               },
-              headerClassName: sorted.map(sorted => {
-                if (sorted.id === h) {
-                  return sorted.desc ? '-sort-desc' : '-sort-asc';
-                }
-                return '';
-              })[0],
+              headerClassName: sorted
+                ? sorted.map(sorted => {
+                    if (sorted.id === h) {
+                      return sorted.desc ? '-sort-desc' : '-sort-asc';
+                    }
+                    return '';
+                  })[0]
+                : undefined,
               accessor: String(i),
               Cell: row => {
                 const value = row.value;
                 const actions = basicActionsToMenu([
                   {
-                    title: 'Exclude ' + value,
+                    title: `Exclude  '${value}'`,
                     onAction: () => handleSQLAction(row.value, h, 'exclude'),
                   },
                   {
-                    title: 'Filter by ' + h + ' = ' + value,
+                    title: `Filter by '${h} = ${value}'`,
                     onAction: () => handleSQLAction(row.value, h, 'filter'),
                   },
                 ]);
                 const popover = (
-                  <Popover className={'clickable-cell'} content={actions ? actions : <a>Filter</a>}>
-                    {value}
-                  </Popover>
+                  <div>
+                    <Popover content={actions ? actions : <a>Filter</a>}>
+                      <div>{value}</div>
+                    </Popover>
+                  </div>
                 );
                 if (value) {
                   return popover;
