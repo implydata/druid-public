@@ -25,6 +25,7 @@ describe('query output', () => {
   it('matches snapshot', () => {
     const queryOutput = (
       <QueryOutput
+        disabled={false}
         sorted={[{ id: 'type', desc: false }]}
         loading={false}
         result={null}

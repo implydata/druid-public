@@ -16,16 +16,19 @@
  * limitations under the License.
  */
 
-import { Popover } from '@blueprintjs/core';
+import { Intent, Popover } from '@blueprintjs/core';
+import copy from 'copy-to-clipboard';
 import React from 'react';
 import ReactTable from 'react-table';
 
+import { AppToaster } from '../../../singletons/toaster';
 import { HeaderRows } from '../../../utils';
 import { basicActionsToMenu } from '../../../utils/basic-action';
 
 import './query-output.scss';
 
 export interface QueryOutputProps {
+  disabled: boolean;
   loading: boolean;
   result: HeaderRows | null;
   error: string | null;
@@ -38,7 +41,8 @@ export class QueryOutput extends React.PureComponent<QueryOutputProps> {
     super(props, context);
   }
   render() {
-    const { result, loading, error, handleSQLAction, sorted } = this.props;
+    const { result, loading, error, sorted } = this.props;
+    console.log(this.props.disabled);
     return (
       <div className="query-output">
         <ReactTable
@@ -49,18 +53,8 @@ export class QueryOutput extends React.PureComponent<QueryOutputProps> {
           columns={(result ? result.header : []).map((h: any, i) => {
             return {
               Header: () => {
-                const actions = basicActionsToMenu([
-                  {
-                    title: `Remove '${h}'`,
-                    onAction: () => handleSQLAction('', h, 'exclude column'),
-                  },
-                  {
-                    title: `Order by '${h}'`,
-                    onAction: () => handleSQLAction('', h, 'order by'),
-                  },
-                ]);
                 return (
-                  <Popover className={'clickable-cell'} content={actions ? actions : <a>Filter</a>}>
+                  <Popover className={'clickable-cell'} content={this.getHeaderActions(h)}>
                     <div>{h}</div>
                   </Popover>
                 );
@@ -76,19 +70,9 @@ export class QueryOutput extends React.PureComponent<QueryOutputProps> {
               accessor: String(i),
               Cell: row => {
                 const value = row.value;
-                const actions = basicActionsToMenu([
-                  {
-                    title: `Exclude  '${value}'`,
-                    onAction: () => handleSQLAction(row.value, h, 'exclude'),
-                  },
-                  {
-                    title: `Filter by '${h} = ${value}'`,
-                    onAction: () => handleSQLAction(row.value, h, 'filter'),
-                  },
-                ]);
                 const popover = (
                   <div>
-                    <Popover content={actions ? actions : <a>Filter</a>}>
+                    <Popover content={this.getRowActions(value, h)}>
                       <div>{value}</div>
                     </Popover>
                   </div>
@@ -103,5 +87,107 @@ export class QueryOutput extends React.PureComponent<QueryOutputProps> {
         />
       </div>
     );
+  }
+
+  getHeaderActions(h: string) {
+    const { disabled, handleSQLAction } = this.props;
+    let actionsMenu;
+    if (disabled) {
+      actionsMenu = basicActionsToMenu([
+        {
+          title: `Copy '${h}'`,
+          onAction: () => {
+            copy(h, { format: 'text/plain' });
+            AppToaster.show({
+              message: `${h}' copied to clipboard`,
+              intent: Intent.SUCCESS,
+            });
+          },
+        },
+        {
+          title: `Copy 'Order BY ${h} ASC`,
+          onAction: () => {
+            copy(`Order BY '${h}' ASC`, { format: 'text/plain' });
+            AppToaster.show({
+              message: `'Order BY '${h}' ASC' copied to clipboard`,
+              intent: Intent.SUCCESS,
+            });
+          },
+        },
+        {
+          title: `Copy 'Order BY '${h}' DESC`,
+          onAction: () => {
+            copy(`Order BY '${h}' DESC`, { format: 'text/plain' });
+            AppToaster.show({
+              message: `'Order BY '${h}' DESC' copied to clipboard`,
+              intent: Intent.SUCCESS,
+            });
+          },
+        },
+      ]);
+    } else {
+      actionsMenu = basicActionsToMenu([
+        {
+          title: `Remove '${h}'`,
+          onAction: () => handleSQLAction('', h, 'exclude column'),
+        },
+        {
+          title: `Order by '${h}'`,
+          onAction: () => handleSQLAction('', h, 'order by'),
+        },
+      ]);
+    }
+    return actionsMenu ? actionsMenu : undefined;
+  }
+
+  getRowActions(row: string, header: string) {
+    const { disabled, handleSQLAction } = this.props;
+    let actionsMenu;
+    if (disabled) {
+      actionsMenu = basicActionsToMenu([
+        {
+          title: `Copy '${row}'`,
+          onAction: () => {
+            copy(row, { format: 'text/plain' });
+            AppToaster.show({
+              message: `${row} copied to clipboard`,
+              intent: Intent.SUCCESS,
+            });
+          },
+        },
+        {
+          title: `Copy 'WHERE '${header}' = '${row}'`,
+          onAction: () => {
+            copy(`WHERE '${header}' = ${row}`, { format: 'text/plain' });
+            AppToaster.show({
+              message: `WHERE '${header}' = '${row}' copied to clipboard`,
+              intent: Intent.SUCCESS,
+            });
+          },
+        },
+        {
+          title: `Copy 'WHERE '${header}' != '${row}'`,
+          onAction: () => {
+            copy(`WHERE '${header}' != '${row}'`, { format: 'text/plain' });
+            AppToaster.show({
+              message: `WHERE '${header}' != '${row}' copied to clipboard`,
+              intent: Intent.SUCCESS,
+            });
+          },
+        },
+      ]);
+    } else {
+      actionsMenu = basicActionsToMenu([
+        {
+          title: `Exclude  '${header}'`,
+          onAction: () => handleSQLAction(row, header, 'exclude'),
+        },
+        {
+          title: `Filter by '${header} = ${row}'`,
+          onAction: () => handleSQLAction(row, header, 'filter'),
+        },
+      ]);
+    }
+    return actionsMenu ? actionsMenu : undefined;
   }
 }

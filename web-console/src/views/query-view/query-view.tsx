@@ -466,6 +466,7 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
           </div>
         </div>
         <QueryOutput
+          disabled={!ast}
           sorted={ast ? ast.getSorted() : undefined}
           handleSQLAction={this.handleSqlAction}
           loading={loading}
