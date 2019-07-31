@@ -28,7 +28,6 @@ describe('query output', () => {
         disabled={false}
         sorted={[{ id: 'type', desc: false }]}
         loading={false}
-        result={null}
         error="lol"
         handleSQLAction={() => {}}
       />

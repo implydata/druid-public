@@ -24,6 +24,7 @@ import React from 'react';
 import { AppToaster } from '../../singletons/toaster';
 import { UrlBaser } from '../../singletons/url-baser';
 import { downloadFile } from '../../utils';
+import { Loader } from '../loader/loader';
 
 import './show-json.scss';
 
@@ -64,7 +65,7 @@ export class ShowJson extends React.PureComponent<ShowJsonProps, ShowJsonState> 
     }
   };
 
-  render() {
+  render(): JSX.Element {
     const { endpoint, downloadFilename } = this.props;
     const { jsonValue } = this.state;
     return (
@@ -73,6 +74,7 @@ export class ShowJson extends React.PureComponent<ShowJsonProps, ShowJsonState> 
           <ButtonGroup className="right-buttons">
             {downloadFilename && (
               <Button
+                disabled={!jsonValue}
                 text="Save"
                 minimal
                 onClick={() => downloadFile(jsonValue, 'json', downloadFilename)}
@@ -80,6 +82,7 @@ export class ShowJson extends React.PureComponent<ShowJsonProps, ShowJsonState> 
             )}
             <Button
               text="Copy"
+              disabled={!jsonValue}
               minimal
               onClick={() => {
                 copy(jsonValue, { format: 'text/plain' });
@@ -91,13 +94,15 @@ export class ShowJson extends React.PureComponent<ShowJsonProps, ShowJsonState> 
             />
             <Button
               text="View raw"
+              disabled={!jsonValue}
               minimal
               onClick={() => window.open(UrlBaser.base(endpoint), '_blank')}
             />
           </ButtonGroup>
         </div>
         <div className="main-area">
-          <TextArea readOnly value={jsonValue} />
+          {!jsonValue && <Loader loadingText="" loading />}
+          {jsonValue && <TextArea readOnly value={jsonValue} />}
         </div>
       </div>
     );

@@ -150,19 +150,18 @@ export interface QueryViewState {
   queryContext: QueryContext;
 
   columnMetadataLoading: boolean;
-  columnMetadata: ColumnMetadata[] | null;
-  columnMetadataError: string | null;
+  columnMetadata?: ColumnMetadata[];
+  columnMetadataError?: string;
 
   loading: boolean;
-  result: HeaderRows | null;
-  queryExtraInfo: QueryExtraInfoData | null;
-  error: string | null;
+  result?: HeaderRows;
+  queryExtraInfo?: QueryExtraInfoData;
+  error?: string;
 
   explainDialogOpen: boolean;
-  explainResult: BasicQueryExplanation | SemiJoinQueryExplanation | string | null;
+  explainResult?: BasicQueryExplanation | SemiJoinQueryExplanation | string;
   loadingExplain: boolean;
-  explainError: Error | null;
-
+  explainError?: string;
   defaultSchema?: string;
   defaultTable?: string;
   ast?: SqlQuery;
@@ -224,18 +223,11 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
       queryContext: {},
 
       columnMetadataLoading: false,
-      columnMetadata: null,
-      columnMetadataError: null,
 
       loading: false,
-      result: null,
-      queryExtraInfo: null,
-      error: null,
 
       explainDialogOpen: false,
       loadingExplain: false,
-      explainResult: null,
-      explainError: null,
     };
 
     this.metadataQueryManager = new QueryManager({
@@ -262,8 +254,8 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
     this.sqlQueryManager = new QueryManager({
       processQuery: async (queryWithContext: QueryWithContext): Promise<QueryResult> => {
         const { queryString, queryContext, wrapQuery } = queryWithContext;
-        let queryId: string | null = null;
-        let sqlQueryId: string | null = null;
+        let queryId: string | undefined;
+        let sqlQueryId: string | undefined;
         let wrappedLimit: number | undefined;
         let ast: SqlQuery | undefined;
         let queryResult: HeaderRows;
@@ -335,8 +327,8 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
       },
       onStateChange: ({ result, loading, error }) => {
         this.setState({
-          result: result ? result.queryResult : null,
-          queryExtraInfo: result ? result.queryExtraInfo : null,
+          result: result ? result.queryResult : undefined,
+          queryExtraInfo: result ? result.queryExtraInfo : undefined,
           loading,
           error,
           ast: result ? result.parsedQuery : undefined,
@@ -361,7 +353,7 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
         this.setState({
           explainResult: result,
           loadingExplain: loading,
-          explainError: error !== null ? new Error(error) : null,
+          explainError: error,
         });
       },
     });
@@ -409,16 +401,15 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
 
   renderExplainDialog() {
     const { explainDialogOpen, explainResult, loadingExplain, explainError } = this.state;
-    if (!loadingExplain && explainDialogOpen) {
-      return (
-        <QueryPlanDialog
-          explainResult={explainResult}
-          explainError={explainError}
-          onClose={() => this.setState({ explainDialogOpen: false })}
-        />
-      );
-    }
-    return null;
+    if (loadingExplain || !explainDialogOpen) return;
+
+    return (
+      <QueryPlanDialog
+        explainResult={explainResult}
+        explainError={explainError}
+        onClose={() => this.setState({ explainDialogOpen: false })}
+      />
+    );
   }
 
   renderMainArea() {
@@ -482,72 +473,6 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
     this.setState({ queryString });
   };
 
-  // private insertExpression(row: string, header: string, operator: string) {
-  //   const { queryString } = this.state;
-  //   const ast = parser(queryString);
-  //   const excludeExpr = {
-  //     type: 'expression',
-  //     operator: {
-  //       type: 'operator',
-  //       spacing: [' '],
-  //       operator: operator,
-  //     },
-  //     lhs: {
-  //       type: 'variable',
-  //       value: header,
-  //       spacing: [' '],
-  //       quote: '"',
-  //     },
-  //     rhs: {
-  //       type: 'variable',
-  //       value: row,
-  //       spacing: [' '],
-  //       quote: "'",
-  //     },
-  //     spacing: [''],
-  //   };
-  //   let found: boolean = false;
-  //   if (ast.where) {
-  //     let node = ast.where.expr;
-  //     let parent = null;
-  //     do {
-  //       if (node.lhs.value === header && node.operator.operator === operator) {
-  //         found = true;
-  //         break;
-  //       }
-  //       parent = node;
-  //       node = node.rhs;
-  //     } while (node.type === 'expression');
-  //     if (found) {
-  //       if (node.rhs.type === 'expression') {
-  //         node.rhs.lhs.value = row;
-  //       } else {
-  //         node.rhs.value = row;
-  //       }
-  //     } else {
-  //       const temp = parent.rhs;
-  //       parent.rhs = {
-  //         type: 'expression',
-  //         operator: {
-  //           type: 'operator',
-  //           spacing: [' '],
-  //           operator: 'AND',
-  //         },
-  //         lhs: temp,
-  //         rhs: excludeExpr,
-  //         spacing: [''],
-  //       };
-  //     }
-  //   } else {
-  //     ast.where = {
-  //       type: 'where',
-  //       spacing: ['\n'],
-  //       expr: excludeExpr,
-  //       syntax: 'WHERE',
-  //     };
-  //   }
-  //   this.setState({ queryString: toString(ast) });
-  //
   private handleSqlAction = (row: string, header: string, action: string): void => {
     let ast: SqlQuery | undefined = this.state.ast;
     if (ast) {
@@ -587,89 +512,6 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
       this.handleRun(true, ast.toString());
     }
   };
-  // switch (action) {
-  //   case 'exclude':
-  //     this.insertExpression(row, header, '!=');
-  //     break;
-  //   case 'exclude column':
-  //     console.log(ast);
-  //     const parts: any[] = [];
-  //     let spacing: string[] | null = null;
-  //     ast.selectParts.map((part: any, index: number) => {
-  //       if (part.expr.value !== header) {
-  //         if (part.alias) {
-  //           if (part.alias.value.value !== header) {
-  //             parts.push(part);
-  //             if (spacing && index === 1) {
-  //               part.spacing = spacing;
-  //             }
-  //           }
-  //         } else {
-  //           parts.push(part);
-  //           if (spacing && index === 1) {
-  //             part.spacing = spacing;
-  //           }
-  //         }
-  //       } else if (index === 0) {
-  //         spacing = part.spacing;
-  //       }
-  //     });
-  //     ast.selectParts = parts;
-  //     this.setState({ queryString: toString(ast) });
-  //     break;
-  //   case 'filter':
-  //     this.insertExpression(row, header, '=');
-  //     break;
-  //   case 'order by':
-  //     if (header.search(/[._]/)) {
-  //       header = '"' + header + '"';
-  //     }
-  //     let direction: string = 'ASC';
-  //     if (ast.orderBy) {
-  //       ast.orderBy.orderByParts.map((part: any) => {
-  //         if (part.expr[0].value.value === header) {
-  //           if (part.direction) {
-  //             direction = part.direction.direction === 'DESC' ? 'ASC' : 'DESC';
-  //           }
-  //         }
-  //       });
-  //     }
-  //     ast.orderBy = {
-  //       type: 'orderBy',
-  //       orderByParts: [
-  //         {
-  //           type: 'orderByPart',
-  //           expr: [
-  //             {
-  //               type: 'exprPart',
-  //               value: {
-  //                 type: 'variable',
-  //                 value: header,
-  //                 spacing: [],
-  //                 quote: "'",
-  //               },
-  //               spacing: [],
-  //             },
-  //           ],
-  //           direction: {
-  //             type: 'direction',
-  //             direction: direction,
-  //             spacing: [' '],
-  //           },
-  //           spacing: [' '],
-  //         },
-  //       ],
-  //       spacing: ['\n'],
-  //       syntax: 'ORDER BY',
-  //     };
-  //     this.setState({
-  //       sorted: [{ id: header, desc: direction === 'DESC' ? true : false }],
-  //       queryString: toString(ast),
-  //     });
-  //     this.handleRun(true);
-  //     break;
-  // }
-  // }
 
   private handleQueryContextChange = (queryContext: QueryContext) => {
     this.setState({ queryContext });
@@ -696,7 +538,7 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
     localStorageSet(LocalStorageKeys.QUERY_VIEW_PANE_SIZE, String(secondaryPaneSize));
   };
 
-  render() {
+  render(): JSX.Element {
     const {
       columnMetadata,
       columnMetadataLoading,
@@ -711,7 +553,7 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
     if (!ast) {
       try {
         tempAst = parser(queryString);
-      } catch (e) {}
+      } catch {}
     }
     return (
       <div

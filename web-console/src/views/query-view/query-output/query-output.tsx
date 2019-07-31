@@ -31,17 +31,14 @@ export interface QueryOutputProps {
   aggregateColumns?: string[];
   disabled: boolean;
   loading: boolean;
-  result: HeaderRows | null;
-  error: string | null;
   handleSQLAction: (row: string, header: string, action: string, direction?: boolean) => void;
   sorted?: { id: string; desc: boolean }[];
+  result?: HeaderRows;
+  error?: string;
 }
 
 export class QueryOutput extends React.PureComponent<QueryOutputProps> {
-  constructor(props: QueryOutputProps, context: any) {
-    super(props, context);
-  }
-  render() {
+  render(): JSX.Element {
     const { result, loading, error } = this.props;
     console.log(this.props.sorted);
     return (

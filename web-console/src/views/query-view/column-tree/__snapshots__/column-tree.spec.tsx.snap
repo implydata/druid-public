@@ -95,7 +95,7 @@ exports[`column tree matches snapshot 1`] = `
             <span
               class="bp3-tree-node-label"
             >
-              deletion-tutorial
+              tasks
             </span>
           </div>
           <div

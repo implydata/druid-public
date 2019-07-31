@@ -28,15 +28,15 @@ import './column-tree.scss';
 
 export interface ColumnTreeProps {
   columnMetadataLoading: boolean;
-  columnMetadata: ColumnMetadata[] | null;
+  columnMetadata?: ColumnMetadata[];
   onQueryStringChange: (queryString: string) => void;
   defaultSchema?: string;
   defaultTable?: string;
 }
 
 export interface ColumnTreeState {
-  prevColumnMetadata: ColumnMetadata[] | null;
-  columnTree: ITreeNode[] | null;
+  prevColumnMetadata?: ColumnMetadata[];
+  columnTree?: ITreeNode[];
   selectedTreeIndex: number;
   expandedNode: number;
 }
@@ -114,8 +114,6 @@ export class ColumnTree extends React.PureComponent<ColumnTreeProps, ColumnTreeS
   constructor(props: ColumnTreeProps, context: any) {
     super(props, context);
     this.state = {
-      prevColumnMetadata: null,
-      columnTree: null,
       selectedTreeIndex: -1,
       expandedNode: -1,
     };
@@ -146,7 +144,7 @@ export class ColumnTree extends React.PureComponent<ColumnTreeProps, ColumnTreeS
     this.setState({ selectedTreeIndex: Number(e.target.value), expandedNode: -1 });
   };
 
-  render() {
+  render(): JSX.Element | null {
     const { columnMetadataLoading } = this.props;
     if (columnMetadataLoading) {
       return (
@@ -184,21 +182,29 @@ export class ColumnTree extends React.PureComponent<ColumnTreeProps, ColumnTreeS
     const { columnTree, selectedTreeIndex } = this.state;
     this.setState({ expandedNode: -1 });
     if (!columnTree) return;
+
+    const selectedNode = columnTree[selectedTreeIndex];
     switch (nodePath.length) {
       case 1: // Datasource
-        const tableSchema = columnTree[selectedTreeIndex].label;
+        const tableSchema = selectedNode.label;
+        let columns: string[];
+        if (nodeData.childNodes) {
+          columns = nodeData.childNodes.map(child => String(child.label));
+        } else {
+          columns = ['*'];
+        }
         if (tableSchema === 'druid') {
-          onQueryStringChange(`SELECT *
+          onQueryStringChange(`SELECT ${columns.join(', ')}
 FROM "${nodeData.label}"
 WHERE "__time" >= CURRENT_TIMESTAMP - INTERVAL '1' DAY`);
         } else {
-          onQueryStringChange(`SELECT *
+          onQueryStringChange(`SELECT ${columns.join(', ')}
 FROM ${tableSchema}.${nodeData.label}`);
         }
         break;
 
       case 2: // Column
-        const schemaNode = columnTree[selectedTreeIndex];
+        const schemaNode = selectedNode;
         const columnSchema = schemaNode.label;
         const columnTable = schemaNode.childNodes ? schemaNode.childNodes[nodePath[0]].label : '?';
         if (columnSchema === 'druid') {
