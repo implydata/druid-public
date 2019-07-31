@@ -466,6 +466,7 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
           </div>
         </div>
         <QueryOutput
+          aggregateColumns={ast ? ast.getAggregateColumns() : undefined}
           disabled={!ast}
           sorted={ast ? ast.getSorted() : undefined}
           handleSQLAction={this.handleSqlAction}
@@ -583,7 +584,7 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
           break;
         }
       }
-      this.handleRun(true);
+      this.handleRun(true, ast.toString());
     }
   };
   // switch (action) {
@@ -674,12 +675,15 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
     this.setState({ queryContext });
   };
 
-  private handleRun = (wrapQuery: boolean) => {
+  private handleRun = (wrapQuery: boolean, customQueryString?: string) => {
     const { queryString, queryContext } = this.state;
-    if (QueryView.isRune(queryString) && !QueryView.validRune(queryString)) return;
+    if (!customQueryString) {
+      customQueryString = queryString;
+    }
+    if (QueryView.isRune(customQueryString) && !QueryView.validRune(customQueryString)) return;
 
-    localStorageSet(LocalStorageKeys.QUERY_KEY, queryString);
-    this.sqlQueryManager.runQuery({ queryString, queryContext, wrapQuery });
+    localStorageSet(LocalStorageKeys.QUERY_KEY, customQueryString);
+    this.sqlQueryManager.runQuery({ queryString: customQueryString, queryContext, wrapQuery });
   };
 
   private handleExplain = () => {
@@ -700,6 +704,9 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
       ast,
       queryString,
     } = this.state;
+    if (ast) {
+      console.log(ast.getAggregateColumns());
+    }
     let tempAst: SqlQuery | undefined;
     if (!ast) {
       try {

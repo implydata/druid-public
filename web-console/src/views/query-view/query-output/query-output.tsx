@@ -28,6 +28,7 @@ import { basicActionsToMenu } from '../../../utils/basic-action';
 import './query-output.scss';
 
 export interface QueryOutputProps {
+  aggregateColumns?: string[];
   disabled: boolean;
   loading: boolean;
   result: HeaderRows | null;
@@ -41,8 +42,8 @@ export class QueryOutput extends React.PureComponent<QueryOutputProps> {
     super(props, context);
   }
   render() {
-    const { result, loading, error, sorted } = this.props;
-    console.log(this.props.disabled);
+    const { result, loading, error } = this.props;
+    console.log(this.props.sorted);
     return (
       <div className="query-output">
         <ReactTable
@@ -59,14 +60,7 @@ export class QueryOutput extends React.PureComponent<QueryOutputProps> {
                   </Popover>
                 );
               },
-              headerClassName: sorted
-                ? sorted.map(sorted => {
-                    if (sorted.id === h) {
-                      return sorted.desc ? '-sort-desc' : '-sort-asc';
-                    }
-                    return '';
-                  })[0]
-                : undefined,
+              headerClassName: this.getHeaderClassName(h),
               accessor: String(i),
               Cell: row => {
                 const value = row.value;
@@ -82,6 +76,11 @@ export class QueryOutput extends React.PureComponent<QueryOutputProps> {
                 }
                 return value;
               },
+              className: this.props.aggregateColumns
+                ? this.props.aggregateColumns.indexOf(h) > -1
+                  ? 'aggregate-column'
+                  : undefined
+                : undefined,
             };
           })}
         />
@@ -189,5 +188,21 @@ export class QueryOutput extends React.PureComponent<QueryOutputProps> {
       ]);
     }
     return actionsMenu ? actionsMenu : undefined;
+  }
+
+  getHeaderClassName(h: string) {
+    const { sorted } = this.props;
+    const className = [];
+    className.push(
+      sorted
+        ? sorted.map(sorted => {
+            if (sorted.id === h) {
+              return sorted.desc ? '-sort-desc' : '-sort-asc';
+            }
+            return '';
+          })[0]
+        : undefined,
+    );
+    return className.join(' ');
   }
 }
