@@ -153,6 +153,7 @@ export class QueryOutput extends React.PureComponent<QueryOutputProps> {
         },
         {
           title: `Copy 'WHERE '${header}' = '${row}'`,
+          // title: `Copy 'WHERE ${excapeVariable(header)} = ${escapeLiteral(row)}`,
           onAction: () => {
             copy(`WHERE '${header}' = ${row}`, { format: 'text/plain' });
             AppToaster.show({

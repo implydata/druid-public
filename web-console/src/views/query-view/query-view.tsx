@@ -555,6 +555,7 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
         tempAst = parser(queryString);
       } catch {}
     }
+    console.log(tempAst);
     return (
       <div
         className={classNames('query-view app-view', { 'hide-column-tree': columnMetadataError })}
