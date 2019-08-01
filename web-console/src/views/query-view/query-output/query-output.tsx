@@ -39,8 +39,8 @@ export interface QueryOutputProps {
 
 export class QueryOutput extends React.PureComponent<QueryOutputProps> {
   render(): JSX.Element {
-    const { result, loading, error } = this.props;
     console.log(this.props.sorted);
+    const { result, loading, error } = this.props;
     return (
       <div className="query-output">
         <ReactTable

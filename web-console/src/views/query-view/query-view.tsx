@@ -311,7 +311,6 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
             rows: sqlResult && sqlResult.length ? sqlResult.slice(1) : [],
           };
         }
-        console.log('updating');
         return {
           queryResult,
           queryExtraInfo: {
@@ -478,17 +477,18 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
     if (ast) {
       switch (action) {
         case 'order by': {
-          const direction = ast.getDirection(header) === 'ASC' ? 'DESC' : 'ASC';
-          ast = ast.orderBy(header, direction);
+          const directionFilter = ast.getSorted().find(filter => {
+            return filter.id === header;
+          });
+          const direction = directionFilter ? directionFilter.desc : true;
+          ast = ast.orderBy(header, direction ? 'ASC' : 'DESC');
           this.setState({
             queryString: ast.toString(),
           });
           break;
         }
         case 'exclude column': {
-          console.log(ast);
           ast = ast.excludeColumn(header);
-          console.log(ast);
           this.setState({
             queryString: ast.toString(),
           });
