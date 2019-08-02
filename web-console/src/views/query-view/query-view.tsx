@@ -266,6 +266,10 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
           ast = parser(queryString);
         } catch (e) {}
 
+        if (!(ast instanceof SqlQuery)) {
+          ast = undefined;
+        }
+
         if (QueryView.isRune(queryString)) {
           // Secret way to issue a native JSON "rune" query
           const runeQuery = Hjson.parse(queryString);
@@ -555,17 +559,28 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
         tempAst = parser(queryString);
       } catch {}
     }
-    console.log(tempAst);
+
+    let defaultSchema;
+    if (ast && ast instanceof SqlQuery) {
+      defaultSchema = ast.getFromNameSpace();
+    } else if (tempAst && tempAst instanceof SqlQuery) {
+      defaultSchema = tempAst.getFromNameSpace();
+    }
+    let defaultTable;
+    if (ast && ast instanceof SqlQuery) {
+      defaultTable = ast.getFromName();
+    } else if (tempAst && tempAst instanceof SqlQuery) {
+      defaultTable = tempAst.getFromName();
+    }
+
     return (
       <div
         className={classNames('query-view app-view', { 'hide-column-tree': columnMetadataError })}
       >
         {!columnMetadataError && (
           <ColumnTree
-            defaultSchema={
-              ast ? ast.getFromNameSpace() : tempAst ? tempAst.getFromNameSpace() : undefined
-            }
-            defaultTable={ast ? ast.getFromName() : tempAst ? tempAst.getFromName() : undefined}
+            defaultSchema={defaultSchema}
+            defaultTable={defaultTable}
             columnMetadataLoading={columnMetadataLoading}
             columnMetadata={columnMetadata}
             onQueryStringChange={this.handleQueryStringChange}

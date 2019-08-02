@@ -21,6 +21,10 @@ import copy from 'copy-to-clipboard';
 import React from 'react';
 import ReactTable from 'react-table';
 
+import {
+  basicIdentifierEscape,
+  basicLiteralEscape,
+} from '../../../../../../druid-sql-parser/src/ast/sql-query/helpers';
 import { AppToaster } from '../../../singletons/toaster';
 import { HeaderRows } from '../../../utils';
 import { basicActionsToMenu } from '../../../utils/basic-action';
@@ -39,7 +43,6 @@ export interface QueryOutputProps {
 
 export class QueryOutput extends React.PureComponent<QueryOutputProps> {
   render(): JSX.Element {
-    console.log(this.props.sorted);
     const { result, loading, error } = this.props;
     return (
       <div className="query-output">
@@ -91,31 +94,31 @@ export class QueryOutput extends React.PureComponent<QueryOutputProps> {
     if (disabled) {
       actionsMenu = basicActionsToMenu([
         {
-          title: `Copy '${h}'`,
+          title: `Copy ${basicIdentifierEscape(h)}`,
           onAction: () => {
-            copy(h, { format: 'text/plain' });
+            copy(basicIdentifierEscape(h), { format: 'text/plain' });
             AppToaster.show({
-              message: `${h}' copied to clipboard`,
+              message: `${basicIdentifierEscape(h)}' copied to clipboard`,
               intent: Intent.SUCCESS,
             });
           },
         },
         {
-          title: `Copy 'Order BY ${h} ASC`,
+          title: `Copy 'ORDER BY ${basicIdentifierEscape(h)} ASC'`,
           onAction: () => {
-            copy(`Order BY '${h}' ASC`, { format: 'text/plain' });
+            copy(`ORDER BY ${basicIdentifierEscape(h)} ASC`, { format: 'text/plain' });
             AppToaster.show({
-              message: `'Order BY '${h}' ASC' copied to clipboard`,
+              message: `ORDER BY ${basicIdentifierEscape(h)} ASC' copied to clipboard`,
               intent: Intent.SUCCESS,
             });
           },
         },
         {
-          title: `Copy 'Order BY '${h}' DESC`,
+          title: `Copy 'ORDER BY ${basicIdentifierEscape(h)} DESC'`,
           onAction: () => {
-            copy(`Order BY '${h}' DESC`, { format: 'text/plain' });
+            copy(`ORDER BY ${basicIdentifierEscape(h)} DESC`, { format: 'text/plain' });
             AppToaster.show({
-              message: `'Order BY '${h}' DESC' copied to clipboard`,
+              message: `ORDER BY ${basicIdentifierEscape(h)} DESC' copied to clipboard`,
               intent: Intent.SUCCESS,
             });
           },
@@ -152,22 +155,29 @@ export class QueryOutput extends React.PureComponent<QueryOutputProps> {
           },
         },
         {
-          title: `Copy 'WHERE '${header}' = '${row}'`,
-          // title: `Copy 'WHERE ${excapeVariable(header)} = ${escapeLiteral(row)}`,
+          title: `Copy 'WHERE ${basicIdentifierEscape(header)} = ${basicLiteralEscape(row)}`,
           onAction: () => {
-            copy(`WHERE '${header}' = ${row}`, { format: 'text/plain' });
+            copy(`WHERE  ${basicIdentifierEscape(header)} = ${basicLiteralEscape(row)}`, {
+              format: 'text/plain',
+            });
             AppToaster.show({
-              message: `WHERE '${header}' = '${row}' copied to clipboard`,
+              message: `WHERE ${basicIdentifierEscape(header)} = ${basicLiteralEscape(
+                row,
+              )} copied to clipboard`,
               intent: Intent.SUCCESS,
             });
           },
         },
         {
-          title: `Copy 'WHERE '${header}' != '${row}'`,
+          title: `Copy 'WHERE ${basicIdentifierEscape(header)} != ${basicLiteralEscape(row)}`,
           onAction: () => {
-            copy(`WHERE '${header}' != '${row}'`, { format: 'text/plain' });
+            copy(`WHERE  ${basicIdentifierEscape(header)} != ${basicLiteralEscape(row)}`, {
+              format: 'text/plain',
+            });
             AppToaster.show({
-              message: `WHERE '${header}' != '${row}' copied to clipboard`,
+              message: `WHERE ${basicIdentifierEscape(header)} != ${basicLiteralEscape(
+                row,
+              )} copied to clipboard`,
               intent: Intent.SUCCESS,
             });
           },
@@ -176,11 +186,11 @@ export class QueryOutput extends React.PureComponent<QueryOutputProps> {
     } else {
       actionsMenu = basicActionsToMenu([
         {
-          title: `Exclude  '${header}'`,
+          title: `Exclude  ${basicLiteralEscape(row)}`,
           onAction: () => handleSQLAction(row, header, 'exclude'),
         },
         {
-          title: `Filter by '${header} = ${row}'`,
+          title: `Filter by '${basicIdentifierEscape(header)} = ${basicLiteralEscape(row)}'`,
           onAction: () => handleSQLAction(row, header, 'filter'),
         },
       ]);
