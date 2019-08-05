@@ -68,7 +68,6 @@ This table compares the available options:
 |[Kafka indexing service](../development/extensions-core/kafka-ingestion.md)|Druid reads directly from Apache Kafka.|Yes|Yes|
 |[Kinesis indexing service](../development/extensions-core/kinesis-ingestion.md)|Druid reads directly from Amazon Kinesis.|Yes|Yes|
 |[Tranquility](tranquility.md)|Tranquility, a library that ships separately from Druid, is used to push data into Druid.|No (late data is dropped based on the `windowPeriod` config)|No|
-|[Realtime nodes](realtime-node.md) (deprecated)|Realtime nodes are standalone Druid processes that pull data from various streaming datasources. They are deprecated and will be removed in a future version.|No (late data is dropped based on the `windowPeriod` config)|No|
 
 ### Batch
 

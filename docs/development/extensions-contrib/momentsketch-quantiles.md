@@ -37,6 +37,7 @@ druid.extensions.loadList=["druid-momentsketch"]
 The result of the aggregation is a momentsketch that is the union of all sketches either built from raw data or read from the segments.
 
 The `momentSketch` aggregator operates over raw data while the `momentSketchMerge` aggregator should be used when aggregating pre-computed sketches.
+
 ```json
 {
   "type" : <aggregator_type>,
@@ -58,6 +59,7 @@ The `momentSketch` aggregator operates over raw data while the `momentSketchMerg
 ### Post Aggregators
 
 Users can query for a set of quantiles using the `momentSketchSolveQuantiles` post-aggregator on the sketches created by the `momentSketch` or `momentSketchMerge` aggregators.
+
 ```json
 {
   "type"  : "momentSketchSolveQuantiles",
@@ -68,6 +70,7 @@ Users can query for a set of quantiles using the `momentSketchSolveQuantiles` po
 ```
 
 Users can also query for the min/max of a distribution:
+
 ```json
 {
   "type" : "momentSketchMin" | "momentSketchMax",
@@ -78,6 +81,7 @@ Users can also query for the min/max of a distribution:
 
 ### Example
 As an example of a query with sketches pre-aggregated at ingestion time, one could set up the following aggregator at ingest:
+
 ```json
 {
   "type": "momentSketch", 
@@ -87,7 +91,9 @@ As an example of a query with sketches pre-aggregated at ingestion time, one cou
   "compress": true,
 }
 ```
+
 and make queries using the following aggregator + post-aggregator:
+
 ```json
 {
   "aggregations": [{

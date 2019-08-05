@@ -26,7 +26,7 @@ title: "ZooKeeper"
 Apache Druid (incubating) uses [Apache ZooKeeper](http://zookeeper.apache.org/) (ZK) for management of current cluster state. The operations that happen over ZK are
 
 1.  [Coordinator](../design/coordinator.md) leader election
-2.  Segment "publishing" protocol from [Historical](../design/historical.md) and [Realtime](../design/realtime.md)
+2.  Segment "publishing" protocol from [Historical](../design/historical.md)
 3.  Segment load/drop protocol between [Coordinator](../design/coordinator.md) and [Historical](../design/historical.md)
 4.  [Overlord](../design/overlord.md) leader election
 5.  [Overlord](../design/overlord.md) and [MiddleManager](../design/middlemanager.md) task management
@@ -43,7 +43,7 @@ ${druid.zk.paths.coordinatorPath}/_COORDINATOR
 
 The `announcementsPath` and `servedSegmentsPath` are used for this.
 
-All [Historical](../design/historical.md) and [Realtime](../design/realtime.md) processes publish themselves on the `announcementsPath`, specifically, they will create an ephemeral znode at
+All [Historical](../design/historical.md) processes publish themselves on the `announcementsPath`, specifically, they will create an ephemeral znode at
 
 ```
 ${druid.zk.paths.announcementsPath}/${druid.host}

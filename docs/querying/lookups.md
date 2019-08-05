@@ -127,6 +127,9 @@ The configuration is propagated to the query serving processes (Broker / Router 
 The query serving processes have an internal API for managing lookups on the process and those are used by the Coordinator.
 The Coordinator periodically checks if any of the processes need to load/drop lookups and updates them appropriately.
 
+Please note that only 2 simultaneous lookup configuration propagation requests can be concurrently handled by a single query serving process. This limit is applied to prevent lookup handling from consuming too many server HTTP connections.
+
+# API for configuring lookups
 
 ## Bulk update
 Lookups can be updated in bulk by posting a JSON object to `/druid/coordinator/v1/lookups/config`. The format of the json object is as follows:

@@ -55,6 +55,7 @@ the implementation of splittable firehoses. Please note that multiple tasks can 
 if one of them fails.
 
 You may want to consider the below points:
+
 - Since this task doesn't shuffle intermediate data, it isn't available for [perfect rollup](../ingestion/index.html#roll-up-modes).
 - The number of tasks for parallel ingestion is decided by `maxNumSubTasks` in the tuningConfig.
   Since the supervisor task creates up to `maxNumSubTasks` worker tasks regardless of the available task slots,
@@ -179,12 +180,11 @@ The tuningConfig is optional and default parameters will be used if no tuningCon
 |property|description|default|required?|
 |--------|-----------|-------|---------|
 |type|The task type, this should always be `index_parallel`.|none|yes|
-|maxRowsPerSegment|Used in sharding. Determines how many rows are in each segment.|5000000|no|
 |maxRowsInMemory|Used in determining when intermediate persists to disk should occur. Normally user does not need to set this, but depending on the nature of data, if rows are short in terms of bytes, user may not want to store a million rows in memory and this value should be set.|1000000|no|
 |maxBytesInMemory|Used in determining when intermediate persists to disk should occur. Normally this is computed internally and user does not need to set it. This value represents number of bytes to aggregate in heap memory before persisting. This is based on a rough estimate of memory usage and not actual usage. The maximum heap memory usage for indexing is maxBytesInMemory * (2 + maxPendingPersists)|1/6 of max JVM memory|no|
-|maxTotalRows|Total number of rows in segments waiting for being pushed. Used in determining when intermediate pushing should occur.|20000000|no|
-|numShards|Directly specify the number of shards to create. If this is specified and 'intervals' is specified in the granularitySpec, the index task can skip the determine intervals/partitions pass through the data. numShards cannot be specified if maxRowsPerSegment is set.|null|no|
-|indexSpec|defines segment storage format options to be used at indexing time, see [IndexSpec](#indexspec)|null|no|
+|partitionsSpec|Defines how to partition the segments in timeChunk, see [PartitionsSpec](#partitionsspec)|`dynamic_partitions`|no|
+|indexSpec|Defines segment storage format options to be used at indexing time, see [IndexSpec](#indexspec)|null|no|
+|indexSpecForIntermediatePersists|Defines segment storage format options to be used at indexing time for intermediate persisted temporary segments. this can be used to disable dimension/metric compression on intermediate segments to reduce memory required for final merging. however, disabling compression on intermediate segments might increase page cache use while they are used before getting merged into final segment published, see [IndexSpec](#indexspec) for possible values.|same as indexSpec|no|
 |maxPendingPersists|Maximum number of persists that can be pending but not started. If this limit would be exceeded by a new intermediate persist, ingestion will block until the currently-running persist finishes. Maximum heap memory usage for indexing scales with maxRowsInMemory * (2 + maxPendingPersists).|0 (meaning one persist can be running concurrently with ingestion, and none can be queued up)|no|
 |reportParseExceptions|If true, exceptions encountered during parsing will be thrown and will halt ingestion; if false, unparseable rows and fields will be skipped.|false|no|
 |pushTimeout|Milliseconds to wait for pushing segments. It must be >= 0, where 0 means to wait forever.|0|no|
@@ -194,6 +194,18 @@ The tuningConfig is optional and default parameters will be used if no tuningCon
 |taskStatusCheckPeriodMs|Polling period in milleseconds to check running task statuses.|1000|no|
 |chatHandlerTimeout|Timeout for reporting the pushed segments in worker tasks.|PT10S|no|
 |chatHandlerNumRetries|Retries for reporting the pushed segments in worker tasks.|5|no|
+
+#### PartitionsSpec
+
+PartitionsSpec is to describe the secondary partitioning method.
+Parallel Index Task supports only the best-effort rollup mode,
+and thus `dynamic_partitions` is only available option currently.
+
+|property|description|default|required?|
+|--------|-----------|-------|---------|
+|type|This should always be `dynamic_partitions`|none|yes|
+|maxRowsPerSegment|Used in sharding. Determines how many rows are in each segment.|5000000|no|
+|maxTotalRows|Total number of rows in segments waiting for being pushed. Used in determining when intermediate segment push should occur.|20000000|no|
 
 #### HTTP Endpoints
 
@@ -375,6 +387,14 @@ An example of the result is
           "metricCompression": "lz4",
           "longEncoding": "longs"
         },
+        "indexSpecForIntermediatePersists": {
+          "bitmap": {
+            "type": "concise"
+          },
+          "dimensionCompression": "lz4",
+          "metricCompression": "lz4",
+          "longEncoding": "longs"
+        },
         "maxPendingPersists": 0,
         "reportParseExceptions": false,
         "pushTimeout": 0,
@@ -548,13 +568,11 @@ The tuningConfig is optional and default parameters will be used if no tuningCon
 |property|description|default|required?|
 |--------|-----------|-------|---------|
 |type|The task type, this should always be "index".|none|yes|
-|maxRowsPerSegment|Used in sharding. Determines how many rows are in each segment.|5000000|no|
 |maxRowsInMemory|Used in determining when intermediate persists to disk should occur. Normally user does not need to set this, but depending on the nature of data, if rows are short in terms of bytes, user may not want to store a million rows in memory and this value should be set.|1000000|no|
 |maxBytesInMemory|Used in determining when intermediate persists to disk should occur. Normally this is computed internally and user does not need to set it. This value represents number of bytes to aggregate in heap memory before persisting. This is based on a rough estimate of memory usage and not actual usage. The maximum heap memory usage for indexing is maxBytesInMemory * (2 + maxPendingPersists)|1/6 of max JVM memory|no|
-|maxTotalRows|Total number of rows in segments waiting for being pushed. Used in determining when intermediate pushing should occur.|20000000|no|
-|numShards|Directly specify the number of shards to create. If this is specified and 'intervals' is specified in the granularitySpec, the index task can skip the determine intervals/partitions pass through the data. numShards cannot be specified if maxRowsPerSegment is set.|null|no|
-|partitionDimensions|The dimensions to partition on. Leave blank to select all dimensions. Only used with `forceGuaranteedRollup` = true, will be ignored otherwise.|null|no|
-|indexSpec|defines segment storage format options to be used at indexing time, see [IndexSpec](#indexspec)|null|no|
+|partitionsSpec|Defines how to partition the segments in timeChunk, see [PartitionsSpec](#partitionsspec)|`dynamic_partitions` if `forceGuaranteedRollup` = false, `hashed_partitions` if `forceGuaranteedRollup` = true|no|
+|indexSpec|Defines segment storage format options to be used at indexing time, see [IndexSpec](#indexspec)|null|no|
+|indexSpecForIntermediatePersists|Defines segment storage format options to be used at indexing time for intermediate persisted temporary segments. this can be used to disable dimension/metric compression on intermediate segments to reduce memory required for final merging. however, disabling compression on intermediate segments might increase page cache use while they are used before getting merged into final segment published, see [IndexSpec](#indexspec) for possible values.|same as indexSpec|no|
 |maxPendingPersists|Maximum number of persists that can be pending but not started. If this limit would be exceeded by a new intermediate persist, ingestion will block until the currently-running persist finishes. Maximum heap memory usage for indexing scales with maxRowsInMemory * (2 + maxPendingPersists).|0 (meaning one persist can be running concurrently with ingestion, and none can be queued up)|no|
 |forceGuaranteedRollup|Forces guaranteeing the [perfect rollup](../ingestion/index.html#roll-up-modes). The perfect rollup optimizes the total size of generated segments and querying time while indexing time will be increased. If this is set to true, the index task will read the entire input data twice: one for finding the optimal number of partitions per time chunk and one for generating segments. Note that the result segments would be hash-partitioned. You can set `forceExtendableShardSpecs` if you plan to append more data to the same time range in the future. This flag cannot be used with `appendToExisting` of IOConfig. For more details, see the below __Segment pushing modes__ section.|false|no|
 |reportParseExceptions|DEPRECATED. If true, exceptions encountered during parsing will be thrown and will halt ingestion; if false, unparseable rows and fields will be skipped. Setting `reportParseExceptions` to true will override existing configurations for `maxParseExceptions` and `maxSavedParseExceptions`, setting `maxParseExceptions` to 0 and limiting `maxSavedParseExceptions` to no more than 1.|false|no|
@@ -563,6 +581,27 @@ The tuningConfig is optional and default parameters will be used if no tuningCon
 |logParseExceptions|If true, log an error message when a parsing exception occurs, containing information about the row where the error occurred.|false|no|
 |maxParseExceptions|The maximum number of parse exceptions that can occur before the task halts ingestion and fails. Overridden if `reportParseExceptions` is set.|unlimited|no|
 |maxSavedParseExceptions|When a parse exception occurs, Druid can keep track of the most recent parse exceptions. "maxSavedParseExceptions" limits how many exception instances will be saved. These saved exceptions will be made available after the task finishes in the [task completion report](../ingestion/reports.md). Overridden if `reportParseExceptions` is set.|0|no|
+
+#### PartitionsSpec
+
+PartitionsSpec is to describe the secondary partitioning method.
+You should use different partitionsSpec depending on the [rollup mode](../ingestion/index.html#roll-up-modes) you want.
+For perfect rollup, you should use `hashed_partitions`.
+
+|property|description|default|required?|
+|--------|-----------|-------|---------|
+|type|This should always be `hashed_partitions`|none|yes|
+|maxRowsPerSegment|Used in sharding. Determines how many rows are in each segment.|5000000|no|
+|numShards|Directly specify the number of shards to create. If this is specified and 'intervals' is specified in the granularitySpec, the index task can skip the determine intervals/partitions pass through the data. numShards cannot be specified if maxRowsPerSegment is set.|null|no|
+|partitionDimensions|The dimensions to partition on. Leave blank to select all dimensions.|null|no|
+
+For best-effort rollup, you should use `dynamic_partitions`.
+
+|property|description|default|required?|
+|--------|-----------|-------|---------|
+|type|This should always be `dynamic_partitions`|none|yes|
+|maxRowsPerSegment|Used in sharding. Determines how many rows are in each segment.|5000000|no|
+|maxTotalRows|Total number of rows in segments waiting for being pushed. Used in determining when intermediate segment push should occur.|20000000|no|
 
 #### IndexSpec
 
@@ -632,17 +671,16 @@ For additional firehoses, please see our [extensions list](../development/extens
 
 ### LocalFirehose
 
-This Firehose can be used to read the data from files on local disk.
-It can be used for POCs to ingest data on disk.
-This firehose is _splittable_ and can be used by [native parallel index tasks](./native_tasks.html#parallel-index-task).
-Since each split represents a file in this firehose, each worker task of `index_parallel` will read a file.
-A sample local firehose spec is shown below:
+This Firehose can be used to read the data from files on local disk, and is mainly intended for proof-of-concept testing, and works with `string` typed parsers.
+This Firehose is _splittable_ and can be used by [native parallel index tasks](./native_tasks.html#parallel-index-task).
+Since each split represents a file in this Firehose, each worker task of `index_parallel` will read a file.
+A sample local Firehose spec is shown below:
 
 ```json
 {
-    "type"    : "local",
-    "filter"   : "*.csv",
-    "baseDir"  : "/data/directory"
+    "type": "local",
+    "filter" : "*.csv",
+    "baseDir": "/data/directory"
 }
 ```
 
@@ -654,15 +692,15 @@ A sample local firehose spec is shown below:
 
 ### HttpFirehose
 
-This Firehose can be used to read the data from remote sites via HTTP.
-This firehose is _splittable_ and can be used by [native parallel index tasks](./native_tasks.html#parallel-index-task).
-Since each split represents a file in this firehose, each worker task of `index_parallel` will read a file.
-A sample http firehose spec is shown below:
+This Firehose can be used to read the data from remote sites via HTTP, and works with `string` typed parsers.
+This Firehose is _splittable_ and can be used by [native parallel index tasks](./native_tasks.html#parallel-index-task).
+Since each split represents a file in this Firehose, each worker task of `index_parallel` will read a file.
+A sample HTTP Firehose spec is shown below:
 
 ```json
 {
-    "type"    : "http",
-    "uris"  : ["http://example.com/uri1", "http://example2.com/uri2"]
+    "type": "http",
+    "uris": ["http://example.com/uri1", "http://example2.com/uri2"]
 }
 ```
 
@@ -699,28 +737,28 @@ You can also use the other existing Druid PasswordProviders. Here is an example 
 }
 ```
 
-The below configurations can be optionally used for tuning the firehose performance.
+The below configurations can optionally be used for tuning the Firehose performance.
 
 |property|description|default|
 |--------|-----------|-------|
 |maxCacheCapacityBytes|Maximum size of the cache space in bytes. 0 means disabling cache. Cached files are not removed until the ingestion task completes.|1073741824|
 |maxFetchCapacityBytes|Maximum size of the fetch space in bytes. 0 means disabling prefetch. Prefetched files are removed immediately once they are read.|1073741824|
-|prefetchTriggerBytes|Threshold to trigger prefetching http objects.|maxFetchCapacityBytes / 2|
-|fetchTimeout|Timeout for fetching a http object.|60000|
-|maxFetchRetry|Maximum retry for fetching a http object.|3|
+|prefetchTriggerBytes|Threshold to trigger prefetching HTTP objects.|maxFetchCapacityBytes / 2|
+|fetchTimeout|Timeout for fetching an HTTP object.|60000|
+|maxFetchRetry|Maximum retries for fetching an HTTP object.|3|
 
 ### IngestSegmentFirehose
 
-This Firehose can be used to read the data from existing druid segments.
-It can be used to ingest existing druid segments using a new schema and change the name, dimensions, metrics, rollup, etc. of the segment.
-This firehose is _splittable_ and can be used by [native parallel index tasks](./native_tasks.html#parallel-index-task).
-A sample ingest firehose spec is shown below -
+This Firehose can be used to read the data from existing druid segments, potentially using a new schema and changing the name, dimensions, metrics, rollup, etc. of the segment.
+This Firehose is _splittable_ and can be used by [native parallel index tasks](./native_tasks.html#parallel-index-task).
+This firehose will accept any type of parser, but will only utilize the list of dimensions and the timestamp specification.
+ A sample ingest Firehose spec is shown below:
 
 ```json
 {
-    "type"    : "ingestSegment",
-    "dataSource"   : "wikipedia",
-    "interval" : "2013-01-01/2013-01-02"
+    "type": "ingestSegment",
+    "dataSource": "wikipedia",
+    "interval": "2013-01-01/2013-01-02"
 }
 ```
 
@@ -728,32 +766,36 @@ A sample ingest firehose spec is shown below -
 |--------|-----------|---------|
 |type|This should be "ingestSegment".|yes|
 |dataSource|A String defining the data source to fetch rows from, very similar to a table in a relational database|yes|
-|interval|A String representing ISO-8601 Interval. This defines the time range to fetch the data over.|yes|
+|interval|A String representing the ISO-8601 interval. This defines the time range to fetch the data over.|yes|
 |dimensions|The list of dimensions to select. If left empty, no dimensions are returned. If left null or not defined, all dimensions are returned. |no|
 |metrics|The list of metrics to select. If left empty, no metrics are returned. If left null or not defined, all metrics are selected.|no|
-|filter| See [Filters](../querying/filters.md)|no|
+|filter| See [Filters](../querying/filters.html)|no|
 |maxInputSegmentBytesPerTask|When used with the native parallel index task, the maximum number of bytes of input segments to process in a single task. If a single segment is larger than this number, it will be processed by itself in a single task (input segments are never split across tasks). Defaults to 150MB.|no|
 
 ### SqlFirehose
 
-SqlFirehoseFactory can be used to ingest events residing in RDBMS. The database connection information is provided as part of the ingestion spec. For each query, the results are fetched locally and indexed. If there are multiple queries from which data needs to be indexed, queries are prefetched in the background upto `maxFetchCapacityBytes` bytes.
+This Firehose can be used to ingest events residing in an RDBMS. The database connection information is provided as part of the ingestion spec.
+For each query, the results are fetched locally and indexed.
+If there are multiple queries from which data needs to be indexed, queries are prefetched in the background, up to `maxFetchCapacityBytes` bytes.
+This firehose will accept any type of parser, but will only utilize the list of dimensions and the timestamp specification. See the extension documentation for more detailed ingestion examples.
 
 Requires one of the following extensions:
- * [MySQL Metadata Store](../development/extensions-core/mysql.md).
- * [PostgreSQL Metadata Store](../development/extensions-core/postgresql.md).
+ * [MySQL Metadata Store](../development/extensions-core/mysql.html).
+ * [PostgreSQL Metadata Store](../development/extensions-core/postgresql.html).
+
 
 ```json
 {
-    "type" : "sql",
+    "type": "sql",
     "database": {
         "type": "mysql",
-        "connectorConfig" : {
-            "connectURI" : "jdbc:mysql://host:port/schema",
-            "user" : "user",
-            "password" : "password"
+        "connectorConfig": {
+            "connectURI": "jdbc:mysql://host:port/schema",
+            "user": "user",
+            "password": "password"
         }
      },
-    "sqls" : ["SELECT * FROM table1", "SELECT * FROM table2"]
+    "sqls": ["SELECT * FROM table1", "SELECT * FROM table2"]
 }
 ```
 
@@ -773,36 +815,52 @@ Requires one of the following extensions:
 |property|description|default|required?|
 |--------|-----------|-------|---------|
 |type|The type of database to query. Valid values are `mysql` and `postgresql`_||Yes|
-|connectorConfig|specify the database connection properties via `connectURI`, `user` and `password`||Yes|
+|connectorConfig|Specify the database connection properties via `connectURI`, `user` and `password`||Yes|
 
 
-### CombiningFirehose
+### InlineFirehose
 
-This firehose can be used to combine and merge data from a list of different firehoses.
-This can be used to merge data from more than one firehose.
+This Firehose can be used to read the data inlined in its own spec.
+It can be used for demos or for quickly testing out parsing and schema, and works with `string` typed parsers.
+A sample inline Firehose spec is shown below:
 
 ```json
 {
-    "type"  :   "combining",
-    "delegates" : [ { firehose1 }, { firehose2 }, ..... ]
+    "type": "inline",
+    "data": "0,values,formatted\n1,as,CSV"
+}
+```
+
+|property|description|required?|
+|--------|-----------|---------|
+|type|This should be "inline".|yes|
+|data|Inlined data to ingest.|yes|
+
+### CombiningFirehose
+
+This Firehose can be used to combine and merge data from a list of different Firehoses.
+
+```json
+{
+    "type": "combining",
+    "delegates": [ { firehose1 }, { firehose2 }, ... ]
 }
 ```
 
 |property|description|required?|
 |--------|-----------|---------|
 |type|This should be "combining"|yes|
-|delegates|list of firehoses to combine data from|yes|
+|delegates|List of Firehoses to combine data from|yes|
 
 
 ### Streaming Firehoses
 
-The firehoses shown below should only be used with the [stream-pull (deprecated)](../ingestion/stream-pull.md) ingestion model, as they are not suitable for batch ingestion.
-
-The EventReceiverFirehose is also used in tasks automatically generated by [Tranquility stream push](../ingestion/stream-push.md).
+The EventReceiverFirehose is used in tasks automatically generated by
+[Tranquility stream push](../ingestion/stream-push.html). These Firehoses are not suitable for batch ingestion.
 
 #### EventReceiverFirehose
 
-EventReceiverFirehoseFactory can be used to ingest events using an http endpoint.
+This Firehose can be used to ingest events using an HTTP endpoint, and works with `string` typed parsers.
 
 ```json
 {
@@ -811,7 +869,7 @@ EventReceiverFirehoseFactory can be used to ingest events using an http endpoint
   "bufferSize": 10000
 }
 ```
-When using this firehose, events can be sent by submitting a POST request to the http endpoint:
+When using this Firehose, events can be sent by submitting a POST request to the HTTP endpoint:
 
 `http://<peonHost>:<port>/druid/worker/v1/chat/<eventReceiverServiceName>/push-events/`
 
@@ -819,28 +877,28 @@ When using this firehose, events can be sent by submitting a POST request to the
 |--------|-----------|---------|
 |type|This should be "receiver"|yes|
 |serviceName|Name used to announce the event receiver service endpoint|yes|
-|maxIdleTime|A firehose is automatically shut down after not receiving any events for this period of time, in milliseconds. If not specified, a firehose is never shut down due to being idle. Zero and negative values have the same effect.|no|
-|bufferSize|Size of buffer used by firehose to store events|no, default is 100000|
+|maxIdleTime|A Firehose is automatically shut down after not receiving any events for this period of time, in milliseconds. If not specified, a Firehose is never shut down due to being idle. Zero and negative values have the same effect.|no|
+|bufferSize|Size of buffer used by Firehose to store events|no, default is 100000|
 
 Shut down time for EventReceiverFirehose can be specified by submitting a POST request to
 
 `http://<peonHost>:<port>/druid/worker/v1/chat/<eventReceiverServiceName>/shutdown?shutoffTime=<shutoffTime>`
 
-If shutOffTime is not specified, the firehose shuts off immediately.
+If shutOffTime is not specified, the Firehose shuts off immediately.
 
 #### TimedShutoffFirehose
 
-This can be used to start a firehose that will shut down at a specified time.
+This can be used to start a Firehose that will shut down at a specified time.
 An example is shown below:
 
 ```json
 {
-    "type"  :   "timed",
+    "type":  "timed",
     "shutoffTime": "2015-08-25T01:26:05.119Z",
     "delegate": {
-          "type": "receiver",
-          "serviceName": "eventReceiverServiceName",
-          "bufferSize": 100000
+        "type": "receiver",
+        "serviceName": "eventReceiverServiceName",
+        "bufferSize": 100000
      }
 }
 ```
@@ -848,5 +906,5 @@ An example is shown below:
 |property|description|required?|
 |--------|-----------|---------|
 |type|This should be "timed"|yes|
-|shutoffTime|time at which the firehose should shut down, in ISO8601 format|yes|
-|delegate|firehose to use|yes|
+|shutoffTime|Time at which the Firehose should shut down, in ISO8601 format|yes|
+|delegate|Firehose to use|yes|

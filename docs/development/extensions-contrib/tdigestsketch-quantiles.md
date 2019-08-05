@@ -57,7 +57,9 @@ The result of the aggregation is a T-Digest sketch that is built ingesting numer
   "compression": <parameter that controls size and accuracy>
  }
 ```
+
 Example:
+
 ```json
 {
 	"type": "buildTDigestSketch",
@@ -94,6 +96,7 @@ The result of the aggregation is a T-Digest sketch that is built by merging pre-
 |compression|Parameter that determines the accuracy and size of the sketch. Higher compression means higher accuracy but more space to store sketches.|no, defaults to 100|
 
 Example:
+
 ```json
 {
 	"queryType": "groupBy",
@@ -109,6 +112,7 @@ Example:
 	"intervals": ["2016-01-01T00:00:00.000Z/2016-01-31T00:00:00.000Z"]
 }
 ```
+
 ### Post Aggregators
 
 #### Quantiles
@@ -132,6 +136,7 @@ This returns an array of quantiles corresponding to a given array of fractions.
 |fractions|Non-empty array of fractions between 0 and 1|yes|
 
 Example:
+
 ```json
 {
 	"queryType": "groupBy",

@@ -83,13 +83,13 @@ export interface ServersViewProps {
 
 export interface ServersViewState {
   serversLoading: boolean;
-  servers: any[] | null;
-  serversError: string | null;
+  servers?: any[];
+  serversError?: string;
   serverFilter: Filter[];
-  groupServersBy: null | 'server_type' | 'tier';
+  groupServersBy?: 'server_type' | 'tier';
 
-  middleManagerDisableWorkerHost: string | null;
-  middleManagerEnableWorkerHost: string | null;
+  middleManagerDisableWorkerHost?: string;
+  middleManagerEnableWorkerHost?: string;
 
   hiddenColumns: LocalStorageBackedArray<string>;
 }
@@ -182,13 +182,7 @@ ORDER BY "rank" DESC, "server" DESC`;
     super(props, context);
     this.state = {
       serversLoading: true,
-      servers: null,
-      serversError: null,
       serverFilter: [],
-      groupServersBy: null,
-
-      middleManagerDisableWorkerHost: null,
-      middleManagerEnableWorkerHost: null,
 
       hiddenColumns: new LocalStorageBackedArray<string>(
         LocalStorageKeys.SERVER_TABLE_COLUMN_SELECTION,
@@ -560,27 +554,26 @@ ORDER BY "rank" DESC, "server" DESC`;
 
   renderDisableWorkerAction() {
     const { middleManagerDisableWorkerHost } = this.state;
+    if (!middleManagerDisableWorkerHost) return;
 
     return (
       <AsyncActionDialog
-        action={
-          middleManagerDisableWorkerHost
-            ? async () => {
-                const resp = await axios.post(
-                  `/druid/indexer/v1/worker/${middleManagerDisableWorkerHost}/disable`,
-                  {},
-                );
-                return resp.data;
-              }
-            : null
-        }
+        action={async () => {
+          const resp = await axios.post(
+            `/druid/indexer/v1/worker/${middleManagerDisableWorkerHost}/disable`,
+            {},
+          );
+          return resp.data;
+        }}
         confirmButtonText="Disable worker"
         successText="Worker has been disabled"
         failText="Could not disable worker"
         intent={Intent.DANGER}
-        onClose={success => {
-          this.setState({ middleManagerDisableWorkerHost: null });
-          if (success) this.serverQueryManager.rerunLastQuery();
+        onClose={() => {
+          this.setState({ middleManagerDisableWorkerHost: undefined });
+        }}
+        onSuccess={() => {
+          this.serverQueryManager.rerunLastQuery();
         }}
       >
         <p>{`Are you sure you want to disable worker '${middleManagerDisableWorkerHost}'?`}</p>
@@ -590,27 +583,26 @@ ORDER BY "rank" DESC, "server" DESC`;
 
   renderEnableWorkerAction() {
     const { middleManagerEnableWorkerHost } = this.state;
+    if (!middleManagerEnableWorkerHost) return;
 
     return (
       <AsyncActionDialog
-        action={
-          middleManagerEnableWorkerHost
-            ? async () => {
-                const resp = await axios.post(
-                  `/druid/indexer/v1/worker/${middleManagerEnableWorkerHost}/enable`,
-                  {},
-                );
-                return resp.data;
-              }
-            : null
-        }
+        action={async () => {
+          const resp = await axios.post(
+            `/druid/indexer/v1/worker/${middleManagerEnableWorkerHost}/enable`,
+            {},
+          );
+          return resp.data;
+        }}
         confirmButtonText="Enable worker"
         successText="Worker has been enabled"
         failText="Could not enable worker"
         intent={Intent.PRIMARY}
-        onClose={success => {
-          this.setState({ middleManagerEnableWorkerHost: null });
-          if (success) this.serverQueryManager.rerunLastQuery();
+        onClose={() => {
+          this.setState({ middleManagerEnableWorkerHost: undefined });
+        }}
+        onSuccess={() => {
+          this.serverQueryManager.rerunLastQuery();
         }}
       >
         <p>{`Are you sure you want to enable worker '${middleManagerEnableWorkerHost}'?`}</p>
@@ -618,7 +610,7 @@ ORDER BY "rank" DESC, "server" DESC`;
     );
   }
 
-  render() {
+  render(): JSX.Element {
     const { goToQuery, noSqlMode } = this.props;
     const { groupServersBy, hiddenColumns } = this.state;
 
@@ -628,8 +620,8 @@ ORDER BY "rank" DESC, "server" DESC`;
           <Label>Group by</Label>
           <ButtonGroup>
             <Button
-              active={groupServersBy === null}
-              onClick={() => this.setState({ groupServersBy: null })}
+              active={!groupServersBy}
+              onClick={() => this.setState({ groupServersBy: undefined })}
             >
               None
             </Button>
@@ -647,7 +639,7 @@ ORDER BY "rank" DESC, "server" DESC`;
             </Button>
           </ButtonGroup>
           <RefreshButton
-            onRefresh={auto => this.serverQueryManager.rerunLastQueryInBackground(auto)}
+            onRefresh={auto => this.serverQueryManager.rerunLastQuery(auto)}
             localStorageKey={LocalStorageKeys.SERVERS_REFRESH_RATE}
           />
           {!noSqlMode && (

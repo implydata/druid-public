@@ -202,7 +202,7 @@ JSON data can contain multi-value dimensions as well. The multiple values for a 
 
 ## Parser
 
-If `type` is not included, the parser defaults to `string`. For additional data formats, please see our [extensions list](../development/extensions.md).
+The default parser type is  `string`, though a handful of extensions provide additional parser types. `string` typed parsers operate on text based inputs that can be split into individual records by newlines. For additional data formats, please see our [extensions list](../development/extensions.html).
 
 ### String Parser
 

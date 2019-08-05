@@ -277,6 +277,7 @@ greater than, less than, greater than or equal to, less than or equal to, and "b
 Bound filters support the use of extraction functions, see [Filtering with Extraction Functions](#filtering-with-extraction-functions) for details.
 
 The following bound filter expresses the condition `21 <= age <= 31`:
+
 ```json
 {
     "type": "bound",
@@ -288,6 +289,7 @@ The following bound filter expresses the condition `21 <= age <= 31`:
 ```
 
 This filter expresses the condition `foo <= name <= hoo`, using the default lexicographic sorting order.
+
 ```json
 {
     "type": "bound",
@@ -298,6 +300,7 @@ This filter expresses the condition `foo <= name <= hoo`, using the default lexi
 ```
 
 Using strict bounds, this filter expresses the condition `21 < age < 31`
+
 ```json
 {
     "type": "bound",
@@ -311,6 +314,7 @@ Using strict bounds, this filter expresses the condition `21 < age < 31`
 ```
 
 The user can also specify a one-sided bound by omitting "upper" or "lower". This filter expresses `age < 31`.
+
 ```json
 {
     "type": "bound",
@@ -322,6 +326,7 @@ The user can also specify a one-sided bound by omitting "upper" or "lower". This
 ```
 
 Likewise, this filter expresses `age >= 18`
+
 ```json
 {
     "type": "bound",
@@ -350,6 +355,7 @@ The interval filter supports the use of extraction functions, see [Filtering wit
 If an extraction function is used with this filter, the extraction function should output values that are parseable as long milliseconds.
 
 The following example filters on the time ranges of October 1-7, 2014 and November 15-16, 2014.
+
 ```json
 {
     "type" : "interval",
