@@ -39,62 +39,7 @@ queries on the query Broker (the first process you query), which are then passed
 queries. Other than the (slight) overhead of translating SQL on the Broker, there isn't an additional performance
 penalty versus native queries.
 
-## Data types and casts
-
-Druid natively supports five basic column types: "long" (64 bit signed int), "float" (32 bit float), "double" (64 bit
-float) "string" (UTF-8 encoded strings and string arrays), and "complex" (catch-all for more exotic data types like
-hyperUnique and approxHistogram columns).
-
-Timestamps (including the `__time` column) are treated by Druid as longs, with the value being the number of
-milliseconds since 1970-01-01 00:00:00 UTC, not counting leap seconds. Therefore, timestamps in Druid do not carry any
-timezone information, but only carry information about the exact moment in time they represent. See the
-[Time functions](#time-functions) section for more information about timestamp handling.
-
-Druid generally treats NULLs and empty strings interchangeably, rather than according to the SQL standard. As such,
-Druid SQL only has partial support for NULLs. For example, the expressions `col IS NULL` and `col = ''` are equivalent,
-and both will evaluate to true if `col` contains an empty string. Similarly, the expression `COALESCE(col1, col2)` will
-return `col2` if `col1` is an empty string. While the `COUNT(*)` aggregator counts all rows, the `COUNT(expr)`
-aggregator will count the number of rows where expr is neither null nor the empty string. String columns in Druid are
-NULLable. Numeric columns are NOT NULL; if you query a numeric column that is not present in all segments of your Druid
-datasource, then it will be treated as zero for rows from those segments.
-
-For mathematical operations, Druid SQL will use integer math if all operands involved in an expression are integers.
-Otherwise, Druid will switch to floating point math. You can force this to happen by casting one of your operands
-to FLOAT. At runtime, Druid may widen 32-bit floats to 64-bit for certain operators, like SUM aggregators.
-
-Druid [multi-value string dimensions](multi-value-dimensions.html) will appear in the table schema as `VARCHAR` typed,
-and may be interacted with in expressions as such. Additionally, they can be treated as `ARRAY` 'like', via a handful of
-special multi-value operators. Expressions against multi-value string dimensions will apply the expression to all values
-of the row, however the caveat is that aggregations on these multi-value string columns will observe the native Druid
-multi-value aggregation behavior, which is equivalent to the `UNNEST` function available in many dialects.
-Refer to the documentation on [multi-value string dimensions](multi-value-dimensions.html) and
-[Druid expressions documentation](../misc/math-expr.html) for additional details.
-
-The following table describes how SQL types map onto Druid types during query runtime. Casts between two SQL types
-that have the same Druid runtime type will have no effect, other than exceptions noted in the table. Casts between two
-SQL types that have different Druid runtime types will generate a runtime cast in Druid. If a value cannot be properly
-cast to another value, as in `CAST('foo' AS BIGINT)`, the runtime will substitute a default value. NULL values cast
-to non-nullable types will also be substituted with a default value (for example, nulls cast to numbers will be
-converted to zeroes).
-
-|SQL type|Druid runtime type|Default value|Notes|
-|--------|------------------|-------------|-----|
-|CHAR|STRING|`''`||
-|VARCHAR|STRING|`''`|Druid STRING columns are reported as VARCHAR|
-|DECIMAL|DOUBLE|`0.0`|DECIMAL uses floating point, not fixed point math|
-|FLOAT|FLOAT|`0.0`|Druid FLOAT columns are reported as FLOAT|
-|REAL|DOUBLE|`0.0`||
-|DOUBLE|DOUBLE|`0.0`|Druid DOUBLE columns are reported as DOUBLE|
-|BOOLEAN|LONG|`false`||
-|TINYINT|LONG|`0`||
-|SMALLINT|LONG|`0`||
-|INTEGER|LONG|`0`||
-|BIGINT|LONG|`0`|Druid LONG columns (except `__time`) are reported as BIGINT|
-|TIMESTAMP|LONG|`0`, meaning 1970-01-01 00:00:00 UTC|Druid's `__time` column is reported as TIMESTAMP. Casts between string and timestamp types assume standard SQL formatting, e.g. `2000-01-02 03:04:05`, _not_ ISO8601 formatting. For handling other formats, use one of the [time functions](#time-functions)|
-|DATE|LONG|`0`, meaning 1970-01-01|Casting TIMESTAMP to DATE rounds down the timestamp to the nearest day. Casts between string and date types assume standard SQL formatting, e.g. `2000-01-02`. For handling other formats, use one of the [time functions](#time-functions)|
-|OTHER|COMPLEX|none|May represent various Druid column types such as hyperUnique, approxHistogram, etc|
-
-§## Query syntax
+## Query syntax
 
 Each Druid datasource appears as a table in the "druid" schema. This is also the default schema, so Druid datasources
 can be referenced as either `druid.dataSourceName` or simply `dataSourceName`.
@@ -158,7 +103,60 @@ query will run separately, back to back (not in parallel). Druid does not curren
 Add "EXPLAIN PLAN FOR" to the beginning of any query to see how it would be run as a native Druid query. In this case,
 the query will not actually be executed.
 
+## Data types and casts
 
+Druid natively supports five basic column types: "long" (64 bit signed int), "float" (32 bit float), "double" (64 bit
+float) "string" (UTF-8 encoded strings and string arrays), and "complex" (catch-all for more exotic data types like
+hyperUnique and approxHistogram columns).
+
+Timestamps (including the `__time` column) are treated by Druid as longs, with the value being the number of
+milliseconds since 1970-01-01 00:00:00 UTC, not counting leap seconds. Therefore, timestamps in Druid do not carry any
+timezone information, but only carry information about the exact moment in time they represent. See the
+[Time functions](#time-functions) section for more information about timestamp handling.
+
+Druid generally treats NULLs and empty strings interchangeably, rather than according to the SQL standard. As such,
+Druid SQL only has partial support for NULLs. For example, the expressions `col IS NULL` and `col = ''` are equivalent,
+and both will evaluate to true if `col` contains an empty string. Similarly, the expression `COALESCE(col1, col2)` will
+return `col2` if `col1` is an empty string. While the `COUNT(*)` aggregator counts all rows, the `COUNT(expr)`
+aggregator will count the number of rows where expr is neither null nor the empty string. String columns in Druid are
+NULLable. Numeric columns are NOT NULL; if you query a numeric column that is not present in all segments of your Druid
+datasource, then it will be treated as zero for rows from those segments.
+
+For mathematical operations, Druid SQL will use integer math if all operands involved in an expression are integers.
+Otherwise, Druid will switch to floating point math. You can force this to happen by casting one of your operands
+to FLOAT. At runtime, Druid may widen 32-bit floats to 64-bit for certain operators, like SUM aggregators.
+
+Druid [multi-value string dimensions](multi-value-dimensions.html) will appear in the table schema as `VARCHAR` typed,
+and may be interacted with in expressions as such. Additionally, they can be treated as `ARRAY` 'like', via a handful of
+special multi-value operators. Expressions against multi-value string dimensions will apply the expression to all values
+of the row, however the caveat is that aggregations on these multi-value string columns will observe the native Druid
+multi-value aggregation behavior, which is equivalent to the `UNNEST` function available in many dialects.
+Refer to the documentation on [multi-value string dimensions](multi-value-dimensions.html) and
+[Druid expressions documentation](../misc/math-expr.html) for additional details.
+
+The following table describes how SQL types map onto Druid types during query runtime. Casts between two SQL types
+that have the same Druid runtime type will have no effect, other than exceptions noted in the table. Casts between two
+SQL types that have different Druid runtime types will generate a runtime cast in Druid. If a value cannot be properly
+cast to another value, as in `CAST('foo' AS BIGINT)`, the runtime will substitute a default value. NULL values cast
+to non-nullable types will also be substituted with a default value (for example, nulls cast to numbers will be
+converted to zeroes).
+
+|SQL type|Druid runtime type|Default value|Notes|
+|--------|------------------|-------------|-----|
+|CHAR|STRING|`''`||
+|VARCHAR|STRING|`''`|Druid STRING columns are reported as VARCHAR|
+|DECIMAL|DOUBLE|`0.0`|DECIMAL uses floating point, not fixed point math|
+|FLOAT|FLOAT|`0.0`|Druid FLOAT columns are reported as FLOAT|
+|REAL|DOUBLE|`0.0`||
+|DOUBLE|DOUBLE|`0.0`|Druid DOUBLE columns are reported as DOUBLE|
+|BOOLEAN|LONG|`false`||
+|TINYINT|LONG|`0`||
+|SMALLINT|LONG|`0`||
+|INTEGER|LONG|`0`||
+|BIGINT|LONG|`0`|Druid LONG columns (except `__time`) are reported as BIGINT|
+|TIMESTAMP|LONG|`0`, meaning 1970-01-01 00:00:00 UTC|Druid's `__time` column is reported as TIMESTAMP. Casts between string and timestamp types assume standard SQL formatting, e.g. `2000-01-02 03:04:05`, _not_ ISO8601 formatting. For handling other formats, use one of the [time functions](#time-functions)|
+|DATE|LONG|`0`, meaning 1970-01-01|Casting TIMESTAMP to DATE rounds down the timestamp to the nearest day. Casts between string and date types assume standard SQL formatting, e.g. `2000-01-02`. For handling other formats, use one of the [time functions](#time-functions)|
+|OTHER|COMPLEX|none|May represent various Druid column types such as hyperUnique, approxHistogram, etc|
 
 ## Built-in functions
 
