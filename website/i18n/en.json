@@ -29,9 +29,6 @@
       "configuration/logging": {
         "title": "Logging"
       },
-      "configuration/realtime": {
-        "title": "Realtime Process Configuration"
-      },
       "dependencies/cassandra-deep-storage": {
         "title": "Cassandra Deep Storage"
       },
@@ -80,9 +77,6 @@
       "design/processes": {
         "title": "Processes and servers"
       },
-      "design/realtime": {
-        "title": "Real-time Process"
-      },
       "design/segments": {
         "title": "Segments"
       },
@@ -122,9 +116,6 @@
       "development/extensions-contrib/kafka-emitter": {
         "title": "Kafka Emitter"
       },
-      "development/extensions-contrib/kafka-simple": {
-        "title": "Kafka Simple Consumer"
-      },
       "development/extensions-contrib/materialized-view": {
         "title": "Materialized View"
       },
@@ -137,14 +128,8 @@
       "development/extensions-contrib/opentsdb-emitter": {
         "title": "OpenTSDB Emitter"
       },
-      "development/extensions-contrib/rabbitmq": {
-        "title": "RabbitMQ"
-      },
       "development/extensions-contrib/redis-cache": {
         "title": "Druid Redis Cache"
-      },
-      "development/extensions-contrib/rocketmq": {
-        "title": "RocketMQ"
       },
       "development/extensions-contrib/sqlserver": {
         "title": "Microsoft SQLServer"
@@ -199,9 +184,6 @@
       },
       "development/extensions-core/hdfs": {
         "title": "HDFS"
-      },
-      "development/extensions-core/kafka-eight-firehose": {
-        "title": "Apache Kafka Eight Firehose"
       },
       "development/extensions-core/kafka-extraction-namespace": {
         "title": "Apache Kafka Lookups"
@@ -289,11 +271,11 @@
         "title": "Native batch ingestion",
         "sidebar_label": "Native batch"
       },
-      "ingestion/realtime-node": {
-        "title": "Realtime nodes"
-      },
       "ingestion/schema-design": {
         "title": "Schema design tips"
+      },
+      "ingestion/standalone-realtime": {
+        "title": "Realtime Process"
       },
       "ingestion/supervisors": {
         "title": "Supervisor reference"
