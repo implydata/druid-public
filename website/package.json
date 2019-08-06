@@ -11,7 +11,7 @@
     "compile-scss": "node-sass scss/custom.scss > static/css/custom.css"
   },
   "devDependencies": {
-    "docusaurus": "^1.11.1",
+    "docusaurus": "^1.12.0",
     "node-sass": "^4.12.0"
   }
 }
