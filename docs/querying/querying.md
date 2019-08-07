@@ -34,7 +34,7 @@ curl -X POST '<queryable_host>:<port>/druid/v2/?pretty' -H 'Content-Type:applica
 ```
  
 Druid's native query language is JSON over HTTP, although many members of the community have contributed different 
-[client libraries](/libraries.md) in other languages to query Druid.
+[client libraries](/libraries.html) in other languages to query Druid.
 
 The Content-Type/Accept Headers can also take 'application/x-jackson-smile'.
 
@@ -53,27 +53,27 @@ Even though queries are typically made to Brokers or Routers, they can also be a
 stream ingestion tasks. This may be valuable if you want to query results for specific segments that are served by
 specific processes.
 
-## Available Queries
+## Available queries
 
 Druid has numerous query types for various use cases. Queries are composed of various JSON properties and Druid has different types of queries for different use cases. The documentation for the various query types describe all the JSON properties that can be set.
 
-### Aggregation Queries
+### Aggregation queries
 
 * [Timeseries](../querying/timeseriesquery.md)
 * [TopN](../querying/topnquery.md)
 * [GroupBy](../querying/groupbyquery.md)
 
-### Metadata Queries
+### Metadata queries
 
 * [Time Boundary](../querying/timeboundaryquery.md)
 * [Segment Metadata](../querying/segmentmetadataquery.md)
 * [Datasource Metadata](../querying/datasourcemetadataquery.md)
 
-### Search Queries
+### Search queries
 
 * [Search](../querying/searchquery.md)
 
-## Which Query Should I Use?
+## Which query should I use?
 
 Where possible, we recommend using [Timeseries]() and [TopN]() queries instead of [GroupBy](). GroupBy is the most flexible Druid query, but also has the poorest performance.
  Timeseries are significantly faster than groupBy queries for aggregations that don't require grouping over dimensions. For grouping and sorting over a single dimension,
@@ -95,7 +95,7 @@ For example, if the query ID is `abc123`, the query can be cancelled as follows:
 curl -X DELETE "http://host:port/druid/v2/abc123"
 ```
 
-## Query Errors
+## Query errors
 
 If a query fails, you will get an HTTP 500 response containing a JSON object with the following structure:
 

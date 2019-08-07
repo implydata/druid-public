@@ -25,7 +25,15 @@ echo "Building to docs for '$1'..."
 
 yarn run compile-scss
 
-yarn run build
+yarn run build | tee ./build-log.txt
+
+if grep -q "unresolved links in file" ./build-log.txt; then
+  echo "There are unresolved links, please fix";
+  rm build-log.txt;
+  exit 1
+fi
+
+rm build-log.txt
 
 node script/fix-path.js $1
 

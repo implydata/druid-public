@@ -143,7 +143,7 @@ the `rowStats` map contains information about row counts. There is one entry for
 
 The `errorMsg` field shows a message describing the error that caused a task to fail. It will be null if the task was successful.
 
-## Live Reports
+## Live reports
 
 ### Row stats
 
@@ -200,7 +200,7 @@ For the Kafka Indexing Service, a GET to the following Overlord API will retriev
 http://<OVERLORD-HOST>:<OVERLORD-PORT>/druid/indexer/v1/supervisor/<supervisor-id>/stats
 ```
 
-### Unparseable Events
+### Unparseable events
 
 Lists of recently-encountered unparseable events can be retrieved from a running task with a GET to the following Peon API:
 

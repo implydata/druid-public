@@ -194,7 +194,7 @@ Returns the dimension value unchanged if the regular expression matches, otherwi
 { "type" : "partial", "expr" : <regular_expression> }
 ```
 
-### Search Query Extraction Function
+### Search query extraction function
 
 Returns the dimension value unchanged if the given [`SearchQuerySpec`](../querying/searchqueryspec.md)
 matches, otherwise returns null.

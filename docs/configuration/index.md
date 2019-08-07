@@ -1096,7 +1096,7 @@ The amount of direct memory needed by Druid is at least
 ensure at least this amount of direct memory is available by providing `-XX:MaxDirectMemorySize=<VALUE>` in
 `druid.indexer.runner.javaOptsArray` as documented above.
 
-#### Peon Query Configuration
+#### Peon query configuration
 
 See [general query configuration](#general-query-configuration).
 
@@ -1204,7 +1204,7 @@ These Historical configurations can be defined in the `historical/runtime.proper
 
 In `druid.segmentCache.locations`, *freeSpacePercent* was added because *maxSize* setting is only a theoretical limit and assumes that much space will always be available for storing segments. In case of any druid bug leading to unaccounted segment files left alone on disk or some other process writing stuff to disk, This check can start failing segment loading early before filling up the disk completely and leaving the host usable otherwise.
 
-#### Historical Query Configs
+#### Historical query configs
 
 ##### Concurrent Requests
 
@@ -1345,7 +1345,7 @@ The amount of direct memory needed by Druid is at least
 ensure at least this amount of direct memory is available by providing `-XX:MaxDirectMemorySize=<VALUE>` at the command
 line.
 
-##### Broker Query Configuration
+##### Broker query configuration
 
 See [general query configuration](#general-query-configuration).
 
@@ -1500,17 +1500,17 @@ If there is an L1 miss and L2 hit, it will also populate L1.
 |`druid.cache.useL2`|A boolean indicating whether to query L2 cache, if it's a miss in L1. It makes sense to configure this to `false` on Historical processes, if L2 is a remote cache like `memcached`, and this cache also used on brokers, because in this case if a query reached Historical it means that a broker didn't find corresponding results in the same remote cache, so a query to the remote cache from Historical is guaranteed to be a miss.|`true`|
 |`druid.cache.populateL2`|A boolean indicating whether to put results into L2 cache.|`true`|
 
-## General Query Configuration
+## General query configuration
 
 This section describes configurations that control behavior of Druid's query types, applicable to Broker, Historical, and MiddleManager processes.
 
-### TopN Query config
+### TopN query config
 
 |Property|Description|Default|
 |--------|-----------|-------|
 |`druid.query.topN.minTopNThreshold`|See [TopN Aliasing](../querying/topnquery.html#aliasing) for details.|1000|
 
-### Search Query Config
+### Search query config
 
 |Property|Description|Default|
 |--------|-----------|-------|
@@ -1524,7 +1524,7 @@ This section describes configurations that control behavior of Druid's query typ
 |`druid.query.segmentMetadata.defaultHistory`|When no interval is specified in the query, use a default interval of defaultHistory before the end time of the most recent segment, specified in ISO8601 format. This property also controls the duration of the default interval used by GET /druid/v2/datasources/{dataSourceName} interactions for retrieving datasource dimensions/metrics.|P1W|
 |`druid.query.segmentMetadata.defaultAnalysisTypes`|This can be used to set the Default Analysis Types for all segment metadata queries, this can be overridden when making the query|["cardinality", "interval", "minmax"]|
 
-### GroupBy Query Config
+### GroupBy query config
 
 This section describes the configurations for groupBy queries. You can set the runtime properties in the `runtime.properties` file on Broker, Historical, and MiddleManager processes. You can set the query context parameters through the [query context](../querying/query-context.md).
 

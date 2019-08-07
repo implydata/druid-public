@@ -182,7 +182,7 @@ Search filters can be used to filter on partial string matches.
 
 The search filter supports the use of extraction functions, see [Filtering with Extraction Functions](#filtering-with-extraction-functions) for details.
 
-#### Search Query Spec
+#### Search query spec
 
 ##### Contains
 

@@ -93,7 +93,7 @@ To acquire standard deviation from variance, user can use "stddev" post aggregat
 
 ## Query Examples:
 
-### Timeseries Query
+### Timeseries query
 
 ```json
 {
@@ -142,7 +142,7 @@ To acquire standard deviation from variance, user can use "stddev" post aggregat
 }
 ```
 
-### GroupBy Query
+### GroupBy query
 
 ```json
 {
