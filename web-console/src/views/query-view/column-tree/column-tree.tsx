@@ -31,6 +31,7 @@ import { AdditiveExpression, Alias, FilterClause, StringType } from 'druid-query
 import React, { ChangeEvent } from 'react';
 
 import { Loader } from '../../../components';
+import { Deferred } from '../../../components/deferred/deferred';
 import { copyAndAlert, escapeSqlIdentifier, groupBy } from '../../../utils';
 import { ColumnMetadata } from '../../../utils/column-metadata';
 
@@ -121,7 +122,7 @@ export interface ColumnTreeProps {
     operator: '!=' | '=' | '>' | '<' | 'like' | '>=' | '<=' | 'LIKE',
     run: boolean,
   ) => void;
-  hasGroupBy?: boolean;
+  hasGroupBy: () => boolean;
 }
 
 export interface ColumnTreeState {
@@ -135,10 +136,7 @@ export interface ColumnTreeState {
 export class ColumnTree extends React.PureComponent<ColumnTreeProps, ColumnTreeState> {
   static getDerivedStateFromProps(props: ColumnTreeProps, state: ColumnTreeState) {
     const { columnMetadata, defaultSchema, defaultTable } = props;
-    if (
-      (columnMetadata && columnMetadata !== state.prevColumnMetadata) ||
-      (columnMetadata && props.hasGroupBy !== state.prevGroupByStatus)
-    ) {
+    if (columnMetadata && columnMetadata !== state.prevColumnMetadata) {
       // @ts-ignore
       const columnTree = groupBy(
         columnMetadata,
@@ -200,64 +198,68 @@ export class ColumnTree extends React.PureComponent<ColumnTreeProps, ColumnTreeS
                     position={Position.RIGHT}
                     autoFocus={false}
                     content={
-                      <Menu>
-                        <MenuItem
-                          icon={IconNames.FULLSCREEN}
-                          text={`Show: ${columnData.COLUMN_NAME}`}
-                          onClick={() => {
-                            handleColumnClick(
-                              schema,
-                              table,
-                              {
-                                id: columnData.COLUMN_NAME,
-                                icon: ColumnTree.dataTypeToIcon(columnData.DATA_TYPE),
-                                label: columnData.COLUMN_NAME,
-                              },
-                              props.onQueryStringChange,
-                            );
-                          }}
-                        />
-                        {columnData.DATA_TYPE === 'BIGINT' && (
-                          <NumberMenu
-                            addFunctionToGroupBy={props.addFunctionToGroupBy}
-                            addToGroupBy={props.addToGroupBy}
-                            addAggregateColumn={props.addAggregateColumn}
-                            filterByRow={props.filterByRow}
-                            columnName={columnData.COLUMN_NAME}
-                            hasGroupBy={props.hasGroupBy}
-                          />
+                      <Deferred
+                        content={() => (
+                          <Menu>
+                            <MenuItem
+                              icon={IconNames.FULLSCREEN}
+                              text={`Show: ${columnData.COLUMN_NAME}`}
+                              onClick={() => {
+                                handleColumnClick(
+                                  schema,
+                                  table,
+                                  {
+                                    id: columnData.COLUMN_NAME,
+                                    icon: ColumnTree.dataTypeToIcon(columnData.DATA_TYPE),
+                                    label: columnData.COLUMN_NAME,
+                                  },
+                                  props.onQueryStringChange,
+                                );
+                              }}
+                            />
+                            {columnData.DATA_TYPE === 'BIGINT' && (
+                              <NumberMenu
+                                addFunctionToGroupBy={props.addFunctionToGroupBy}
+                                addToGroupBy={props.addToGroupBy}
+                                addAggregateColumn={props.addAggregateColumn}
+                                filterByRow={props.filterByRow}
+                                columnName={columnData.COLUMN_NAME}
+                                hasGroupBy={props.hasGroupBy()}
+                              />
+                            )}
+                            {columnData.DATA_TYPE === 'VARCHAR' && (
+                              <StringMenu
+                                addFunctionToGroupBy={props.addFunctionToGroupBy}
+                                addToGroupBy={props.addToGroupBy}
+                                addAggregateColumn={props.addAggregateColumn}
+                                filterByRow={props.filterByRow}
+                                columnName={columnData.COLUMN_NAME}
+                                hasGroupBy={props.hasGroupBy()}
+                              />
+                            )}
+                            {columnData.DATA_TYPE === 'TIMESTAMP' && (
+                              <StringMenu
+                                addFunctionToGroupBy={props.addFunctionToGroupBy}
+                                addToGroupBy={props.addToGroupBy}
+                                addAggregateColumn={props.addAggregateColumn}
+                                filterByRow={props.filterByRow}
+                                columnName={columnData.COLUMN_NAME}
+                                hasGroupBy={props.hasGroupBy()}
+                              />
+                            )}
+                            <MenuItem
+                              icon={IconNames.CLIPBOARD}
+                              text={`Copy: ${columnData.COLUMN_NAME}`}
+                              onClick={() => {
+                                copyAndAlert(
+                                  columnData.COLUMN_NAME,
+                                  `${columnData.COLUMN_NAME} query copied to clipboard`,
+                                );
+                              }}
+                            />
+                          </Menu>
                         )}
-                        {columnData.DATA_TYPE === 'VARCHAR' && (
-                          <StringMenu
-                            addFunctionToGroupBy={props.addFunctionToGroupBy}
-                            addToGroupBy={props.addToGroupBy}
-                            addAggregateColumn={props.addAggregateColumn}
-                            filterByRow={props.filterByRow}
-                            columnName={columnData.COLUMN_NAME}
-                            hasGroupBy={props.hasGroupBy}
-                          />
-                        )}
-                        {columnData.DATA_TYPE === 'TIMESTAMP' && (
-                          <StringMenu
-                            addFunctionToGroupBy={props.addFunctionToGroupBy}
-                            addToGroupBy={props.addToGroupBy}
-                            addAggregateColumn={props.addAggregateColumn}
-                            filterByRow={props.filterByRow}
-                            columnName={columnData.COLUMN_NAME}
-                            hasGroupBy={props.hasGroupBy}
-                          />
-                        )}
-                        <MenuItem
-                          icon={IconNames.CLIPBOARD}
-                          text={`Copy: ${columnData.COLUMN_NAME}`}
-                          onClick={() => {
-                            copyAndAlert(
-                              columnData.COLUMN_NAME,
-                              `${columnData.COLUMN_NAME} query copied to clipboard`,
-                            );
-                          }}
-                        />
-                      </Menu>
+                      />
                     }
                   >
                     <div>{columnData.COLUMN_NAME}</div>

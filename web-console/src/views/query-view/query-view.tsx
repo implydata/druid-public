@@ -33,6 +33,7 @@ import {
   StringType,
 } from 'druid-query-toolkit';
 import Hjson from 'hjson';
+import memoizeOne from 'memoize-one';
 import React from 'react';
 import SplitterLayout from 'react-splitter-layout';
 
@@ -63,11 +64,19 @@ import { RunButton } from './run-button/run-button';
 
 import './query-view.scss';
 
-const parser = sqlParserFactory(
+const parserRaw = sqlParserFactory(
   SQL_FUNCTIONS.map((sql_function: SyntaxDescription) => {
     return sql_function.syntax.substr(0, sql_function.syntax.indexOf('('));
   }),
 );
+
+const parser = memoizeOne((sql: string) => {
+  try {
+    return parserRaw(sql);
+  } catch {
+    return;
+  }
+});
 
 interface QueryWithContext {
   queryString: string;
@@ -199,9 +208,7 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
         let wrappedLimit: number | undefined;
         let jsonQuery: any;
 
-        try {
-          ast = parser(queryString);
-        } catch {}
+        ast = parser(queryString);
 
         if (!(ast instanceof SqlQuery)) {
           ast = undefined;
@@ -571,6 +578,23 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
     localStorageSet(LocalStorageKeys.QUERY_VIEW_PANE_SIZE, String(secondaryPaneSize));
   };
 
+  private getGroupBySetting = () => {
+    const { ast, queryString } = this.state;
+
+    let tempAst: SqlQuery | undefined;
+    if (!ast) {
+      tempAst = parser(queryString);
+    }
+
+    let hasGroupBy = false;
+    if (ast && ast instanceof SqlQuery) {
+      hasGroupBy = !!ast.groupByClause;
+    } else if (tempAst && tempAst instanceof SqlQuery) {
+      hasGroupBy = !!tempAst.groupByClause;
+    }
+    return hasGroupBy;
+  };
+
   render(): JSX.Element {
     const {
       columnMetadata,
@@ -582,9 +606,7 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
 
     let tempAst: SqlQuery | undefined;
     if (!ast) {
-      try {
-        tempAst = parser(queryString);
-      } catch {}
+      tempAst = parser(queryString);
     }
     let defaultSchema;
     if (ast && ast instanceof SqlQuery) {
@@ -598,12 +620,6 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
     } else if (tempAst && tempAst instanceof SqlQuery) {
       defaultTable = tempAst.getTableName();
     }
-    let hasGroupBy;
-    if (ast && ast instanceof SqlQuery) {
-      hasGroupBy = !!ast.groupByClause;
-    } else if (tempAst && tempAst instanceof SqlQuery) {
-      hasGroupBy = !!tempAst.groupByClause;
-    }
 
     return (
       <div
@@ -615,7 +631,7 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
             addFunctionToGroupBy={this.addFunctionToGroupBy}
             addAggregateColumn={this.addAggregateColumn}
             addToGroupBy={this.addToGroupBy}
-            hasGroupBy={hasGroupBy}
+            hasGroupBy={this.getGroupBySetting}
             columnMetadataLoading={columnMetadataLoading}
             columnMetadata={columnMetadata}
             onQueryStringChange={this.handleQueryStringChange}

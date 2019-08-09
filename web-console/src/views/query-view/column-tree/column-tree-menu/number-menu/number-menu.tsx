@@ -44,7 +44,7 @@ export interface NumberMenuProps {
     operator: '!=' | '=' | '>' | '<' | 'like' | '>=' | '<=' | 'LIKE',
     run: boolean,
   ) => void;
-  hasGroupBy?: boolean;
+  hasGroupBy: boolean;
   columnName: string;
 }
 

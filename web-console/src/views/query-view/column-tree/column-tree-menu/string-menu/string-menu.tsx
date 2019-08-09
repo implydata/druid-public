@@ -52,7 +52,7 @@ export interface StringMenuProps {
     operator: '!=' | '=' | '>' | '<' | 'like' | '>=' | '<=' | 'LIKE',
     run: boolean,
   ) => void;
-  hasGroupBy?: boolean;
+  hasGroupBy: boolean;
   columnName: string;
 }
 

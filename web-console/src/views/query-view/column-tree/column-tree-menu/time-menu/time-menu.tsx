@@ -49,7 +49,7 @@ export interface TimeMenuProps {
     operator: '!=' | '=' | '>' | '<' | 'like' | '>=' | '<=' | 'LIKE',
     run: boolean,
   ) => void;
-  hasGroupBy?: boolean;
+  hasGroupBy: boolean;
   columnName: string;
 }
 

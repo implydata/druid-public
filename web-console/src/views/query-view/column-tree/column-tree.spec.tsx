@@ -55,6 +55,7 @@ describe('column tree', () => {
           ] as ColumnMetadata[]
         }
         onQueryStringChange={() => {}}
+        hasGroupBy={() => true}
       />
     );
 
