@@ -30,7 +30,7 @@
     <parent>
         <artifactId>druid</artifactId>
         <groupId>org.apache.druid</groupId>
-        <version>0.15.0-incubating-iap7-SNAPSHOT</version>
+        <version>0.15.0-iap-pre-blookup-SNAPSHOT</version>
     </parent>
 
     <dependencies>
