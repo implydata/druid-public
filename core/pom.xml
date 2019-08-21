@@ -29,7 +29,7 @@
   <parent>
     <artifactId>druid</artifactId>
     <groupId>org.apache.druid</groupId>
-    <version>0.15.0-iap-pre-blookup-SNAPSHOT</version>
+    <version>0.15.0-iap-pre-blookup1</version>
   </parent>
 
   <properties>
