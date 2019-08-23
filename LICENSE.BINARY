@@ -523,7 +523,7 @@ BINARY/JAVA-CORE
 
 
 BINARY/HADOOP-CLIENT
-    This product bundles Apache Hadoop version 2.8.3.
+    This product bundles Apache Hadoop version 3.1.1.3.1.0.0-78.
       * org.apache.hadoop:hadoop-annotations
       * org.apache.hadoop:hadoop-auth
       * org.apache.hadoop:hadoop-client
@@ -533,11 +533,9 @@ BINARY/HADOOP-CLIENT
       * org.apache.hadoop:hadoop-mapreduce-client-common
       * org.apache.hadoop:hadoop-mapreduce-client-core
       * org.apache.hadoop:hadoop-mapreduce-client-jobclient
-      * org.apache.hadoop:hadoop-mapreduce-client-shuffle
       * org.apache.hadoop:hadoop-yarn-api
       * org.apache.hadoop:hadoop-yarn-client
       * org.apache.hadoop:hadoop-yarn-common
-      * org.apache.hadoop:hadoop-yarn-server-common
 
     This product bundles Gson version 2.2.4.
       * com.google.code.gson:gson
