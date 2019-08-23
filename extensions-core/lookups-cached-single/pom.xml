@@ -28,7 +28,7 @@
   <parent>
     <groupId>org.apache.druid</groupId>
     <artifactId>druid</artifactId>
-    <version>0.15.0-incubating-iap8-SNAPSHOT</version>
+    <version>0.15.0-incubating-iap7-hdp310</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
