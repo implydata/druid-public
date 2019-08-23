@@ -361,7 +361,6 @@ export class ColumnTree extends React.PureComponent<ColumnTreeProps, ColumnTreeS
         columnTree,
         selectedTreeIndex,
         currentSchemaSubtree,
-        prevGroupByStatus: props.hasGroupBy,
       };
     }
     return null;
