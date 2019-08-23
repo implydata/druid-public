@@ -30,7 +30,11 @@
 
     .ace_gutter-layer {
       background-color: #27313c;
-      width: 50px;
+      //Ace editor applies styling directly to the element so there isn't a more specific selector
+      width: 42px !important ;
+      .ace_gutter-cell {
+        padding-left: 0px;
+      }
     }
   }
 }
