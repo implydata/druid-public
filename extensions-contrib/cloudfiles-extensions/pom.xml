@@ -29,7 +29,7 @@
     <parent>
         <groupId>org.apache.druid</groupId>
         <artifactId>druid</artifactId>
-        <version>0.15.0-incubating-iap9-hdp264</version>
+        <version>0.15.0-incubating-iap10-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
