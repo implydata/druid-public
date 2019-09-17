@@ -9,29 +9,35 @@
           "format" : "json",
           "dimensionsSpec" : {
             "dimensions" : [
-              "channel",
-              "cityName",
-              "comment",
-              "countryIsoCode",
-              "countryName",
-              "isAnonymous",
-              "isMinor",
-              "isNew",
-              "isRobot",
-              "isUnpatrolled",
-              "metroCode",
-              "namespace",
-              "page",
-              "regionIsoCode",
-              "regionName",
-              "user",
-              { "name": "added", "type": "long" },
-              { "name": "deleted", "type": "long" },
-              { "name": "delta", "type": "long" }
+              "agent_category",
+              "agent_type",
+              "browser",
+              "browser_version",
+              "city",
+              "continent",
+              "country",
+              "version",
+              "event_type",
+              "event_subtype",
+              "loaded_image",
+              "adblock_list",
+              "language",
+              "number",
+              "os",
+              "platform",
+              "referrer",
+              "referrer_host",
+              "region",
+              "screen",
+              "session",
+              "timezone",
+              "timezone_offset",
+              "window",
+              { "name": "session_length", "type": "long" }
             ]
           },
           "timestampSpec": {
-            "column": "time",
+            "column": "timestamp",
             "format": "iso"
           }
         }
@@ -41,7 +47,7 @@
         "type" : "uniform",
         "segmentGranularity" : "hour",
         "queryGranularity" : "none",
-        "intervals" : ["2015-09-12/2015-09-13"],
+        "intervals" : ["2019-08-21/2019-08-22"],
         "rollup" : false
       }
     },
@@ -50,7 +56,7 @@
       "firehose" : {
         "type" : "local",
         "baseDir" : "quickstart/tutorial/",
-        "filter" : "wikiticker-2015-09-12-sampled.json.gz"
+        "filter" : "kttm-2019-08-21.json.gz"
       },
       "appendToExisting" : false
     },

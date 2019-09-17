@@ -36,7 +36,7 @@ It will also be helpful to have finished [Tutorial: Loading a file](../tutorials
 
 ## Load the initial data
 
-For this tutorial, we'll be using the Wikipedia edits sample data, with an ingestion task spec that will create 1-3 segments per hour in the input data.
+For this tutorial, we'll be using the koalastothemax usage analytics sample data, with an ingestion task spec that will create 1-3 segments per hour in the input data.
 
 The ingestion spec can be found at `quickstart/tutorial/compaction-init-index.json`. Let's submit that spec, which will create a datasource called `compaction-tutorial`:
 

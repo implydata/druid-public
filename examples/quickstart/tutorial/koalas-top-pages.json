@@ -1,0 +1,15 @@
+{
+  "queryType" : "topN",
+  "dataSource" : "koalas",
+  "intervals" : ["2019-08-21/2019-08-22"],
+  "granularity" : "all",
+  "dimension" : "loaded_image",
+  "metric" : "count",
+  "threshold" : 10,
+  "aggregations" : [
+    {
+      "type" : "count",
+      "name" : "count"
+    }
+  ]
+}

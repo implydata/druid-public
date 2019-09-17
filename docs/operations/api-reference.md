@@ -632,7 +632,7 @@ Retrieve a list of active tasks being run on MiddleManager. Returns JSON list of
 prefer to use the `/druid/indexer/v1/tasks` [Overlord API](#overlord) or one of it's task state specific variants instead.
 
 ```json
-["index_wikiticker_2019-02-11T02:20:15.316Z"]
+["index_koalas_2019-02-11T02:20:15.316Z"]
 ```
 
 * `/druid/worker/v1/task/{taskid}/log`
@@ -666,7 +666,7 @@ Shutdown a running task by `taskid`. Normal usage should prefer to use the `/dru
 [Overlord API](#overlord) instead. Returns JSON:
 
 ```json
-{"task":"index_kafka_wikiticker_f7011f8ffba384b_fpeclode"}
+{"task":"index_kafka_koalas_f7011f8ffba384b_fpeclode"}
 ```
 
 

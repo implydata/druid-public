@@ -128,54 +128,68 @@ It takes a few seconds for all the Druid processes to fully start up. If you ope
 
 ### Tutorial Dataset
 
-For the following data loading tutorials, we have included a sample data file containing Wikipedia page edit events that occurred on 2015-09-12.
+For the following data loading tutorials, we have included a sample data file containing usage analytics for koalastothemax.com that occurred on 2019-08-21.
 
-This sample data is located at `quickstart/tutorial/wikiticker-2015-09-12-sampled.json.gz` from the Druid package root.
-The page edit events are stored as JSON objects in a text file.
+This sample data is located at `quickstart/tutorial/kttm-2019-08-21.json.gz` from the Druid package root.
+The events are stored as JSON objects in a text file.
 
 The sample data has the following columns, and an example event is shown below:
 
-  * added
-  * channel
-  * cityName
-  * comment
-  * countryIsoCode
-  * countryName
-  * deleted
-  * delta
-  * isAnonymous
-  * isMinor
-  * isNew
-  * isRobot
-  * isUnpatrolled
-  * metroCode
-  * namespace
-  * page
-  * regionIsoCode
-  * regionName
-  * user
+  * timestamp
+  * agent_category
+  * agent_type
+  * browser
+  * browser_version
+  * city
+  * continent
+  * country
+  * version
+  * event_type
+  * event_subtype
+  * loaded_image
+  * adblock_list
+  * language
+  * number
+  * os
+  * platform
+  * referrer
+  * referrer_host
+  * region
+  * screen
+  * session
+  * session_length
+  * timezone
+  * timezone_offset
+  * window
 
 ```json
 {
-  "timestamp":"2015-09-12T20:03:45.018Z",
-  "channel":"#en.wikipedia",
-  "namespace":"Main",
-  "page":"Spider-Man's powers and equipment",
-  "user":"foobar",
-  "comment":"/* Artificial web-shooters */",
-  "cityName":"New York",
-  "regionName":"New York",
-  "regionIsoCode":"NY",
-  "countryName":"United States",
-  "countryIsoCode":"US",
-  "isAnonymous":false,
-  "isNew":false,
-  "isMinor":false,
-  "isRobot":false,
-  "isUnpatrolled":false,
-  "added":99,
-  "delta":99,
-  "deleted":0,
+  "timestamp": "2019-08-19T00:00:02.190Z",
+  "agent_category": "Personal computer",
+  "agent_type": "Browser",
+  "browser": "Chrome",
+  "browser_version": "76.0.3809.100",
+  "city": "Carlock",
+  "continent": "North America",
+  "country": "United States",
+  "version": "1.9.6",
+  "event_type": "PercentClear",
+  "event_subtype": "30",
+  "loaded_image": "http://www.koalastothemax.com/img/koalas2.jpg",
+  "adblock_list": "NoAdblock",
+  "language": "[\"en\",\"en-US\"]",
+  "number": "10",
+  "os": "Windows",
+  "platform": "Windows",
+  "referrer": "Direct",
+  "referrer_host": "Direct",
+  "region": "Illinois",
+  "screen": "1366x768",
+  "session": "S00556009",
+  "session_length": 44628,
+  "timezone": "N/A",
+  "timezone_offset": "300",
+  "window": "1366x625"
 }
 ```
 

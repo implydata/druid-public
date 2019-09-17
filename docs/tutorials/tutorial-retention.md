@@ -33,7 +33,7 @@ It will also be helpful to have finished [Tutorial: Loading a file](../tutorials
 
 ## Load the example data
 
-For this tutorial, we'll be using the Wikipedia edits sample data, with an ingestion task spec that will create a separate segment for each hour in the input data.
+For this tutorial, we'll be using the koalastothemax.com usage analytics data, with an ingestion task spec that will create a separate segment for each hour in the input data.
 
 The ingestion spec can be found at `quickstart/tutorial/retention-index.json`. Let's submit that spec, which will create a datasource called `retention-tutorial`:
 

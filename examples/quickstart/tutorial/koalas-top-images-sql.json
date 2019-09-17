@@ -1,0 +1,3 @@
+{
+  "query":"SELECT loaded_image, COUNT(*) AS views FROM koalas WHERE \"__time\" BETWEEN TIMESTAMP '2019-08-21 00:00:00' AND TIMESTAMP '2019-08-22 00:00:00' GROUP BY loaded_image ORDER BY views DESC LIMIT 10"
+}

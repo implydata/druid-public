@@ -347,14 +347,14 @@ Content: List of JSON Resource-Action objects, e.g.:
 [
 {
   "resource": {
-    "name": "wiki.*",
+    "name": "koalas.*",
     "type": "DATASOURCE"
   },
   "action": "READ"
 },
 {
   "resource": {
-    "name": "wikiticker",
+    "name": "koalas",
     "type": "DATASOURCE"
   },
   "action": "WRITE"

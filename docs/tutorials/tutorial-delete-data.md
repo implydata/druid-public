@@ -31,7 +31,7 @@ the [single-machine quickstart](index.html) and have it running on your local ma
 
 ## Load initial data
 
-In this tutorial, we will use the Wikipedia edits data, with an indexing spec that creates hourly segments. This spec is located at `quickstart/tutorial/deletion-index.json`, and it creates a datasource called `deletion-tutorial`.
+In this tutorial, we will use the koalastothemax.com usage analytics data, with an indexing spec that creates hourly segments. This spec is located at `quickstart/tutorial/deletion-index.json`, and it creates a datasource called `deletion-tutorial`.
 
 Let's load this initial data:
 

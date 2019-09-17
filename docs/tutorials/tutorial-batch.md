@@ -30,14 +30,14 @@ For this tutorial, we'll assume you've already downloaded Druid as described in
 the [quickstart](index.html) using the `micro-quickstart` single-machine configuration and have it
 running on your local machine. You don't need to have loaded any data yet.
 
-A data load is initiated by submitting an *ingestion task* spec to the Druid Overlord. For this tutorial, we'll be loading the sample Wikipedia page edits data.
+A data load is initiated by submitting an *ingestion task* spec to the Druid Overlord. For this tutorial, we'll be loading the sample koalastothemax.com usage analytics data.
 
 An ingestion spec can be written by hand or by using the "Data loader" that is built into the Druid console.
 The data loader can help you build an ingestion spec by sampling your data and and iteratively configuring various ingestion parameters.
 The data loader currently only supports native batch ingestion (support for streaming, including data stored in Apache Kafka and AWS Kinesis, is coming in future releases).
 Streaming ingestion is only available through a written ingestion spec today.
 
-We've included a sample of Wikipedia edits from September 12, 2015 to get you started.
+We've included a sample of usage analytics for koalastothemax.com that occurred on 2019-08-21 to get you started.
 
 
 ## Loading data with the data loader
@@ -47,7 +47,7 @@ Select `Local disk`.
 
 ![Data loader init](../assets/tutorial-batch-data-loader-01.png "Data loader init")
 
-Enter the value of `quickstart/tutorial/` as the base directory and `wikiticker-2015-09-12-sampled.json.gz` as a filter.
+Enter the value of `quickstart/tutorial/` as the base directory and `kttm-2019-08-21.json.gz` as a filter.
 The separation of base directory and [wildcard file filter](https://commons.apache.org/proper/commons-io/apidocs/org/apache/commons/io/filefilter/WildcardFileFilter.html) is there if you need to ingest data from multiple files.
 
 Click `Preview` and make sure that the the data you are seeing is correct.
@@ -84,7 +84,7 @@ Since this is a small dataset, there are no adjustments that need to be made in 
 ![Data loader partition](../assets/tutorial-batch-data-loader-06.png "Data loader partition")
 
 Clicking past the `Tune` step, we get to the publish step, which is where we can specify what the datasource name in Druid.
-Let's name this datasource `wikipedia`.
+Let's name this datasource `koalas`.
 
 ![Data loader publish](../assets/tutorial-batch-data-loader-07.png "Data loader publish")
 
@@ -105,7 +105,7 @@ In the tasks view, you can click `Refresh` a couple of times until your ingestio
 
 When a tasks succeeds it means that it built one or more segments that will now be picked up by the data servers.
 
-Navigate to the `Datasources` view and click refresh until your datasource (`wikipedia`) appears.
+Navigate to the `Datasources` view and click refresh until your datasource (`koalas`) appears.
 This can take a few seconds as the segments are being loaded.
 
 ![Datasource view](../assets/tutorial-batch-data-loader-10.png "Datasource view")
@@ -113,7 +113,7 @@ This can take a few seconds as the segments are being loaded.
 A datasource is queryable once you see a green (fully available) circle.
 At this point, you can go to the `Query` view to run SQL queries against the datasource.
 
-Since this is a small dataset, you can simply run a `SELECT * FROM wikipedia` query to see your results.
+Since this is a small dataset, you can simply run a `SELECT * FROM koalas` query to see your results.
 
 ![Query view](../assets/tutorial-batch-data-loader-11.png "Query view")
 
@@ -122,44 +122,50 @@ Check out the [query tutorial](../tutorials/tutorial-query.md) to run some examp
 
 ## Loading data with a spec (via console)
 
-The Druid package includes the following sample native batch ingestion task spec at `quickstart/tutorial/wikipedia-index.json`, shown here for convenience,
-which has been configured to read the `quickstart/tutorial/wikiticker-2015-09-12-sampled.json.gz` input file:
+The Druid package includes the following sample native batch ingestion task spec at `quickstart/tutorial/koalas-index.json`, shown here for convenience,
+which has been configured to read the `quickstart/tutorial/kttm-2019-08-21.json.gz` input file:
 
 ```json
 {
   "type" : "index",
   "spec" : {
     "dataSchema" : {
-      "dataSource" : "wikipedia",
+      "dataSource" : "koalas",
       "parser" : {
         "type" : "string",
         "parseSpec" : {
           "format" : "json",
           "dimensionsSpec" : {
             "dimensions" : [
-              "channel",
-              "cityName",
-              "comment",
-              "countryIsoCode",
-              "countryName",
-              "isAnonymous",
-              "isMinor",
-              "isNew",
-              "isRobot",
-              "isUnpatrolled",
-              "metroCode",
-              "namespace",
-              "page",
-              "regionIsoCode",
-              "regionName",
-              "user",
-              { "name": "added", "type": "long" },
-              { "name": "deleted", "type": "long" },
-              { "name": "delta", "type": "long" }
+              "agent_category",
+              "agent_type",
+              "browser",
+              "browser_version",
+              "city",
+              "continent",
+              "country",
+              "version",
+              "event_type",
+              "event_subtype",
+              "loaded_image",
+              "adblock_list",
+              "language",
+              "number",
+              "os",
+              "platform",
+              "referrer",
+              "referrer_host",
+              "region",
+              "screen",
+              "session",
+              "timezone",
+              "timezone_offset",
+              "window",
+              { "name": "session_length", "type": "long" }
             ]
           },
           "timestampSpec": {
-            "column": "time",
+            "column": "timestamp",
             "format": "iso"
           }
         }
@@ -169,7 +175,7 @@ which has been configured to read the `quickstart/tutorial/wikiticker-2015-09-12
         "type" : "uniform",
         "segmentGranularity" : "day",
         "queryGranularity" : "none",
-        "intervals" : ["2015-09-12/2015-09-13"],
+        "intervals" : ["2019-08-21/2019-08-22"],
         "rollup" : false
       }
     },
@@ -178,7 +184,7 @@ which has been configured to read the `quickstart/tutorial/wikiticker-2015-09-12
       "firehose" : {
         "type" : "local",
         "baseDir" : "quickstart/tutorial/",
-        "filter" : "wikiticker-2015-09-12-sampled.json.gz"
+        "filter" : "kttm-2019-08-21.json.gz"
       },
       "appendToExisting" : false
     },
@@ -191,7 +197,7 @@ which has been configured to read the `quickstart/tutorial/wikiticker-2015-09-12
 }
 ```
 
-This spec will create a datasource named "wikipedia".
+This spec will create a datasource named "koalas".
 
 From the task view, click on `Submit task` and select `Raw JSON task`.
 
@@ -213,21 +219,21 @@ This script will POST an ingestion task to the Druid Overlord and poll Druid unt
 Run the following command from Druid package root:
 
 ```bash
-bin/post-index-task --file quickstart/tutorial/wikipedia-index.json --url http://localhost:8081
+bin/post-index-task --file quickstart/tutorial/koalas-index.json --url http://localhost:8081
 ```
 
 You should see output like the following:
 
 ```bash
-Beginning indexing data for wikipedia
-Task started: index_wikipedia_2018-07-27T06:37:44.323Z
-Task log:     http://localhost:8081/druid/indexer/v1/task/index_wikipedia_2018-07-27T06:37:44.323Z/log
-Task status:  http://localhost:8081/druid/indexer/v1/task/index_wikipedia_2018-07-27T06:37:44.323Z/status
-Task index_wikipedia_2018-07-27T06:37:44.323Z still running...
-Task index_wikipedia_2018-07-27T06:37:44.323Z still running...
+Beginning indexing data for koalas
+Task started: index_koalas_2018-07-27T06:37:44.323Z
+Task log:     http://localhost:8081/druid/indexer/v1/task/index_koalas_2018-07-27T06:37:44.323Z/log
+Task status:  http://localhost:8081/druid/indexer/v1/task/index_koalas_2018-07-27T06:37:44.323Z/status
+Task index_koalas_2018-07-27T06:37:44.323Z still running...
+Task index_koalas_2018-07-27T06:37:44.323Z still running...
 Task finished with status: SUCCESS
-Completed indexing data for wikipedia. Now loading indexed data onto the cluster...
-wikipedia loading complete! You may now query your data
+Completed indexing data for koalas. Now loading indexed data onto the cluster...
+koalas loading complete! You may now query your data
 ```
 
 Once the spec is submitted, you can follow the same instructions as above to wait for the data to load and then query it.
@@ -240,13 +246,13 @@ Let's briefly discuss how we would've submitted the ingestion task without using
 To submit the task, POST it to Druid in a new terminal window from the apache-druid-#{DRUIDVERSION} directory:
 
 ```bash
-curl -X 'POST' -H 'Content-Type:application/json' -d @quickstart/tutorial/wikipedia-index.json http://localhost:8081/druid/indexer/v1/task
+curl -X 'POST' -H 'Content-Type:application/json' -d @quickstart/tutorial/koalas-index.json http://localhost:8081/druid/indexer/v1/task
 ```
 
 Which will print the ID of the task if the submission was successful:
 
 ```bash
-{"task":"index_wikipedia_2018-06-09T21:30:32.802Z"}
+{"task":"index_koalas_2018-06-09T21:30:32.802Z"}
 ```
 
 You can monitor the status of this task from the console as outlined above.
@@ -259,7 +265,7 @@ Once the data is loaded, please follow the [query tutorial](../tutorials/tutoria
 
 ## Cleanup
 
-If you wish to go through any of the other ingestion tutorials, you will need to shut down the cluster and reset the cluster state by removing the contents of the `var` directory under the druid package, as the other tutorials will write to the same "wikipedia" datasource.
+If you wish to go through any of the other ingestion tutorials, you will need to shut down the cluster and reset the cluster state by removing the contents of the `var` directory under the druid package, as the other tutorials will write to the same "koalas" datasource.
 
 
 ## Further reading

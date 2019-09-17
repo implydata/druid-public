@@ -50,15 +50,15 @@ Start a Kafka broker by running the following command in a new terminal:
 ./bin/kafka-server-start.sh config/server.properties
 ```
 
-Run this command to create a Kafka topic called *wikipedia*, to which we'll send data:
+Run this command to create a Kafka topic called *koalas*, to which we'll send data:
 
 ```bash
-./bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic wikipedia
+./bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic koalas
 ```
 
 ## Start Druid Kafka ingestion
 
-We will use Druid's Kafka indexing service to ingest messages from our newly created *wikipedia* topic.
+We will use Druid's Kafka indexing service to ingest messages from our newly created *koalas* topic.
 
 ### Submit a supervisor via the console
 
@@ -72,37 +72,43 @@ Paste in this spec and click `Submit`.
 {
   "type": "kafka",
   "dataSchema": {
-    "dataSource": "wikipedia",
+    "dataSource": "koalas",
     "parser": {
       "type": "string",
       "parseSpec": {
         "format": "json",
-        "timestampSpec": {
-          "column": "time",
-          "format": "auto"
-        },
-        "dimensionsSpec": {
-          "dimensions": [
-            "channel",
-            "cityName",
-            "comment",
-            "countryIsoCode",
-            "countryName",
-            "isAnonymous",
-            "isMinor",
-            "isNew",
-            "isRobot",
-            "isUnpatrolled",
-            "metroCode",
-            "namespace",
-            "page",
-            "regionIsoCode",
-            "regionName",
-            "user",
-            { "name": "added", "type": "long" },
-            { "name": "deleted", "type": "long" },
-            { "name": "delta", "type": "long" }
+        "dimensionsSpec" : {
+          "dimensions" : [
+            "agent_category",
+            "agent_type",
+            "browser",
+            "browser_version",
+            "city",
+            "continent",
+            "country",
+            "version",
+            "event_type",
+            "event_subtype",
+            "loaded_image",
+            "adblock_list",
+            "language",
+            "number",
+            "os",
+            "platform",
+            "referrer",
+            "referrer_host",
+            "region",
+            "screen",
+            "session",
+            "timezone",
+            "timezone_offset",
+            "window",
+            { "name": "session_length", "type": "long" }
           ]
+        },
+        "timestampSpec": {
+          "column": "timestamp",
+          "format": "iso"
         }
       }
     },
@@ -119,7 +125,7 @@ Paste in this spec and click `Submit`.
     "reportParseExceptions": false
   },
   "ioConfig": {
-    "topic": "wikipedia",
+    "topic": "koalas",
     "replicas": 2,
     "taskDuration": "PT10M",
     "completionTimeout": "PT20M",
@@ -139,11 +145,11 @@ This will start the supervisor that will in turn spawn some tasks that will star
 To start the service directly, we will need to submit a supervisor spec to the Druid overlord by running the following from the Druid package root:
 
 ```bash
-curl -XPOST -H'Content-Type: application/json' -d @quickstart/tutorial/wikipedia-kafka-supervisor.json http://localhost:8081/druid/indexer/v1/supervisor
+curl -XPOST -H'Content-Type: application/json' -d @quickstart/tutorial/koalas-kafka-supervisor.json http://localhost:8081/druid/indexer/v1/supervisor
 ```
 
 
-If the supervisor was successfully created, you will get a response containing the ID of the supervisor; in our case we should see `{"id":"wikipedia"}`.
+If the supervisor was successfully created, you will get a response containing the ID of the supervisor; in our case we should see `{"id":"koalas"}`.
 
 For more details about what's going on here, check out the
 [Druid Kafka indexing service documentation](../development/extensions-core/kafka-ingestion.md).
@@ -159,17 +165,17 @@ In your Druid directory, run the following command:
 
 ```bash
 cd quickstart/tutorial
-gunzip -c wikiticker-2015-09-12-sampled.json.gz > wikiticker-2015-09-12-sampled.json
+gunzip -c kttm-2015-09-21.json.gz > kttm-2019-09-21.json
 ```
 
 In your Kafka directory, run the following command, where {PATH_TO_DRUID} is replaced by the path to the Druid directory:
 
 ```bash
 export KAFKA_OPTS="-Dfile.encoding=UTF-8"
-./bin/kafka-console-producer.sh --broker-list localhost:9092 --topic wikipedia < {PATH_TO_DRUID}/quickstart/tutorial/wikiticker-2015-09-12-sampled.json
+./bin/kafka-console-producer.sh --broker-list localhost:9092 --topic koalas < {PATH_TO_DRUID}/quickstart/tutorial/kttm-2019-08-21.json
 ```
 
-The previous command posted sample events to the *wikipedia* Kafka topic which were then ingested into Druid by the Kafka indexing service. You're now ready to run some queries!
+The previous command posted sample events to the *koalas* Kafka topic which were then ingested into Druid by the Kafka indexing service. You're now ready to run some queries!
 
 ## Querying your data
 
@@ -179,7 +185,7 @@ Please follow the [query tutorial](../tutorials/tutorial-query.md) to run some e
 
 ## Cleanup
 
-If you wish to go through any of the other ingestion tutorials, you will need to shut down the cluster and reset the cluster state by removing the contents of the `var` directory under the druid package, as the other tutorials will write to the same "wikipedia" datasource.
+If you wish to go through any of the other ingestion tutorials, you will need to shut down the cluster and reset the cluster state by removing the contents of the `var` directory under the druid package, as the other tutorials will write to the same "koalas" datasource.
 
 ## Further reading
 

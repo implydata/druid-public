@@ -89,7 +89,7 @@ public class IndexTaskSamplerSpecTest extends EasyMockSupport
                   + "      \"firehose\": {\n"
                   + "        \"type\": \"local\",\n"
                   + "        \"baseDir\": \"/tmp\",\n"
-                  + "        \"filter\": \"wikiticker-2015-09-12-sampled.json\"\n"
+                  + "        \"filter\": \"kttm-2019-08-21.json\"\n"
                   + "      }\n"
                   + "    }\n"
                   + "  }\n"
@@ -114,7 +114,7 @@ public class IndexTaskSamplerSpecTest extends EasyMockSupport
 
     FirehoseFactory firehoseFactory = capturedFirehoseFactory.getValue();
     Assert.assertEquals(new File("/tmp"), ((LocalFirehoseFactory) firehoseFactory).getBaseDir());
-    Assert.assertEquals("wikiticker-2015-09-12-sampled.json", ((LocalFirehoseFactory) firehoseFactory).getFilter());
+    Assert.assertEquals("kttm-2019-08-21.json", ((LocalFirehoseFactory) firehoseFactory).getFilter());
 
     DataSchema dataSchema = capturedDataSchema.getValue();
     Assert.assertEquals("sampler", dataSchema.getDataSource());

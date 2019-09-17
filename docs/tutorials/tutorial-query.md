@@ -26,7 +26,7 @@ sidebar_label: "Querying data"
 
 This tutorial will demonstrate how to query data in Apache Druid (incubating), with examples for Druid SQL and Druid's native query format.
 
-The tutorial assumes that you've already completed one of the 4 ingestion tutorials, as we will be querying the sample Wikipedia edits data.
+The tutorial assumes that you've already completed one of the 4 ingestion tutorials, as we will be querying the sample koalastothemax.com usage analytics data.
 
 * [Tutorial: Loading a file](../tutorials/tutorial-batch.md)
 * [Tutorial: Loading stream data from Kafka](../tutorials/tutorial-kafka.md)
@@ -39,13 +39,13 @@ The Druid console includes a view to issue queries to Druid and nicely format th
 
 Druid supports a dialect of SQL for querying.
 
-This query retrieves the 10 Wikipedia pages with the most page edits on 2015-09-12.
+This query retrieves the 10 koalas loaded_images with the most views on 2019-08-22.
 
 ```sql
-SELECT page, COUNT(*) AS Edits
-FROM wikipedia
-WHERE "__time" BETWEEN TIMESTAMP '2015-09-12 00:00:00' AND TIMESTAMP '2015-09-13 00:00:00'
-GROUP BY page ORDER BY Edits DESC
+SELECT loaded_images, COUNT(*) AS views
+FROM koalas
+WHERE "__time" BETWEEN TIMESTAMP '2019-08-21 00:00:00' AND TIMESTAMP '2019-08-22 00:00:00'
+GROUP BY loaded_image ORDER BY views DESC
 LIMIT 10
 ```
 
@@ -62,7 +62,7 @@ You can also configure extra context flags to be sent with the query from the mo
 
 ![Query options](../assets/tutorial-query-02.png "Query options")
 
-Note that the console will by default wrap your SQL queries in a limit so that you can issue queries like `SELECT * FROM wikipedia` without much hesitation - you can turn off this behaviour.
+Note that the console will by default wrap your SQL queries in a limit so that you can issue queries like `SELECT * FROM koalas` without much hesitation - you can turn off this behaviour.
 
 ### Query SQL via dsql
 
@@ -79,21 +79,21 @@ dsql>
 To submit the query, paste it to the `dsql` prompt and press enter:
 
 ```bash
-dsql> SELECT page, COUNT(*) AS Edits FROM wikipedia WHERE "__time" BETWEEN TIMESTAMP '2015-09-12 00:00:00' AND TIMESTAMP '2015-09-13 00:00:00' GROUP BY page ORDER BY Edits DESC LIMIT 10;
-┌──────────────────────────────────────────────────────────┬───────┐
-│ page                                                     │ Edits │
-├──────────────────────────────────────────────────────────┼───────┤
-│ Wikipedia:Vandalismusmeldung                             │    33 │
-│ User:Cyde/List of candidates for speedy deletion/Subpage │    28 │
-│ Jeremy Corbyn                                            │    27 │
-│ Wikipedia:Administrators' noticeboard/Incidents          │    21 │
-│ Flavia Pennetta                                          │    20 │
-│ Total Drama Presents: The Ridonculous Race               │    18 │
-│ User talk:Dudeperson176123                               │    18 │
-│ Wikipédia:Le Bistro/12 septembre 2015                    │    18 │
-│ Wikipedia:In the news/Candidates                         │    17 │
-│ Wikipedia:Requests for page protection                   │    17 │
-└──────────────────────────────────────────────────────────┴───────┘
+dsql> SELECT loaded_image, COUNT(*) AS views FROM koalas WHERE "__time" BETWEEN TIMESTAMP '2019-08-21 00:00:00' AND TIMESTAMP '2019-08-22 00:00:00' GROUP BY loaded_image ORDER BY views DESC LIMIT 10;
+┌───────────────────────────────────────────────┬───────┐
+│ loaded_image                                  │ views │
+├───────────────────────────────────────────────┼───────┤
+│ http://www.koalastothemax.com/img/koalas3.jpg │ 18022 │
+│ http://www.koalastothemax.com/img/koalas.jpg  │ 17635 │
+│ http://www.koalastothemax.com/img/koalas1.jpg │ 16626 │
+│ http://www.koalastothemax.com/img/koalas2.jpg │ 16493 │
+│ https://koalastothemax.com/img/koalas.jpg     │ 14184 │
+│ https://koalastothemax.com/img/koalas1.jpg    │ 12795 │
+│ Custom image                                  │ 12765 │
+│ https://koalastothemax.com/img/koalas2.jpg    │ 12491 │
+│ https://koalastothemax.com/img/koalas3.jpg    │ 12290 │
+│ http://koalastothemax.com/img/koalas3.jpg     │  2240 │
+└───────────────────────────────────────────────┴───────┘
 Retrieved 10 rows in 0.06s.
 ```
 
@@ -102,56 +102,26 @@ Retrieved 10 rows in 0.06s.
 
 The SQL queries are submitted as JSON over HTTP.
 
-The tutorial package includes an example file that contains the SQL query shown above at `quickstart/tutorial/wikipedia-top-pages-sql.json`. Let's submit that query to the Druid Broker:
+The tutorial package includes an example file that contains the SQL query shown above at `quickstart/tutorial/koalas-top-images-sql.json`. Let's submit that query to the Druid Broker:
 
 ```bash
-curl -X 'POST' -H 'Content-Type:application/json' -d @quickstart/tutorial/wikipedia-top-pages-sql.json http://localhost:8888/druid/v2/sql
+curl -X 'POST' -H 'Content-Type:application/json' -d @quickstart/tutorial/koalas-top-images-sql.json http://localhost:8888/druid/v2/sql
 ```
 
 The following results should be returned:
 
 ```json
 [
-  {
-    "page": "Wikipedia:Vandalismusmeldung",
-    "Edits": 33
-  },
-  {
-    "page": "User:Cyde/List of candidates for speedy deletion/Subpage",
-    "Edits": 28
-  },
-  {
-    "page": "Jeremy Corbyn",
-    "Edits": 27
-  },
-  {
-    "page": "Wikipedia:Administrators' noticeboard/Incidents",
-    "Edits": 21
-  },
-  {
-    "page": "Flavia Pennetta",
-    "Edits": 20
-  },
-  {
-    "page": "Total Drama Presents: The Ridonculous Race",
-    "Edits": 18
-  },
-  {
-    "page": "User talk:Dudeperson176123",
-    "Edits": 18
-  },
-  {
-    "page": "Wikipédia:Le Bistro/12 septembre 2015",
-    "Edits": 18
-  },
-  {
-    "page": "Wikipedia:In the news/Candidates",
-    "Edits": 17
-  },
-  {
-    "page": "Wikipedia:Requests for page protection",
-    "Edits": 17
-  }
+  {"loaded_image":"http://www.koalastothemax.com/img/koalas3.jpg","views":18022},
+  {"loaded_image":"http://www.koalastothemax.com/img/koalas.jpg","views":17635},
+  {"loaded_image":"http://www.koalastothemax.com/img/koalas1.jpg","views":16626},
+  {"loaded_image":"http://www.koalastothemax.com/img/koalas2.jpg","views":16493},
+  {"loaded_image":"https://koalastothemax.com/img/koalas.jpg","views":14184},
+  {"loaded_image":"https://koalastothemax.com/img/koalas1.jpg","views":12795},
+  {"loaded_image":"Custom image","views":12765},
+  {"loaded_image":"https://koalastothemax.com/img/koalas2.jpg","views":12491},
+  {"loaded_image":"https://koalastothemax.com/img/koalas3.jpg","views":12290},
+  {"loaded_image":"http://koalastothemax.com/img/koalas3.jpg","views":2240}
 ]
 ```
 
@@ -162,8 +132,8 @@ Here is a collection of queries to try out:
 #### Query over time
 
 ```sql
-SELECT FLOOR(__time to HOUR) AS HourTime, SUM(deleted) AS LinesDeleted
-FROM wikipedia WHERE "__time" BETWEEN TIMESTAMP '2015-09-12 00:00:00' AND TIMESTAMP '2015-09-13 00:00:00'
+SELECT FLOOR(__time to HOUR) AS HourTime, SUM(session_time) AS total_session_time
+FROM koalas WHERE "__time" BETWEEN TIMESTAMP '2019-08-21 00:00:00' AND TIMESTAMP '2019-08-22 00:00:00'
 GROUP BY 1
 ```
 
@@ -172,9 +142,9 @@ GROUP BY 1
 #### General group by
 
 ```sql
-SELECT channel, page, SUM(added)
-FROM wikipedia WHERE "__time" BETWEEN TIMESTAMP '2015-09-12 00:00:00' AND TIMESTAMP '2015-09-13 00:00:00'
-GROUP BY channel, page
+SELECT browser, loaded_image, SUM(session_time)
+FROM koalas WHERE "__time" BETWEEN TIMESTAMP '2019-08-21 00:00:00' AND TIMESTAMP '2019-08-22 00:00:00'
+GROUP BY browser, loaded_image
 ORDER BY SUM(added) DESC
 ```
 
@@ -183,8 +153,8 @@ ORDER BY SUM(added) DESC
 #### Select raw data
 
 ```sql
-SELECT user, page
-FROM wikipedia WHERE "__time" BETWEEN TIMESTAMP '2015-09-12 02:00:00' AND TIMESTAMP '2015-09-12 03:00:00'
+SELECT browser, loaded_image
+FROM koalas WHERE "__time" BETWEEN TIMESTAMP '2019-08-21 02:00:00' AND TIMESTAMP '2019-08-21 03:00:00'
 LIMIT 5
 ```
 
@@ -201,14 +171,15 @@ If you are querying in other ways you can get the plan by prepending `EXPLAIN PL
 
 Using a query from an example above:
 
-`EXPLAIN PLAN FOR SELECT page, COUNT(*) AS Edits FROM wikipedia WHERE "__time" BETWEEN TIMESTAMP '2015-09-12 00:00:00' AND TIMESTAMP '2015-09-13 00:00:00' GROUP BY page ORDER BY Edits DESC LIMIT 10;`
+`EXPLAIN PLAN FOR SELECT loaded_image, COUNT(*) AS views FROM koalas WHERE "__time" BETWEEN TIMESTAMP '2019-08-21 00:00:00' AND TIMESTAMP '2019-08-22 00:00:00' GROUP BY loaded_image ORDER BY views DESC LIMIT 10;`
 
 ```bash
-dsql> EXPLAIN PLAN FOR SELECT page, COUNT(*) AS Edits FROM wikipedia WHERE "__time" BETWEEN TIMESTAMP '2015-09-12 00:00:00' AND TIMESTAMP '2015-09-13 00:00:00' GROUP BY page ORDER BY Edits DESC LIMIT 10;
+dsql> EXPLAIN PLAN FOR SELECT loaded_image, COUNT(*) AS views FROM koalas WHERE "__time" BETWEEN TIMESTAMP '2019-08-21 00:00:00' AND TIMESTAMP '2019-08-22 00:00:00' GROUP BY loaded_image ORDER BY views DESC LIMIT 10;
 ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │ PLAN                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    │
 ├─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ DruidQueryRel(query=[{"queryType":"topN","dataSource":{"type":"table","name":"wikipedia"},"virtualColumns":[],"dimension":{"type":"default","dimension":"page","outputName":"d0","outputType":"STRING"},"metric":{"type":"numeric","metric":"a0"},"threshold":10,"intervals":{"type":"intervals","intervals":["2015-09-12T00:00:00.000Z/2015-09-13T00:00:00.001Z"]},"filter":null,"granularity":{"type":"all"},"aggregations":[{"type":"count","name":"a0"}],"postAggregations":[],"context":{},"descending":false}], signature=[{d0:STRING, a0:LONG}]) │
+│ DruidQueryRel(query=[{"queryType":"topN","dataSource":{"type":"table","name":"koalas"},"virtualColumns":[],"dimension":{"type":"default","dimension":"loaded_image","outputName":"d0","outputType":"STRING"},"metric":{"type":"numeric","metric":"a0"},"threshold":10,"intervals":{"type":"intervals","intervals":["2019-08-21T00:00:00.000Z/2019-08-22T00:00:00.001Z"]},"filter":null,"granularity":{"type":"all"},"aggregations":[{"type":"count","name":"a0"}],"postAggregations":[],"context":{},"descending":false}], signature=[{d0:STRING, a0:LONG}])
+ │
 └─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 Retrieved 1 row in 0.03s.
 ```
@@ -222,15 +193,15 @@ Druid's native query format is expressed in JSON.
 
 You can issue native Druid queries from the console's Query view.
 
-Here is a query that retrieves the 10 Wikipedia pages with the most page edits on 2015-09-12.
+Here is a query that retrieves the 10 koalas images with the most views on 2019-08-21.
 
 ```json
 {
   "queryType" : "topN",
-  "dataSource" : "wikipedia",
-  "intervals" : ["2015-09-12/2015-09-13"],
+  "dataSource" : "koalas",
+  "intervals" : ["2019-08-21/2019-08-22"],
   "granularity" : "all",
-  "dimension" : "page",
+  "dimension" : "os",
   "metric" : "count",
   "threshold" : 10,
   "aggregations" : [
@@ -249,49 +220,49 @@ Simply paste it into the console to switch the editor into JSON mode.
 
 ### Native queries over HTTP
 
-We have included a sample native TopN query under `quickstart/tutorial/wikipedia-top-pages.json`:
+We have included a sample native TopN query under `quickstart/tutorial/koalas-top-views.json`:
 
 Let's submit this query to Druid:
 
 ```bash
-curl -X 'POST' -H 'Content-Type:application/json' -d @quickstart/tutorial/wikipedia-top-pages.json http://localhost:8888/druid/v2?pretty
+curl -X 'POST' -H 'Content-Type:application/json' -d @quickstart/tutorial/koalas-top-views.json http://localhost:8888/druid/v2?pretty
 ```
 
 You should see the following query results:
 
 ```json
 [ {
-  "timestamp" : "2015-09-12T00:46:58.771Z",
+  "timestamp" : "2019-08-21T00:00:00.169Z",
   "result" : [ {
-    "count" : 33,
-    "page" : "Wikipedia:Vandalismusmeldung"
+    "count" : 18022,
+    "loaded_image" : "http://www.koalastothemax.com/img/koalas3.jpg"
   }, {
-    "count" : 28,
-    "page" : "User:Cyde/List of candidates for speedy deletion/Subpage"
+    "count" : 17635,
+    "loaded_image" : "http://www.koalastothemax.com/img/koalas.jpg"
   }, {
-    "count" : 27,
-    "page" : "Jeremy Corbyn"
+    "count" : 16626,
+    "loaded_image" : "http://www.koalastothemax.com/img/koalas1.jpg"
   }, {
-    "count" : 21,
-    "page" : "Wikipedia:Administrators' noticeboard/Incidents"
+    "count" : 16493,
+    "loaded_image" : "http://www.koalastothemax.com/img/koalas2.jpg"
   }, {
-    "count" : 20,
-    "page" : "Flavia Pennetta"
+    "count" : 14184,
+    "loaded_image" : "https://koalastothemax.com/img/koalas.jpg"
   }, {
-    "count" : 18,
-    "page" : "Total Drama Presents: The Ridonculous Race"
+    "count" : 12795,
+    "loaded_image" : "https://koalastothemax.com/img/koalas1.jpg"
   }, {
-    "count" : 18,
-    "page" : "User talk:Dudeperson176123"
+    "count" : 12765,
+    "loaded_image" : "Custom image"
   }, {
-    "count" : 18,
-    "page" : "Wikipédia:Le Bistro/12 septembre 2015"
+    "count" : 12491,
+    "loaded_image" : "https://koalastothemax.com/img/koalas2.jpg"
   }, {
-    "count" : 17,
-    "page" : "Wikipedia:In the news/Candidates"
+    "count" : 12290,
+    "loaded_image" : "https://koalastothemax.com/img/koalas3.jpg"
   }, {
-    "count" : 17,
-    "page" : "Wikipedia:Requests for page protection"
+    "count" : 2240,
+    "loaded_image" : "http://koalastothemax.com/img/koalas3.jpg"
   } ]
 } ]
 ```

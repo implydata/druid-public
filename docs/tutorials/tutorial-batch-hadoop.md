@@ -110,10 +110,10 @@ docker exec -it druid-hadoop-demo bash
 
 ### Copy input data to the Hadoop container
 
-From the apache-druid-#{DRUIDVERSION} package root on the host, copy the `quickstart/tutorial/wikiticker-2015-09-12-sampled.json.gz` sample data to the shared folder:
+From the apache-druid-#{DRUIDVERSION} package root on the host, copy the `quickstart/tutorial/kttm-2019-08-21.json.gz` sample data to the shared folder:
 
 ```bash
-cp quickstart/tutorial/wikiticker-2015-09-12-sampled.json.gz /tmp/shared/wikiticker-2015-09-12-sampled.json.gz
+cp quickstart/tutorial/kttm-2019-08-21.json.gz /tmp/shared/kttm-2019-08-21.json.gz
 ```
 
 ### Setup HDFS directories
@@ -130,7 +130,7 @@ cd /usr/local/hadoop/bin
 ./hadoop fs -chmod 777 /quickstart
 ./hadoop fs -chmod -R 777 /tmp
 ./hadoop fs -chmod -R 777 /user
-./hadoop fs -put /shared/wikiticker-2015-09-12-sampled.json.gz /quickstart/wikiticker-2015-09-12-sampled.json.gz
+./hadoop fs -put /shared/kttm-2019-08-21.json.gz /quickstart/kttm-2019-08-21.json.gz
 ```
 
 If you encounter namenode errors when running this command, the Hadoop container may not be finished initializing. When this occurs, wait a couple of minutes and retry the commands.
@@ -200,15 +200,15 @@ If the cluster is still running, CTRL-C to terminate the `bin/start-micro-quicks
 
 ## Load batch data
 
-We've included a sample of Wikipedia edits from September 12, 2015 to get you started.
+We've included a sample of click metrics for koalastothemax.com from August 21, 2019 to get you started.
 
 To load this data into Druid, you can submit an *ingestion task* pointing to the file. We've included
-a task that loads the `wikiticker-2015-09-12-sampled.json.gz` file included in the archive.
+a task that loads the `kttm-2019-08-21.json.gz` file included in the archive.
 
-Let's submit the `wikipedia-index-hadoop-.json` task:
+Let's submit the `koalas-index-hadoop-.json` task:
 
 ```bash
-bin/post-index-task --file quickstart/tutorial/wikipedia-index-hadoop.json --url http://localhost:8081
+bin/post-index-task --file quickstart/tutorial/koalas-index-hadoop.json --url http://localhost:8081
 ```
 
 ## Querying your data
@@ -224,7 +224,7 @@ If you wish to go through any of the other tutorials, you will need to:
 * Revert the deep storage and task storage config back to local types in `conf/druid/single-server/micro-quickstart/_common/common.runtime.properties`
 * Restart the cluster
 
-This is necessary because the other ingestion tutorials will write to the same "wikipedia" datasource, and later tutorials expect the cluster to use local deep storage.
+This is necessary because the other ingestion tutorials will write to the same "koalas" datasource, and later tutorials expect the cluster to use local deep storage.
 
 Example reverted config:
 

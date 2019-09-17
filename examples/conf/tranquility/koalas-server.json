@@ -1,0 +1,83 @@
+{
+  "dataSources" : {
+    "koalas" : {
+      "spec" : {
+        "dataSchema" : {
+          "dataSource" : "koalas",
+          "parser" : {
+            "type" : "string",
+            "parseSpec" : {
+              "format" : "json",
+              "dimensionsSpec" : {
+                "dimensions" : [
+                  "agent_category",
+                  "agent_type",
+                  "browser",
+                  "browser_version",
+                  "city",
+                  "continent",
+                  "country",
+                  "version",
+                  "event_type",
+                  "event_subtype",
+                  "loaded_image",
+                  "adblock_list",
+                  "language",
+                  "number",
+                  "os",
+                  "platform",
+                  "referrer",
+                  "referrer_host",
+                  "region",
+                  "screen",
+                  "session",
+                  "timezone",
+                  "timezone_offset",
+                  "window",
+                  { "name": "session_length", "type": "long" }
+                ]
+              },
+              "timestampSpec": {
+                "column": "timestamp",
+                "format": "iso"
+              }
+            }
+          },
+          "metricsSpec" : [
+            {
+              "name" : "session_length",
+              "type" : "longSum",
+              "fieldName" : "session_length"
+            }
+          ],
+          "granularitySpec" : {
+            "type" : "uniform",
+            "segmentGranularity" : "day",
+            "queryGranularity" : "none",
+            "intervals" : ["2019-08-21/2019-08-22"],
+            "rollup" : false
+          }
+        },
+        "ioConfig" : {
+          "type" : "realtime"
+        },
+        "tuningConfig" : {
+          "type" : "realtime",
+          "intermediatePersistPeriod" : "PT10M",
+          "windowPeriod" : "P3650D"
+        }
+      },
+      "properties" : {
+        "task.partitions" : "1",
+        "task.replicants" : "1"
+      }
+    }
+  },
+  "properties" : {
+    "zookeeper.connect" : "localhost",
+    "druid.discovery.curator.path" : "/druid/discovery",
+    "druid.selectors.indexing.serviceName" : "druid/overlord",
+    "http.port" : "8200",
+    "http.threads" : "9"
+  }
+}
