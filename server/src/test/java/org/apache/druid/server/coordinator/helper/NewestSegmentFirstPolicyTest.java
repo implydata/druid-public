@@ -676,7 +676,6 @@ public class NewestSegmentFirstPolicyTest
         DATA_SOURCE,
         0,
         targetCompactionSizeBytes,
-        targetCompactionSizeBytes,
         null,
         numTargetCompactionSegments,
         skipOffsetFromLatest,

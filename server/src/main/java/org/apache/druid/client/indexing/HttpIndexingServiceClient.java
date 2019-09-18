@@ -73,7 +73,6 @@ public class HttpIndexingServiceClient implements IndexingServiceClient
   @Override
   public String compactSegments(
       List<DataSegment> segments,
-      @Nullable Long targetCompactionSizeBytes,
       int compactionTaskPriority,
       ClientCompactQueryTuningConfig tuningConfig,
       @Nullable Map<String, Object> context
@@ -95,7 +94,6 @@ public class HttpIndexingServiceClient implements IndexingServiceClient
             dataSource,
             null,
             segments,
-            targetCompactionSizeBytes,
             tuningConfig,
             context
         )

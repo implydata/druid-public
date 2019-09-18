@@ -44,8 +44,6 @@ public class DataSourceCompactionConfig
   private final String dataSource;
   private final int taskPriority;
   private final long inputSegmentSizeBytes;
-  @Nullable
-  private final Long targetCompactionSizeBytes;
   // The number of input segments is limited because the byte size of a serialized task spec is limited by
   // RemoteTaskRunnerConfig.maxZnodeBytes.
   @Nullable
@@ -60,7 +58,6 @@ public class DataSourceCompactionConfig
       @JsonProperty("dataSource") String dataSource,
       @JsonProperty("taskPriority") @Nullable Integer taskPriority,
       @JsonProperty("inputSegmentSizeBytes") @Nullable Long inputSegmentSizeBytes,
-      @JsonProperty("targetCompactionSizeBytes") @Nullable Long targetCompactionSizeBytes,
       @JsonProperty("maxRowsPerSegment") @Nullable Integer maxRowsPerSegment,
       @JsonProperty("maxNumSegmentsToCompact") @Nullable Integer maxNumSegmentsToCompact,
       @JsonProperty("skipOffsetFromLatest") @Nullable Period skipOffsetFromLatest,
@@ -75,11 +72,6 @@ public class DataSourceCompactionConfig
     this.inputSegmentSizeBytes = inputSegmentSizeBytes == null
                                  ? DEFAULT_INPUT_SEGMENT_SIZE_BYTES
                                  : inputSegmentSizeBytes;
-    this.targetCompactionSizeBytes = getValidTargetCompactionSizeBytes(
-        targetCompactionSizeBytes,
-        maxRowsPerSegment,
-        tuningConfig
-    );
     this.maxRowsPerSegment = maxRowsPerSegment;
     this.maxNumSegmentsToCompact = maxNumSegmentsToCompact == null
                                    ? DEFAULT_NUM_INPUT_SEGMENTS
@@ -165,13 +157,6 @@ public class DataSourceCompactionConfig
 
   @JsonProperty
   @Nullable
-  public Long getTargetCompactionSizeBytes()
-  {
-    return targetCompactionSizeBytes;
-  }
-
-  @JsonProperty
-  @Nullable
   public Integer getMaxRowsPerSegment()
   {
     return maxRowsPerSegment;
@@ -211,7 +196,6 @@ public class DataSourceCompactionConfig
            inputSegmentSizeBytes == that.inputSegmentSizeBytes &&
            maxNumSegmentsToCompact == that.maxNumSegmentsToCompact &&
            Objects.equals(dataSource, that.dataSource) &&
-           Objects.equals(targetCompactionSizeBytes, that.targetCompactionSizeBytes) &&
            Objects.equals(skipOffsetFromLatest, that.skipOffsetFromLatest) &&
            Objects.equals(tuningConfig, that.tuningConfig) &&
            Objects.equals(taskContext, that.taskContext);
@@ -224,7 +208,6 @@ public class DataSourceCompactionConfig
         dataSource,
         taskPriority,
         inputSegmentSizeBytes,
-        targetCompactionSizeBytes,
         maxNumSegmentsToCompact,
         skipOffsetFromLatest,
         tuningConfig,

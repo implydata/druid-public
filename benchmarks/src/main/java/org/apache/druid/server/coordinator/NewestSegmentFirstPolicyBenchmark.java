@@ -95,7 +95,6 @@ public class NewestSegmentFirstPolicyBenchmark
               dataSource,
               0,
               targetCompactionSizeBytes,
-              targetCompactionSizeBytes,
               null,
               null,
               null,

@@ -843,7 +843,8 @@ public class IndexTask extends AbstractBatchIndexTask implements ChatHandler
         buildSegmentsFireDepartmentMetrics,
         toolbox,
         dataSchema,
-        tuningConfig
+        tuningConfig,
+        firehoseFactory
     );
     boolean exceptionOccurred = false;
     try (final BatchAppenderatorDriver driver = BatchAppenderators.newDriver(appenderator, toolbox, segmentAllocator)) {
@@ -1079,11 +1080,6 @@ public class IndexTask extends AbstractBatchIndexTask implements ChatHandler
     @Nullable
     private final SegmentWriteOutMediumFactory segmentWriteOutMediumFactory;
 
-    public static IndexTuningConfig createDefault()
-    {
-      return new IndexTuningConfig();
-    }
-
     @Nullable
     private static PartitionsSpec getDefaultPartitionsSpec(
         boolean forceGuaranteedRollup,
@@ -1292,6 +1288,7 @@ public class IndexTask extends AbstractBatchIndexTask implements ChatHandler
 
     @JsonProperty
     @Nullable
+    @Override
     public PartitionsSpec getPartitionsSpec()
     {
       return partitionsSpec;

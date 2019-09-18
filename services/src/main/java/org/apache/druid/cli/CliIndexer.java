@@ -62,6 +62,7 @@ import org.apache.druid.server.coordination.ServerType;
 import org.apache.druid.server.http.SegmentListerResource;
 import org.apache.druid.server.initialization.jetty.CliIndexerServerModule;
 import org.apache.druid.server.initialization.jetty.JettyServerInitializer;
+import org.apache.druid.timeline.PrunePartitionsSpec;
 import org.eclipse.jetty.server.Server;
 
 import java.util.List;
@@ -101,6 +102,7 @@ public class CliIndexer extends ServerRunnable
             binder.bindConstant().annotatedWith(Names.named("serviceName")).to("druid/indexer");
             binder.bindConstant().annotatedWith(Names.named("servicePort")).to(8091);
             binder.bindConstant().annotatedWith(Names.named("tlsServicePort")).to(8291);
+            binder.bindConstant().annotatedWith(PrunePartitionsSpec.class).to(true);
 
             IndexingServiceModuleHelper.configureTaskRunnerConfigs(binder);
 

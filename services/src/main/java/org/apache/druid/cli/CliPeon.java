@@ -108,6 +108,7 @@ import org.apache.druid.server.http.SegmentListerResource;
 import org.apache.druid.server.initialization.jetty.ChatHandlerServerModule;
 import org.apache.druid.server.initialization.jetty.JettyServerInitializer;
 import org.apache.druid.server.metrics.DataSourceTaskIdHolder;
+import org.apache.druid.timeline.PrunePartitionsSpec;
 import org.eclipse.jetty.server.Server;
 
 import javax.annotation.Nullable;
@@ -170,6 +171,7 @@ public class CliPeon extends GuiceRunnable
             binder.bindConstant().annotatedWith(Names.named("serviceName")).to("druid/peon");
             binder.bindConstant().annotatedWith(Names.named("servicePort")).to(0);
             binder.bindConstant().annotatedWith(Names.named("tlsServicePort")).to(-1);
+            binder.bindConstant().annotatedWith(PrunePartitionsSpec.class).to(true);
 
             JsonConfigProvider.bind(binder, "druid.task.executor", DruidNode.class, Parent.class);
 
