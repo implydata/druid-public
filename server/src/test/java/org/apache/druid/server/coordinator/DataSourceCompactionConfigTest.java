@@ -101,7 +101,7 @@ public class DataSourceCompactionConfigTest
   @Test
   public void testSerdeUserCompactTuningConfig() throws IOException
   {
-    final UserCompactTuningConfig config = new UserCompactTuningConfig(null, null, null, null, null, null);
+    final UserCompactTuningConfig config = new UserCompactTuningConfig(null, null, null, null, null, null, null);
     final String json = OBJECT_MAPPER.writeValueAsString(config);
     // Check maxRowsPerSegment doesn't exist in the JSON string
     Assert.assertFalse(json.contains("maxRowsPerSegment"));
@@ -124,6 +124,7 @@ public class DataSourceCompactionConfigTest
             null,
             null,
             10000L,
+            null,
             null,
             null,
             null
@@ -185,6 +186,7 @@ public class DataSourceCompactionConfigTest
             10000L,
             null,
             null,
+            null,
             null
         ),
         ImmutableMap.of("key", "val")
@@ -206,6 +208,7 @@ public class DataSourceCompactionConfigTest
             null,
             null,
             10000L,
+            null,
             null,
             null,
             null
@@ -241,7 +244,8 @@ public class DataSourceCompactionConfigTest
             LongEncodingStrategy.LONGS
         ),
         1,
-        3000L
+        3000L,
+        null
     );
 
     final String json = OBJECT_MAPPER.writeValueAsString(tuningConfig);

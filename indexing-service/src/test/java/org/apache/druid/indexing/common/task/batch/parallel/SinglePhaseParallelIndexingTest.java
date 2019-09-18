@@ -431,9 +431,9 @@ public class SinglePhaseParallelIndexingTest extends AbstractParallelIndexSuperv
     );
   }
 
-  private static class TestSupervisorTask extends TestParallelIndexSupervisorTask
+  public static class TestSupervisorTask extends TestParallelIndexSupervisorTask
   {
-    TestSupervisorTask(
+    public TestSupervisorTask(
         String id,
         TaskResource taskResource,
         ParallelIndexIngestionSpec ingestionSchema,
@@ -451,7 +451,7 @@ public class SinglePhaseParallelIndexingTest extends AbstractParallelIndexSuperv
     }
   }
 
-  private static class TestSinglePhaseRunner extends TestSinglePhaseParallelIndexTaskRunner
+  public static class TestSinglePhaseRunner extends TestSinglePhaseParallelIndexTaskRunner
   {
     private final ParallelIndexSupervisorTask supervisorTask;
 
@@ -496,7 +496,7 @@ public class SinglePhaseParallelIndexingTest extends AbstractParallelIndexSuperv
     }
   }
 
-  private static class TestSinglePhaseSubTaskSpec extends SinglePhaseSubTaskSpec
+  public static class TestSinglePhaseSubTaskSpec extends SinglePhaseSubTaskSpec
   {
     private final ParallelIndexSupervisorTask supervisorTask;
 

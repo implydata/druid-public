@@ -158,6 +158,7 @@ public class ParallelIndexSupervisorTaskSerdeTest
     // set up test tools
     return new ParallelIndexSupervisorTask(
         "taskId",
+        null,
         new TaskResource("group", 1),
         ingestionSpec,
         new HashMap<>(),

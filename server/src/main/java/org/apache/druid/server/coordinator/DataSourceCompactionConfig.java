@@ -241,7 +241,8 @@ public class DataSourceCompactionConfig
         @JsonProperty("maxTotalRows") @Nullable Long maxTotalRows,
         @JsonProperty("indexSpec") @Nullable IndexSpec indexSpec,
         @JsonProperty("maxPendingPersists") @Nullable Integer maxPendingPersists,
-        @JsonProperty("pushTimeout") @Nullable Long pushTimeout
+        @JsonProperty("pushTimeout") @Nullable Long pushTimeout,
+        @JsonProperty("maxNumConcurrentSubTasks") @Nullable Integer maxNumConcurrentSubTasks
     )
     {
       super(
@@ -251,7 +252,8 @@ public class DataSourceCompactionConfig
           maxTotalRows,
           indexSpec,
           maxPendingPersists,
-          pushTimeout
+          pushTimeout,
+          maxNumConcurrentSubTasks
       );
     }
 

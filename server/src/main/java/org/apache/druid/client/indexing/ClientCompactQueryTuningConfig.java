@@ -43,6 +43,8 @@ public class ClientCompactQueryTuningConfig
   private final Integer maxPendingPersists;
   @Nullable
   private final Long pushTimeout;
+  @Nullable
+  private final Integer maxNumConcurrentSubTasks;
 
   public static ClientCompactQueryTuningConfig from(
       @Nullable UserCompactTuningConfig userCompactionTaskQueryTuningConfig,
@@ -58,7 +60,10 @@ public class ClientCompactQueryTuningConfig
         userCompactionTaskQueryTuningConfig == null
         ? null
         : userCompactionTaskQueryTuningConfig.getMaxPendingPersists(),
-        userCompactionTaskQueryTuningConfig == null ? null : userCompactionTaskQueryTuningConfig.getPushTimeout()
+        userCompactionTaskQueryTuningConfig == null ? null : userCompactionTaskQueryTuningConfig.getPushTimeout(),
+        userCompactionTaskQueryTuningConfig == null
+        ?
+        null : userCompactionTaskQueryTuningConfig.getMaxNumConcurrentSubTasks()
     );
   }
 
@@ -70,7 +75,8 @@ public class ClientCompactQueryTuningConfig
       @JsonProperty("maxTotalRows") @Nullable Long maxTotalRows,
       @JsonProperty("indexSpec") @Nullable IndexSpec indexSpec,
       @JsonProperty("maxPendingPersists") @Nullable Integer maxPendingPersists,
-      @JsonProperty("pushTimeout") @Nullable Long pushTimeout
+      @JsonProperty("pushTimeout") @Nullable Long pushTimeout,
+      @JsonProperty("maxNumConcurrentSubTasks") @Nullable Integer maxNumConcurrentSubTasks
   )
   {
     this.maxRowsPerSegment = maxRowsPerSegment;
@@ -80,12 +86,13 @@ public class ClientCompactQueryTuningConfig
     this.indexSpec = indexSpec;
     this.maxPendingPersists = maxPendingPersists;
     this.pushTimeout = pushTimeout;
+    this.maxNumConcurrentSubTasks = maxNumConcurrentSubTasks;
   }
 
   @JsonProperty
   public String getType()
   {
-    return "index";
+    return "index_parallel";
   }
 
   @JsonProperty
@@ -137,6 +144,13 @@ public class ClientCompactQueryTuningConfig
     return pushTimeout;
   }
 
+  @JsonProperty
+  @Nullable
+  public Integer getMaxNumConcurrentSubTasks()
+  {
+    return maxNumConcurrentSubTasks;
+  }
+
   @Override
   public boolean equals(Object o)
   {
@@ -153,7 +167,8 @@ public class ClientCompactQueryTuningConfig
            Objects.equals(maxTotalRows, that.maxTotalRows) &&
            Objects.equals(indexSpec, that.indexSpec) &&
            Objects.equals(maxPendingPersists, that.maxPendingPersists) &&
-           Objects.equals(pushTimeout, that.pushTimeout);
+           Objects.equals(pushTimeout, that.pushTimeout) &&
+           Objects.equals(maxNumConcurrentSubTasks, that.maxNumConcurrentSubTasks);
   }
 
   @Override
@@ -166,7 +181,8 @@ public class ClientCompactQueryTuningConfig
         maxTotalRows,
         indexSpec,
         maxPendingPersists,
-        pushTimeout
+        pushTimeout,
+        maxNumConcurrentSubTasks
     );
   }
 
@@ -181,6 +197,7 @@ public class ClientCompactQueryTuningConfig
            ", indexSpec=" + indexSpec +
            ", maxPendingPersists=" + maxPendingPersists +
            ", pushTimeout=" + pushTimeout +
+           ", maxNumConcurrentSubTasks=" + maxNumConcurrentSubTasks +
            '}';
   }
 }
