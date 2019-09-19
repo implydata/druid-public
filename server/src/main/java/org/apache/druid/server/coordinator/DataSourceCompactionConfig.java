@@ -75,51 +75,6 @@ public class DataSourceCompactionConfig
     this.taskContext = taskContext;
   }
 
-  /**
-   * This method is copied from {@code CompactionTask#getValidTargetCompactionSizeBytes}. The only difference is this
-   * method doesn't check 'numShards' which is not supported by {@link UserCompactTuningConfig}.
-   *
-   * Currently, we can't use the same method here because it's in a different module. Until we figure out how to reuse
-   * the same method, this method must be synced with {@code CompactionTask#getValidTargetCompactionSizeBytes}.
-   */
-  @Nullable
-  private static Long getValidTargetCompactionSizeBytes(
-      @Nullable Long targetCompactionSizeBytes,
-      @Nullable Integer maxRowsPerSegment,
-      @Nullable UserCompactTuningConfig tuningConfig
-  )
-  {
-    if (targetCompactionSizeBytes != null) {
-      Preconditions.checkArgument(
-          !hasPartitionConfig(maxRowsPerSegment, tuningConfig),
-          "targetCompactionSizeBytes[%s] cannot be used with maxRowsPerSegment[%s] and maxTotalRows[%s]",
-          targetCompactionSizeBytes,
-          maxRowsPerSegment,
-          tuningConfig == null ? null : tuningConfig.getMaxTotalRows()
-      );
-      return targetCompactionSizeBytes;
-    } else {
-      return hasPartitionConfig(maxRowsPerSegment, tuningConfig) ? null : DEFAULT_TARGET_COMPACTION_SIZE_BYTES;
-    }
-  }
-
-  /**
-   * his method is copied from {@code CompactionTask#hasPartitionConfig}. The two differences are
-   * 1) this method doesn't check 'numShards' which is not supported by {@link UserCompactTuningConfig}, and
-   * 2) this method accepts an additional 'maxRowsPerSegment' parameter since it's not supported by
-   * {@link UserCompactTuningConfig}.
-   *
-   * Currently, we can't use the same method here because it's in a different module. Until we figure out how to reuse
-   * the same method, this method must be synced with {@code CompactionTask#hasPartitionConfig}.
-   */
-  private static boolean hasPartitionConfig(
-      @Nullable Integer maxRowsPerSegment,
-      @Nullable UserCompactTuningConfig tuningConfig
-  )
-  {
-    return maxRowsPerSegment != null || (tuningConfig != null && tuningConfig.getMaxTotalRows() != null);
-  }
-
   @JsonProperty
   public String getDataSource()
   {

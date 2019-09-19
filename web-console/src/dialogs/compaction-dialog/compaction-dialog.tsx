@@ -40,7 +40,7 @@ export class CompactionDialog extends React.PureComponent<
   CompactionDialogProps,
   CompactionDialogState
 > {
-  static DEFAULT_TARGET_COMPACTION_SIZE_BYTES = 419430400;
+  static DEFAULT_MAX_ROWS_PER_SEGMENT = 5000000;
 
   constructor(props: CompactionDialogProps) {
     super(props);
@@ -56,7 +56,7 @@ export class CompactionDialog extends React.PureComponent<
       inputSegmentSizeBytes: 419430400,
       maxNumSegmentsToCompact: 150,
       skipOffsetFromLatest: 'P1D',
-      targetCompactionSizeBytes: CompactionDialog.DEFAULT_TARGET_COMPACTION_SIZE_BYTES,
+      maxRowsPerSegment: CompactionDialog.DEFAULT_MAX_ROWS_PER_SEGMENT,
       taskContext: null,
       taskPriority: 25,
       tuningConfig: null,
@@ -102,7 +102,7 @@ export class CompactionDialog extends React.PureComponent<
               type: 'string',
             },
             {
-              name: 'targetCompactionSizeBytes',
+              name: 'maxRowsPerSegment',
               type: 'number',
             },
             {

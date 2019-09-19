@@ -189,7 +189,7 @@ public class NewestSegmentFirstIterator implements CompactionSegmentIterator
 
   /**
    * Iterates the given {@link VersionedIntervalTimeline}. Only compactible {@link TimelineObjectHolder}s are returned,
-   * which means the holder always has at least two {@link DataSegment}s.
+   * which means the holder always has at least one {@link DataSegment}.
    */
   private static class CompactibleTimelineObjectHolderCursor implements Iterator<List<DataSegment>>
   {
@@ -208,7 +208,7 @@ public class NewestSegmentFirstIterator implements CompactionSegmentIterator
               .filter(holder -> {
                 final List<PartitionChunk<DataSegment>> chunks = Lists.newArrayList(holder.getObject().iterator());
                 final long partitionBytes = chunks.stream().mapToLong(chunk -> chunk.getObject().getSize()).sum();
-                return chunks.size() > 1
+                return chunks.size() > 0
                        && partitionBytes > 0
                        && interval.contains(chunks.get(0).getObject().getInterval());
               })
@@ -267,7 +267,7 @@ public class NewestSegmentFirstIterator implements CompactionSegmentIterator
           || !Objects.equals(maxTotalRows, dynamicPartitionsSpec.getMaxTotalRows())) {
         log.info(
             "Configured maxRowsPerSegment[%s] and maxTotalRows[%s] are differenet from "
-            + "the partitionsSpec[%s] of segments",
+            + "the partitionsSpec[%s] of segments. Needs compaction.",
             maxRowsPerSegment,
             maxTotalRows,
             dynamicPartitionsSpec
@@ -300,7 +300,7 @@ public class NewestSegmentFirstIterator implements CompactionSegmentIterator
     while (compactibleTimelineObjectHolderCursor.hasNext()) {
       final SegmentsToCompact candidates = new SegmentsToCompact(compactibleTimelineObjectHolderCursor.next());
 
-      if (candidates.getNumSegments() > 1) {
+      if (candidates.getNumSegments() > 0) {
         final boolean isCompactibleSize = candidates.getTotalSize() <= inputSegmentSize;
         final boolean needsCompaction = needsCompaction(config, candidates);
 
@@ -318,15 +318,8 @@ public class NewestSegmentFirstIterator implements CompactionSegmentIterator
             );
           }
         }
-      } else if (candidates.getNumSegments() == 1) {
-        log.warn(
-            "There is only one segment[%s] in datasource[%s] and interval[%s]",
-            candidates.segments.get(0).getId(),
-            candidates.segments.get(0).getDataSource(),
-            candidates.segments.get(0).getInterval()
-        );
       } else {
-        log.warn("No segment is found? Continue to the next interval");
+        throw new ISE("No segment is found?");
       }
     }
     log.info("All segments look good! Nothing to compact");
