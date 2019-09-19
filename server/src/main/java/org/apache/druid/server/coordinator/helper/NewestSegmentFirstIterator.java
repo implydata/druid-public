@@ -317,13 +317,6 @@ public class NewestSegmentFirstIterator implements CompactionSegmentIterator
                 inputSegmentSize
             );
           }
-          if (!needsCompaction) {
-            log.info(
-                "Segments of datasource[%s] and interval[%s] doesn't need compaction. Skipping.",
-                candidates.segments.get(0).getDataSource(),
-                candidates.segments.get(0).getInterval()
-            );
-          }
         }
       } else if (candidates.getNumSegments() == 1) {
         log.warn(
