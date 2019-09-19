@@ -182,7 +182,7 @@ public class NewestSegmentFirstIterator implements CompactionSegmentIterator
         config
     );
 
-    if (segmentsToCompact.getNumSegments() > 1) {
+    if (!segmentsToCompact.isEmpty()) {
       queue.add(new QueueEntry(segmentsToCompact.segments));
     }
   }

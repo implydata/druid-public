@@ -78,7 +78,7 @@ public class HttpIndexingServiceClient implements IndexingServiceClient
       @Nullable Map<String, Object> context
   )
   {
-    Preconditions.checkArgument(segments.size() > 1, "Expect two or more segments to compact");
+    Preconditions.checkArgument(!segments.isEmpty(), "Expect non-empty segments to compact");
 
     final String dataSource = segments.get(0).getDataSource();
     Preconditions.checkArgument(
