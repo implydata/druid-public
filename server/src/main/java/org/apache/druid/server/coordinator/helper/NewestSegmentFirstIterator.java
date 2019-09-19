@@ -249,6 +249,11 @@ public class NewestSegmentFirstIterator implements CompactionSegmentIterator
 
     final PartitionsSpec segmentPartitionsSpec = candidates.segments.get(0).getCompactionPartitionsSpec();
     if (!(segmentPartitionsSpec instanceof DynamicPartitionsSpec)) {
+      log.info(
+          "Candidate segment[%s] is not compacted yet or was compacted with a non dynamic partitions spec."
+          + " Needs compaction.",
+          candidates.segments.get(0)
+      );
       return true;
     }
     final DynamicPartitionsSpec dynamicPartitionsSpec = (DynamicPartitionsSpec) segmentPartitionsSpec;
@@ -258,9 +263,21 @@ public class NewestSegmentFirstIterator implements CompactionSegmentIterator
         .allMatch(segment -> dynamicPartitionsSpec.equals(segment.getCompactionPartitionsSpec()));
 
     if (allCandidatesHaveSameCompactionPartitionsSpec) {
-      return !Objects.equals(maxRowsPerSegment, dynamicPartitionsSpec.getMaxRowsPerSegment())
-          || !Objects.equals(maxTotalRows, dynamicPartitionsSpec.getMaxTotalRows());
+      if (!Objects.equals(maxRowsPerSegment, dynamicPartitionsSpec.getMaxRowsPerSegment())
+          || !Objects.equals(maxTotalRows, dynamicPartitionsSpec.getMaxTotalRows())) {
+        log.info(
+            "Configured maxRowsPerSegment[%s] and maxTotalRows[%s] are differenet from "
+            + "the partitionsSpec[%s] of segments",
+            maxRowsPerSegment,
+            maxTotalRows,
+            dynamicPartitionsSpec
+        );
+        return true;
+      } else {
+        return false;
+      }
     } else {
+      log.info("Candidates[%s] were compacted with different partitions spec. Needs compaction.", candidates.segments);
       return true;
     }
   }
@@ -316,9 +333,10 @@ public class NewestSegmentFirstIterator implements CompactionSegmentIterator
             candidates.segments.get(0).getInterval()
         );
       } else {
-        throw new ISE("No segment is found?");
+        log.warn("No segment is found? Continue to the next interval");
       }
     }
+    log.info("All segments look good! Nothing to compact");
     return new SegmentsToCompact();
   }
 
