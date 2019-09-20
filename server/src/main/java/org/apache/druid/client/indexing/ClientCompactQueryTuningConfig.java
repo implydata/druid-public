@@ -21,6 +21,7 @@ package org.apache.druid.client.indexing;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.druid.data.input.SplitHintSpec;
 import org.apache.druid.segment.IndexSpec;
 import org.apache.druid.server.coordinator.DataSourceCompactionConfig.UserCompactTuningConfig;
 
@@ -37,6 +38,8 @@ public class ClientCompactQueryTuningConfig
   private final Integer maxRowsInMemory;
   @Nullable
   private final Long maxTotalRows;
+  @Nullable
+  private final SplitHintSpec splitHintSpec;
   @Nullable
   private final IndexSpec indexSpec;
   @Nullable
@@ -56,6 +59,7 @@ public class ClientCompactQueryTuningConfig
         userCompactionTaskQueryTuningConfig == null ? null : userCompactionTaskQueryTuningConfig.getMaxRowsInMemory(),
         userCompactionTaskQueryTuningConfig == null ? null : userCompactionTaskQueryTuningConfig.getMaxBytesInMemory(),
         userCompactionTaskQueryTuningConfig == null ? null : userCompactionTaskQueryTuningConfig.getMaxTotalRows(),
+        userCompactionTaskQueryTuningConfig == null ? null : userCompactionTaskQueryTuningConfig.getSplitHintSpec(),
         userCompactionTaskQueryTuningConfig == null ? null : userCompactionTaskQueryTuningConfig.getIndexSpec(),
         userCompactionTaskQueryTuningConfig == null
         ? null
@@ -73,6 +77,7 @@ public class ClientCompactQueryTuningConfig
       @JsonProperty("maxRowsInMemory") @Nullable Integer maxRowsInMemory,
       @JsonProperty("maxBytesInMemory") @Nullable Long maxBytesInMemory,
       @JsonProperty("maxTotalRows") @Nullable Long maxTotalRows,
+      @JsonProperty("splitHintSpec") @Nullable SplitHintSpec splitHintSpec,
       @JsonProperty("indexSpec") @Nullable IndexSpec indexSpec,
       @JsonProperty("maxPendingPersists") @Nullable Integer maxPendingPersists,
       @JsonProperty("pushTimeout") @Nullable Long pushTimeout,
@@ -83,6 +88,7 @@ public class ClientCompactQueryTuningConfig
     this.maxBytesInMemory = maxBytesInMemory;
     this.maxRowsInMemory = maxRowsInMemory;
     this.maxTotalRows = maxTotalRows;
+    this.splitHintSpec = splitHintSpec;
     this.indexSpec = indexSpec;
     this.maxPendingPersists = maxPendingPersists;
     this.pushTimeout = pushTimeout;
@@ -126,6 +132,13 @@ public class ClientCompactQueryTuningConfig
   public long getMaxTotalRowsOr(long defaultMaxTotalRows)
   {
     return maxTotalRows == null ? defaultMaxTotalRows : maxTotalRows;
+  }
+
+  @Nullable
+  @JsonProperty
+  public SplitHintSpec getSplitHintSpec()
+  {
+    return splitHintSpec;
   }
 
   @JsonProperty
