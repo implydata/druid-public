@@ -22,6 +22,8 @@ package org.apache.druid.sql.calcite;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import org.apache.calcite.runtime.CalciteContextException;
+import org.apache.calcite.tools.ValidationException;
 import org.apache.druid.common.config.NullHandling;
 import org.apache.druid.java.util.common.DateTimes;
 import org.apache.druid.java.util.common.Intervals;
@@ -70,6 +72,7 @@ import org.apache.druid.query.topn.TopNQueryBuilder;
 import org.apache.druid.segment.column.ValueType;
 import org.apache.druid.sql.calcite.expression.DruidExpression;
 import org.apache.druid.sql.calcite.filtration.Filtration;
+import org.apache.druid.sql.calcite.planner.Calcites;
 import org.apache.druid.sql.calcite.rel.CannotBuildQueryException;
 import org.apache.druid.sql.calcite.util.CalciteTests;
 import org.hamcrest.CoreMatchers;
@@ -5701,7 +5704,7 @@ public class CalciteQueryTest extends BaseCalciteQueryTest
         "lookyloo",
         false,
         null,
-        false,
+        null,
         true
     );
 
@@ -5754,7 +5757,7 @@ public class CalciteQueryTest extends BaseCalciteQueryTest
         "lookyloo",
         false,
         null,
-        false,
+        null,
         true
     );
 
@@ -5900,8 +5903,11 @@ public class CalciteQueryTest extends BaseCalciteQueryTest
         PLANNER_CONFIG_LOS_ANGELES,
         QUERY_CONTEXT_DEFAULT,
         "SELECT SUM(cnt), gran FROM (\n"
-        + "  SELECT FLOOR(__time TO MONTH) AS gran,\n"
-        + "  cnt FROM druid.foo\n"
+        + "  SELECT\n"
+        + "    FLOOR(__time TO MONTH) AS gran,\n"
+        + "    cnt\n"
+        + "  FROM druid.foo\n"
+        + "  WHERE __time >= TIME_PARSE('1999-12-01 00:00:00') AND __time < TIME_PARSE('2002-01-01 00:00:00')\n"
         + ") AS x\n"
         + "GROUP BY gran\n"
         + "ORDER BY gran",
@@ -5909,7 +5915,7 @@ public class CalciteQueryTest extends BaseCalciteQueryTest
         ImmutableList.of(
             Druids.newTimeseriesQueryBuilder()
                   .dataSource(CalciteTests.DATASOURCE1)
-                  .intervals(QSS(Filtration.eternity()))
+                  .intervals(QSS(Intervals.of("1999-12-01T00-08:00/2002-01-01T00-08:00")))
                   .granularity(new PeriodGranularity(Period.months(1), null, DateTimes.inferTzFromString(LOS_ANGELES)))
                   .aggregators(AGGS(new LongSumAggregatorFactory("a0", "cnt")))
                   .context(TIMESERIES_CONTEXT_DEFAULT)
@@ -5968,7 +5974,7 @@ public class CalciteQueryTest extends BaseCalciteQueryTest
                         .setVirtualColumns(
                             EXPRESSION_VIRTUAL_COLUMN(
                                 "d0:v",
-                                "timestamp_floor(timestamp_shift(\"__time\",'P1D',-1),'P1M',null,'UTC')",
+                                "timestamp_floor(timestamp_shift(\"__time\",'P1D',-1,'UTC'),'P1M',null,'UTC')",
                                 ValueType.LONG
                             )
                         )
@@ -6662,6 +6668,22 @@ public class CalciteQueryTest extends BaseCalciteQueryTest
         ImmutableList.of(),
         ImmutableList.of(new Object[]{explanation})
     );
+  }
+
+  @Test
+  public void testTimeExtractWithTooFewArguments() throws Exception
+  {
+    // Regression test for https://github.com/apache/incubator-druid/pull/7710.
+    expectedException.expect(ValidationException.class);
+    expectedException.expectCause(CoreMatchers.instanceOf(CalciteContextException.class));
+    expectedException.expectCause(
+        ThrowableMessageMatcher.hasMessage(
+            CoreMatchers.containsString(
+                "Invalid number of arguments to function 'TIME_EXTRACT'. Was expecting 2 arguments"
+            )
+        )
+    );
+    testQuery("SELECT TIME_EXTRACT(__time) FROM druid.foo", ImmutableList.of(), ImmutableList.of());
   }
 
   @Test
@@ -7595,6 +7617,44 @@ public class CalciteQueryTest extends BaseCalciteQueryTest
         ),
         ImmutableList.of(
             new Object[]{""}
+        )
+    );
+  }
+
+  @Test
+  public void testTimestampCeil() throws Exception
+  {
+    testQuery(
+        "SELECT CEIL(TIMESTAMP '2000-01-01 00:00:00' TO DAY), \n"
+        + "CEIL(TIMESTAMP '2000-01-01 01:00:00' TO DAY) \n"
+        + "FROM druid.foo\n"
+        + "LIMIT 1",
+        ImmutableList.of(
+            newScanQueryBuilder()
+                .dataSource(CalciteTests.DATASOURCE1)
+                .intervals(QSS(Filtration.eternity()))
+                .virtualColumns(
+                    EXPRESSION_VIRTUAL_COLUMN("v0", "946684800000", ValueType.LONG),
+                    EXPRESSION_VIRTUAL_COLUMN("v1", "946771200000", ValueType.LONG)
+                )
+                .columns("v0", "v1")
+                .limit(1)
+                .resultFormat(ScanQuery.RESULT_FORMAT_COMPACTED_LIST)
+                .context(QUERY_CONTEXT_DEFAULT)
+                .build()
+
+        ),
+        ImmutableList.of(
+            new Object[]{
+                Calcites.jodaToCalciteTimestamp(
+                    DateTimes.of("2000-01-01"),
+                    DateTimeZone.UTC
+                ),
+                Calcites.jodaToCalciteTimestamp(
+                    DateTimes.of("2000-01-02"),
+                    DateTimeZone.UTC
+                )
+            }
         )
     );
   }

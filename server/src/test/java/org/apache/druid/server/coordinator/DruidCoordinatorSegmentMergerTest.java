@@ -20,7 +20,6 @@
 package org.apache.druid.server.coordinator;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import org.apache.druid.client.indexing.IndexingServiceClient;
 import org.apache.druid.client.indexing.NoopIndexingServiceClient;
 import org.apache.druid.common.config.JacksonConfigManager;
@@ -471,7 +470,9 @@ public class DruidCoordinatorSegmentMergerTest
     );
     final DruidCoordinatorRuntimeParams params =
         DruidCoordinatorRuntimeParams.newBuilder()
-                                     .withAvailableSegments(ImmutableSet.copyOf(segments))
+                                     .setAvailableSegments(
+                                         DruidCoordinatorRuntimeParams.createAvailableSegmentsSet(segments)
+                                     )
                                      .withDynamicConfigs(CoordinatorDynamicConfig.builder().withMergeBytesLimit(
                                          mergeBytesLimit).withMergeSegmentsLimit(mergeSegmentsLimit).build())
                                      .withEmitter(EasyMock.createMock(ServiceEmitter.class))

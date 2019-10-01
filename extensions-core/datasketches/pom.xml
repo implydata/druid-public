@@ -29,7 +29,7 @@
   <parent>
     <groupId>org.apache.druid</groupId>
     <artifactId>druid</artifactId>
-    <version>0.14.0-incubating-iap7-hdp265-2-SNAPSHOT</version>
+    <version>0.14.0-incubating-iap17-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
@@ -37,7 +37,7 @@
     <dependency>
       <groupId>com.yahoo.datasketches</groupId>
       <artifactId>sketches-core</artifactId>
-      <version>0.13.3</version>
+      <version>0.13.4</version>
       <exclusions>
         <exclusion>
           <groupId>com.google.code.findbugs</groupId>

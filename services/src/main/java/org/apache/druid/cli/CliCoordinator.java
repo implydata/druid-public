@@ -56,6 +56,7 @@ import org.apache.druid.metadata.MetadataSegmentManagerConfig;
 import org.apache.druid.metadata.MetadataSegmentManagerProvider;
 import org.apache.druid.metadata.MetadataStorage;
 import org.apache.druid.metadata.MetadataStorageProvider;
+import org.apache.druid.query.lookup.LookupSerdeModule;
 import org.apache.druid.server.audit.AuditManagerProvider;
 import org.apache.druid.server.coordinator.BalancerStrategyFactory;
 import org.apache.druid.server.coordinator.DruidCoordinator;
@@ -248,6 +249,10 @@ public class CliCoordinator extends ServerRunnable
 
     if (beOverlord) {
       modules.addAll(new CliOverlord().getModules(false));
+    } else {
+      // Only add LookupSerdeModule if !beOverlord, since CliOverlord includes it, and having two copies causes
+      // the injector to get confused due to having multiple bindings for the same classes.
+      modules.add(new LookupSerdeModule());
     }
 
     return modules;
