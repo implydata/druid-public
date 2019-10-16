@@ -2062,13 +2062,13 @@ name: Apache Hadoop
 license_category: binary
 module: hadoop-client
 license_name: Apache License version 2.0
-version: 2.8.5
+version: 2.7.3.2.6.3.0-235
 libraries:
   - org.apache.hadoop: hadoop-annotations
   - org.apache.hadoop: hadoop-auth
   - org.apache.hadoop: hadoop-client
   - org.apache.hadoop: hadoop-common
-  - org.apache.hadoop: hadoop-hdfs-client
+  - org.apache.hadoop: hadoop-hdfs
   - org.apache.hadoop: hadoop-mapreduce-client-app
   - org.apache.hadoop: hadoop-mapreduce-client-common
   - org.apache.hadoop: hadoop-mapreduce-client-core
@@ -2513,6 +2513,19 @@ notice: |
 
 ---
 
+name: Apache HTrace
+license_category: binary
+module: java-core
+license_name: Apache License version 2.0
+version: 3.1.0-incubating
+libraries:
+  - org.apache.htrace: htrace-core
+notices:
+  - htrace-core: |
+      htrace-core
+      Copyright 2015 The Apache Software Foundation
+---
+
 name: Gson
 license_category: binary
 module: hadoop-client
@@ -2537,7 +2550,7 @@ name: Nimbus JOSE+JWT
 license_category: binary
 module: hadoop-client
 license_name: Apache License version 2.0
-version: 4.41.1
+version: 3.9
 libraries:
   - com.nimbusds: nimbus-jose-jwt
 
@@ -3235,6 +3248,26 @@ version: 1.9.2
 libraries:
   - org.codehaus.jackson: jackson-jaxrs
   - org.codehaus.jackson: jackson-xc
+
+---
+
+name: Jetty SSLEngine
+license_category: binary
+module: extensions/druid-hdfs-storage
+license_name: Apache License version 2.0
+version: 6.1.26.hwx
+libraries:
+  - org.mortbay.jetty: jetty-sslengine
+
+---
+
+name: Apache Commons CLI
+license_category: binary
+module: extensions/druid-hdfs-storage
+license_name: Apache License version 2.0
+version: 1.3.1
+libraries:
+  - commons-cli: commons-cli
 
 ---
 
@@ -4140,6 +4173,26 @@ license_name: Apache License version 2.0
 version: 1.22.0
 libraries:
   - com.google.oauth-client: google-oauth-client
+
+---
+
+name: Microsoft Azure SDK For Key Vault Core
+license_category: binary
+module: java-core
+license_name: Apache License version 2.0
+version: 0.8.0
+libraries:
+  - com.microsoft.azure: azure-keyvault-core
+
+---
+
+name: Microsoft Azure Storage Client SDK
+license_category: binary
+module: java-core
+license_name: Apache License version 2.0
+version: 5.4.0
+libraries:
+  - com.microsoft.azure: azure-storage
 
 ---
 
