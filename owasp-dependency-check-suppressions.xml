@@ -190,4 +190,76 @@
      <packageUrl regex="true">^pkg:npm/node\-sass@.*$</packageUrl>
      <vulnerabilityName>CWE-400: Uncontrolled Resource Consumption ('Resource Exhaustion')</vulnerabilityName>
   </suppress>
+  <suppress>
+    <notes><![CDATA[
+     file name:  nimbus-jose-jwt-3.9.jar
+
+     from HDP 2.6.3 in druid-hdfs-storage
+     ]]></notes>
+    <packageUrl regex="true">^pkg:maven/com\.nimbusds/nimbus\-jose\-jwt@3.9$</packageUrl>
+    <cvssBelow>10</cvssBelow>
+  </suppress>
+  <suppress>
+    <notes><![CDATA[
+     file name:  hadoop-*-2.7.3.2.6.3.0-235.jar
+
+     from HDP 2.6.3 in druid-hdfs-storage
+     ]]></notes>
+    <packageUrl regex="true">^pkg:maven/org\.apache\.hadoop/hadoop\-.*@2.7.3.2.6.3.0-235$</packageUrl>
+    <cvssBelow>10</cvssBelow>
+  </suppress>
+  <suppress>
+    <notes><![CDATA[
+     file name: jackson-mapper-asl-1.9.13.jar
+
+     from HDP 2.6.3 in druid-hdfs-storage
+     ]]></notes>
+    <packageUrl regex="true">^pkg:maven/org\.codehaus\.jackson/jackson\-mapper\-asl@1.9.13$</packageUrl>
+    <cvssBelow>10</cvssBelow>
+  </suppress>
+  <suppress>
+    <notes><![CDATA[
+     file name: jetty-*-6.1.26.hwx.jar
+
+     from HDP 2.6.3 in druid-hdfs-storage, druid-orc-extensions
+     ]]></notes>
+    <packageUrl regex="true">^pkg:maven/org\.mortbay\.jetty/jetty.*@6.1.26.hwx$</packageUrl>
+    <cvssBelow>10</cvssBelow>
+  </suppress>
+  <suppress>
+    <notes><![CDATA[
+     file name: htrace-core-3.1.0-incubating.jar/META-INF/maven/com.fasterxml.jackson.core/jackson-databind/pom.xml
+
+     from HDP 2.6.3 in druid-hdfs-storage
+     ]]></notes>
+    <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/jackson\-databind@2.4.0$</packageUrl>
+    <cvssBelow>10</cvssBelow>
+  </suppress>
+  <suppress>
+    <notes><![CDATA[
+     file name: log4j-1.2.17.jar
+
+     from HDP 2.6.3 in druid-orc-extensions
+     ]]></notes>
+    <packageUrl regex="true">^pkg:maven/log4j/log4j@1.2.17$</packageUrl>
+    <cvssBelow>10</cvssBelow>
+  </suppress>
+  <suppress>
+    <notes><![CDATA[
+     file name: netty-all-4.0.52.Final.jar
+
+     from HDP 2.6.3 in druid-orc-extensions
+     ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.netty/netty\-all@4.0.52.Final$</packageUrl>
+    <cvssBelow>10</cvssBelow>
+  </suppress>
+  <suppress>
+    <notes><![CDATA[
+     file name: xercesImpl-2.9.1.jar
+
+     from HDP 2.6.3 in druid-orc-extensions
+     ]]></notes>
+    <packageUrl regex="true">^pkg:maven/xerces/xercesImpl@2.9.1$</packageUrl>
+    <cvssBelow>10</cvssBelow>
+  </suppress>
 </suppressions>

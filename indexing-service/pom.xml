@@ -297,6 +297,19 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <configuration>
+                    <!-- The analysis gets confused between netty-all and netty-handler -->
+                    <ignoredUsedUndeclaredDependencies>
+                        <dependency>io.netty:netty-all</dependency>
+                    </ignoredUsedUndeclaredDependencies>
+                    <ignoredUnusedDeclaredDependencies>
+                        <dependency>io.netty:netty-handler</dependency>
+                    </ignoredUnusedDeclaredDependencies>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
