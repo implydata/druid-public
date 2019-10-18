@@ -28,7 +28,7 @@
     <parent>
         <groupId>org.apache.druid</groupId>
         <artifactId>druid</artifactId>
-        <version>0.16.0-incubating-iap2-hdp264</version>
+        <version>0.16.0-incubating-iap3-SNAPSHOT</version>
     </parent>
 
     <dependencies>
