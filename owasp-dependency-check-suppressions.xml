@@ -187,4 +187,39 @@
      <packageUrl regex="true">^pkg:npm/node\-sass@.*$</packageUrl>
      <vulnerabilityName>CWE-400: Uncontrolled Resource Consumption ('Resource Exhaustion')</vulnerabilityName>
   </suppress>
+  <suppress>
+    <notes><![CDATA[
+         file name: jetty-*-9.3.27.v20190418.jar
+         ]]></notes>
+    <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty/jetty\-.*@9.3.27.v20190418$</packageUrl>
+    <cvssBelow>10</cvssBelow>
+    <cve>CVE-2017-9735</cve>
+  </suppress>
+  <suppress>
+    <notes><![CDATA[
+         file name: aws-java-sdk-bundle-1.11.271.jar
+
+         from druid-hdfs-storage
+         ]]></notes>
+    <packageUrl regex="true">^pkg:maven/com\.amazonaws/aws\-java\-sdk\-.*@1.11.271$</packageUrl>
+    <cvssBelow>10</cvssBelow>
+  </suppress>
+  <suppress>
+    <notes><![CDATA[
+         file name: aws-java-sdk-bundle-1.11.271.jar
+
+         from druid-hdfs-storage
+         ]]></notes>
+    <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/jackson\-databind@2.6.7.1$</packageUrl>
+    <cvssBelow>10</cvssBelow>
+  </suppress>
+  <suppress>
+    <notes><![CDATA[
+         file name: log4j-1.2.17.jar
+
+         from druid-orc-extensions i guess...
+         ]]></notes>
+    <packageUrl regex="true">^pkg:maven/log4j/log4j@1.2.17$</packageUrl>
+    <cvssBelow>10</cvssBelow>
+  </suppress>
 </suppressions>
