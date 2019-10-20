@@ -265,6 +265,9 @@ def build_compatible_license_names():
     compatible_licenses['The MIT License'] = 'MIT License'
     compatible_licenses['MIT License'] = 'MIT License'
 
+    # For example, hadoop pulls in re2j, which uses "The Go license"
+    compatible_licenses['The Go license'] = 'The Go license'
+
     compatible_licenses['-'] = '-'
     return compatible_licenses
 

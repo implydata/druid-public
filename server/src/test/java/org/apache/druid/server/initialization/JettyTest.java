@@ -296,6 +296,7 @@ public class JettyTest extends BaseJettyTest
   }
 
   @Test
+  @Ignore("Request decompression disabled for HDP 3.1 build since it requires Jetty 9.3, which does not support this")
   public void testGzipRequestDecompression() throws Exception
   {
     String text = "hello";
