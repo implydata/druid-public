@@ -29,7 +29,7 @@
     <parent>
         <groupId>org.apache.druid</groupId>
         <artifactId>druid</artifactId>
-        <version>0.16.0-iap-pre6-parallel-stateful-compaction3-SNAPSHOT</version>
+        <version>0.16.0-incubating-iap5-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -80,14 +80,6 @@
               <exclusion>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpcore</artifactId>
-              </exclusion>
-              <exclusion>
-                <groupId>org.codehaus.jackson</groupId>
-                <artifactId>jackson-core-asl</artifactId>
-              </exclusion>
-              <exclusion>
-                <groupId>org.codehaus.jackson</groupId>
-                <artifactId>jackson-mapper-asl</artifactId>
               </exclusion>
               <exclusion>
                 <groupId>org.apache.zookeeper</groupId>
@@ -192,14 +184,6 @@
             <exclusion>
               <groupId>org.apache.httpcomponents</groupId>
               <artifactId>httpcore</artifactId>
-            </exclusion>
-            <exclusion>
-              <groupId>org.codehaus.jackson</groupId>
-              <artifactId>jackson-core-asl</artifactId>
-            </exclusion>
-            <exclusion>
-              <groupId>org.codehaus.jackson</groupId>
-              <artifactId>jackson-mapper-asl</artifactId>
             </exclusion>
             <exclusion>
               <groupId>org.apache.zookeeper</groupId>

@@ -14,8 +14,10 @@ exports[`header bar matches snapshot 1`] = `
         className="logo"
       >
         <svg
+          height="134"
           version="1.1"
           viewBox="0 0 288 134"
+          width="288"
           xmlns="http://www.w3.org/2000/svg"
         >
           <path
