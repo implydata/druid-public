@@ -29,7 +29,7 @@
 
     <groupId>org.apache.druid</groupId>
     <artifactId>druid</artifactId>
-    <version>0.16.0-incubating-iap5-SNAPSHOT</version>
+    <version>0.16.0-iap4-parallel-stateful-compaction-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Druid</name>
