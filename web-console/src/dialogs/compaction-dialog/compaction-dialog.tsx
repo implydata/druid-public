@@ -125,9 +125,9 @@ export class CompactionDialog extends React.PureComponent<
               defaultValue: CompactionDialog.DEFAULT_MAX_ROWS_PER_SEGMENT,
               info: (
                 <p>
-                  The maximum number of rows, for each segment, after compaction. Each
-                  compaction task may generate more than one output segment, and it will try to keep
-                  each output segment close to this configured size.
+                  The maximum number of rows, for each segment, after compaction. Each compaction
+                  task may generate more than one output segment, and it will try to keep each
+                  output segment close to this configured size.
                 </p>
               ),
             },
