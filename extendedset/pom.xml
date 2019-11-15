@@ -31,7 +31,7 @@
   <parent>
     <groupId>org.apache.druid</groupId>
     <artifactId>druid</artifactId>
-    <version>0.16.0-iap4-parallel-stateful-compaction</version>
+    <version>0.16.0-iap5-parallel-stateful-compcation-SNAPSHOT</version>
   </parent>
 
   <dependencies>
