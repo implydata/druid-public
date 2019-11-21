@@ -27,7 +27,7 @@
   <parent>
     <groupId>org.apache.druid</groupId>
     <artifactId>druid</artifactId>
-    <version>0.16.0-iap4.2-SNAPSHOT</version>
+    <version>0.16.0-incubating-iap4.1</version>
   </parent>
 
   <prerequisites>
