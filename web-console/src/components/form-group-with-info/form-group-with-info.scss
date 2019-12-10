@@ -20,7 +20,7 @@
   .bp3-form-content {
     position: relative;
 
-    & > .bp3-popover-wrapper {
+    & > .bp3-popover-wrapper:not(.road-sign) {
       position: absolute;
       right: 0;
       top: 7px;

@@ -42,6 +42,7 @@ import axios from 'axios';
 import classNames from 'classnames';
 import memoize from 'memoize-one';
 import React from 'react';
+import { RoadSign, RoadSignContent } from 'road-signs';
 
 import {
   AutoForm,
@@ -100,6 +101,7 @@ import {
   getTransformFormFields,
   getTuningSpecFormFields,
   GranularitySpec,
+  IngestionComboType,
   IngestionComboTypeWithExtra,
   IngestionSpec,
   InputFormat,
@@ -575,16 +577,27 @@ export class LoadDataView extends React.PureComponent<LoadDataViewProps, LoadDat
   }
 
   renderApplyButtonBar() {
+    const { specPreview } = this.state;
     const previewSpecSame = this.isPreviewSpecSame();
+
+    const hasInputSourceUri = !!(
+      specPreview.ioConfig.inputSource && specPreview.ioConfig.inputSource.uris
+    );
 
     return (
       <FormGroup className="control-buttons">
-        <Button
-          text="Apply"
-          disabled={previewSpecSame}
-          intent={Intent.PRIMARY}
-          onClick={this.applyPreviewSpec}
-        />
+        <RoadSign
+          active={hasInputSourceUri}
+          position="left"
+          content={<RoadSignContent content="Click to preview your data" />}
+        >
+          <Button
+            text="Apply"
+            disabled={previewSpecSame}
+            intent={Intent.PRIMARY}
+            onClick={this.applyPreviewSpec}
+          />
+        </RoadSign>
         {!previewSpecSame && (
           <Button
             text="Cancel"
@@ -993,6 +1006,30 @@ export class LoadDataView extends React.PureComponent<LoadDataViewProps, LoadDat
     this.setState(deltaState as LoadDataViewState);
   }
 
+  getIoConfigFormFields(ingestionComboType: IngestionComboType) {
+    const { specPreview } = this.state;
+
+    const fields = getIoConfigFormFields(ingestionComboType);
+    const noInputSourceUris =
+      !specPreview.ioConfig.inputSource || !specPreview.ioConfig.inputSource.uris;
+
+    return fields.map(f => {
+      if (f.name === 'inputSource.uris') {
+        return Object.assign({}, f, {
+          signProps: {
+            active: noInputSourceUris,
+            position: 'left',
+            content: (
+              <RoadSignContent content="Enter https://static.imply.io/data/wikipedia.json.gz" />
+            ),
+          },
+        });
+      }
+
+      return f;
+    });
+  }
+
   renderConnectStep() {
     const { specPreview: spec, inputQueryState, sampleStrategy } = this.state;
     const specType = getSpecType(spec);
@@ -1071,7 +1108,7 @@ export class LoadDataView extends React.PureComponent<LoadDataViewProps, LoadDat
           </Callout>
           {ingestionComboType ? (
             <AutoForm
-              fields={getIoConfigFormFields(ingestionComboType)}
+              fields={this.getIoConfigFormFields(ingestionComboType)}
               model={ioConfig}
               onChange={c => this.updateSpecPreview(deepSet(spec, 'ioConfig', c))}
             />

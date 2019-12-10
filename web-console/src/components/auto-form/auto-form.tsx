@@ -18,6 +18,7 @@
 
 import { Button, ButtonGroup, FormGroup, Intent, NumericInput } from '@blueprintjs/core';
 import React from 'react';
+import { RoadSign, RoadSignProps } from 'road-signs';
 
 import { deepDelete, deepGet, deepSet } from '../../utils/object-change';
 import { ArrayInput } from '../array-input/array-input';
@@ -53,6 +54,7 @@ export interface Field<M> {
   defined?: Functor<M, boolean>;
   required?: Functor<M, boolean>;
   adjustment?: (model: M) => M;
+  signProps?: RoadSignProps;
 }
 
 export interface AutoFormProps<T> {
@@ -303,25 +305,35 @@ export class AutoForm<T extends Record<string, any>> extends React.PureComponent
   }
 
   renderFieldInput(field: Field<T>) {
+    const wrap = (element: JSX.Element) => {
+      if (!field.signProps) {
+        return element;
+      }
+
+      return <RoadSign {...field.signProps}>{element}</RoadSign>;
+    };
+
     switch (field.type) {
       case 'number':
-        return this.renderNumberInput(field);
+        return wrap(this.renderNumberInput(field));
       case 'size-bytes':
-        return this.renderSizeBytesInput(field);
+        return wrap(this.renderSizeBytesInput(field));
       case 'string':
-        return this.renderStringInput(field);
+        return wrap(this.renderStringInput(field));
       case 'duration':
-        return this.renderStringInput(field, (str: string) =>
-          str.toUpperCase().replace(/[^0-9PYMDTHS.,]/g, ''),
+        return wrap(
+          this.renderStringInput(field, (str: string) =>
+            str.toUpperCase().replace(/[^0-9PYMDTHS.,]/g, ''),
+          ),
         );
       case 'boolean':
-        return this.renderBooleanInput(field);
+        return wrap(this.renderBooleanInput(field));
       case 'string-array':
-        return this.renderStringArrayInput(field);
+        return wrap(this.renderStringArrayInput(field));
       case 'json':
-        return this.renderJsonInput(field);
+        return wrap(this.renderJsonInput(field));
       case 'interval':
-        return this.renderIntervalInput(field);
+        return wrap(this.renderIntervalInput(field));
       default:
         throw new Error(`unknown field type '${field.type}'`);
     }
