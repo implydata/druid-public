@@ -20,7 +20,6 @@
 package org.apache.druid.query.aggregation.last;
 
 import org.apache.druid.java.util.common.DateTimes;
-import org.apache.druid.java.util.common.StringUtils;
 import org.apache.druid.query.aggregation.Aggregator;
 import org.apache.druid.query.aggregation.SerializablePairLongString;
 import org.apache.druid.query.aggregation.first.StringFirstLastUtils;
@@ -76,7 +75,7 @@ public class StringLastAggregator implements Aggregator
   @Override
   public Object get()
   {
-    return new SerializablePairLongString(lastTime, StringUtils.chop(lastValue, maxStringBytes));
+    return new SerializablePairLongString(lastTime, StringFirstLastUtils.chop(lastValue, maxStringBytes));
   }
 
   @Override

@@ -36,12 +36,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 
 /**
- * Abstraction for single column, single argument simple aggregators like sum, avg, min, max that:
- *
- * 1) Can take direct field accesses or expressions as inputs.
- * 2) Cannot implicitly cast strings to numbers when using a direct field access.
- *
- * @see Aggregations#getArgumentsForSimpleAggregator for details on these requirements
+ * Abstraction for single column, single argument simple aggregators like sum, avg, min, max
  */
 public abstract class SimpleSqlAggregator implements SqlAggregator
 {

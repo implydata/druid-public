@@ -31,13 +31,8 @@ import org.apache.calcite.sql.type.InferTypes;
 import org.apache.calcite.sql.type.OperandTypes;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlTypeName;
-import org.apache.calcite.util.Optionality;
 import org.apache.druid.java.util.common.ISE;
 import org.apache.druid.query.aggregation.AggregatorFactory;
-import org.apache.druid.query.aggregation.any.DoubleAnyAggregatorFactory;
-import org.apache.druid.query.aggregation.any.FloatAnyAggregatorFactory;
-import org.apache.druid.query.aggregation.any.LongAnyAggregatorFactory;
-import org.apache.druid.query.aggregation.any.StringAnyAggregatorFactory;
 import org.apache.druid.query.aggregation.first.DoubleFirstAggregatorFactory;
 import org.apache.druid.query.aggregation.first.FloatFirstAggregatorFactory;
 import org.apache.druid.query.aggregation.first.LongFirstAggregatorFactory;
@@ -65,13 +60,12 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class EarliestLatestAnySqlAggregator implements SqlAggregator
+public class EarliestLatestSqlAggregator implements SqlAggregator
 {
-  public static final SqlAggregator EARLIEST = new EarliestLatestAnySqlAggregator(AggregatorType.EARLIEST);
-  public static final SqlAggregator LATEST = new EarliestLatestAnySqlAggregator(AggregatorType.LATEST);
-  public static final SqlAggregator ANY_VALUE = new EarliestLatestAnySqlAggregator(AggregatorType.ANY_VALUE);
+  public static final SqlAggregator EARLIEST = new EarliestLatestSqlAggregator(EarliestOrLatest.EARLIEST);
+  public static final SqlAggregator LATEST = new EarliestLatestSqlAggregator(EarliestOrLatest.LATEST);
 
-  enum AggregatorType
+  enum EarliestOrLatest
   {
     EARLIEST {
       @Override
@@ -87,7 +81,7 @@ public class EarliestLatestAnySqlAggregator implements SqlAggregator
           case STRING:
             return new StringFirstAggregatorFactory(name, fieldName, maxStringBytes);
           default:
-            throw new ISE("Cannot build EARLIEST aggregatorFactory for type[%s]", type);
+            throw new ISE("Cannot build aggregatorFactory for type[%s]", type);
         }
       }
     },
@@ -106,26 +100,7 @@ public class EarliestLatestAnySqlAggregator implements SqlAggregator
           case STRING:
             return new StringLastAggregatorFactory(name, fieldName, maxStringBytes);
           default:
-            throw new ISE("Cannot build LATEST aggregatorFactory for type[%s]", type);
-        }
-      }
-    },
-
-    ANY_VALUE {
-      @Override
-      AggregatorFactory createAggregatorFactory(String name, String fieldName, ValueType type, int maxStringBytes)
-      {
-        switch (type) {
-          case LONG:
-            return new LongAnyAggregatorFactory(name, fieldName);
-          case FLOAT:
-            return new FloatAnyAggregatorFactory(name, fieldName);
-          case DOUBLE:
-            return new DoubleAnyAggregatorFactory(name, fieldName);
-          case STRING:
-            return new StringAnyAggregatorFactory(name, fieldName, maxStringBytes);
-          default:
-            throw new ISE("Cannot build ANY aggregatorFactory for type[%s]", type);
+            throw new ISE("Cannot build aggregatorFactory for type[%s]", type);
         }
       }
     };
@@ -138,13 +113,13 @@ public class EarliestLatestAnySqlAggregator implements SqlAggregator
     );
   }
 
-  private final AggregatorType aggregatorType;
+  private final EarliestOrLatest earliestOrLatest;
   private final SqlAggFunction function;
 
-  private EarliestLatestAnySqlAggregator(final AggregatorType aggregatorType)
+  private EarliestLatestSqlAggregator(final EarliestOrLatest earliestOrLatest)
   {
-    this.aggregatorType = aggregatorType;
-    this.function = new EarliestLatestSqlAggFunction(aggregatorType);
+    this.earliestOrLatest = earliestOrLatest;
+    this.function = new EarliestLatestSqlAggFunction(earliestOrLatest);
   }
 
   @Override
@@ -208,7 +183,7 @@ public class EarliestLatestAnySqlAggregator implements SqlAggregator
               .filter(Objects::nonNull)
               .collect(Collectors.toList()),
         Collections.singletonList(
-            aggregatorType.createAggregatorFactory(
+            earliestOrLatest.createAggregatorFactory(
                 aggregatorName,
                 fieldName,
                 outputType,
@@ -221,27 +196,25 @@ public class EarliestLatestAnySqlAggregator implements SqlAggregator
 
   private static class EarliestLatestSqlAggFunction extends SqlAggFunction
   {
-    EarliestLatestSqlAggFunction(AggregatorType aggregatorType)
+    EarliestLatestSqlAggFunction(EarliestOrLatest earliestOrLatest)
     {
       super(
-          aggregatorType.name(),
+          earliestOrLatest.name(),
           null,
           SqlKind.OTHER_FUNCTION,
           ReturnTypes.ARG0,
           InferTypes.RETURN_TYPE,
           OperandTypes.or(
-              OperandTypes.NUMERIC,
-              OperandTypes.BOOLEAN,
+              OperandTypes.or(OperandTypes.NUMERIC, OperandTypes.BOOLEAN),
               OperandTypes.sequence(
-                  "'" + aggregatorType.name() + "(expr, maxBytesPerString)'\n",
+                  "'" + earliestOrLatest.name() + "(expr, maxBytesPerString)'\n",
                   OperandTypes.STRING,
                   OperandTypes.and(OperandTypes.NUMERIC, OperandTypes.LITERAL)
               )
           ),
           SqlFunctionCategory.STRING,
           false,
-          false,
-          Optionality.FORBIDDEN
+          false
       );
     }
   }

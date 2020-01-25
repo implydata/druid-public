@@ -20,7 +20,6 @@
 package org.apache.druid.query.aggregation.first;
 
 import org.apache.druid.java.util.common.DateTimes;
-import org.apache.druid.java.util.common.StringUtils;
 import org.apache.druid.query.aggregation.Aggregator;
 import org.apache.druid.query.aggregation.SerializablePairLongString;
 import org.apache.druid.segment.BaseLongColumnValueSelector;
@@ -73,7 +72,7 @@ public class StringFirstAggregator implements Aggregator
   @Override
   public Object get()
   {
-    return new SerializablePairLongString(firstTime, StringUtils.chop(firstValue, maxStringBytes));
+    return new SerializablePairLongString(firstTime, StringFirstLastUtils.chop(firstValue, maxStringBytes));
   }
 
   @Override
