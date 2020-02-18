@@ -43,6 +43,12 @@ public class QueryDataSource implements DataSource
     return query.getDataSource().getNames();
   }
 
+  @Override
+  public boolean isCacheable()
+  {
+    return false;
+  }
+
   @JsonProperty
   public Query getQuery()
   {

@@ -236,7 +236,9 @@ public class DruidCoordinatorBalancer implements DruidCoordinatorHelper
         log.info(
             "Unable to select %d remaining candidate segments out of %d total to balance "
             + "after %d iterations, ending run.",
-            (maxSegmentsToMove - moved - unmoved), maxSegmentsToMove, iter
+            (maxSegmentsToMove - moved - unmoved),
+            maxSegmentsToMove,
+            iter
         );
         break;
       }

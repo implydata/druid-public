@@ -51,6 +51,12 @@ public class TableDataSource implements DataSource
   }
 
   @Override
+  public boolean isCacheable()
+  {
+    return true;
+  }
+
+  @Override
   public String toString()
   {
     return name;

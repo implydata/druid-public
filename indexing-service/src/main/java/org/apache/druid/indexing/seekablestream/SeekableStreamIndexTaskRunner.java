@@ -1017,11 +1017,12 @@ public abstract class SeekableStreamIndexTaskRunner<PartitionIdType, SequenceOff
           public void onSuccess(SegmentsAndMetadata publishedSegmentsAndMetadata)
           {
             log.info(
-                "Published segments [%s] for sequence [%s] with metadata [%s].",
-                String.join(", ", Lists.transform(publishedSegmentsAndMetadata.getSegments(), DataSegment::toString)),
+                "Published %s segments for sequence [%s] with metadata [%s].",
+                publishedSegmentsAndMetadata.getSegments().size(),
                 sequenceMetadata.getSequenceName(),
                 Preconditions.checkNotNull(publishedSegmentsAndMetadata.getCommitMetadata(), "commitMetadata")
             );
+            log.infoSegments(publishedSegmentsAndMetadata.getSegments(), "Published segments");
 
             sequences.remove(sequenceMetadata);
             publishingSequences.remove(sequenceMetadata.getSequenceName());
@@ -1045,11 +1046,12 @@ public abstract class SeekableStreamIndexTaskRunner<PartitionIdType, SequenceOff
                   {
                     if (handoffSegmentsAndMetadata == null) {
                       log.warn(
-                          "Failed to hand off segments: %s",
-                          String.join(
-                              ", ",
-                              Lists.transform(publishedSegmentsAndMetadata.getSegments(), DataSegment::toString)
-                          )
+                          "Failed to hand off %s segments",
+                          publishedSegmentsAndMetadata.getSegments().size()
+                      );
+                      log.warnSegments(
+                          publishedSegmentsAndMetadata.getSegments(),
+                          "Failed to hand off segments"
                       );
                     }
                     handoffFuture.set(handoffSegmentsAndMetadata);

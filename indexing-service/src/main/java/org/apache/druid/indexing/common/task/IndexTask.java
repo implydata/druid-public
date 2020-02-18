@@ -31,7 +31,6 @@ import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -783,7 +782,7 @@ public class IndexTask extends AbstractBatchIndexTask implements ChatHandler
         }
         catch (ParseException e) {
           if (ingestionSchema.getTuningConfig().isLogParseExceptions()) {
-            log.error(e, "Encountered parse exception: ");
+            log.error(e, "Encountered parse exception");
           }
 
           if (determinePartitionsSavedParseExceptions != null) {
@@ -949,7 +948,8 @@ public class IndexTask extends AbstractBatchIndexTask implements ChatHandler
             buildSegmentsMeters.getUnparseable(),
             buildSegmentsMeters.getThrownAway()
         );
-        log.info("Published segments: %s", Lists.transform(published.getSegments(), DataSegment::getId));
+        log.info("Published [%s] segments", published.getSegments().size());
+        log.debugSegments(published.getSegments(), "Published segments");
 
         toolbox.getTaskReportFileWriter().write(getId(), getTaskCompletionReports());
         return TaskStatus.success(getId());

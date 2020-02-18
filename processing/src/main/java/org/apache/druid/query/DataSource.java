@@ -35,5 +35,13 @@ import java.util.List;
               })
 public interface DataSource
 {
+  /**
+   * Returns the names of all table datasources involved in this query.
+   */
   List<String> getNames();
+
+  /**
+   * Returns true if queries on this dataSource are cacheable at both the result level and per-segment level.
+   */
+  boolean isCacheable();
 }

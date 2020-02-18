@@ -20,7 +20,6 @@
 package org.apache.druid.server.coordinator.helper;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Iterables;
 import com.google.inject.Inject;
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
 import org.apache.druid.client.indexing.ClientCompactQuery;
@@ -206,10 +205,11 @@ public class DruidCoordinatorSegmentCompactor implements DruidCoordinatorHelper
             newAutoCompactionContext(config.getTaskContext())
         );
         LOG.info(
-            "Submitted a compactTask[%s] for segments %s",
+            "Submitted a compactionTask[%s] for %s segments",
             taskId,
-            Iterables.transform(segmentsToCompact, DataSegment::getId)
+            segmentsToCompact.size()
         );
+        LOG.infoSegments(segmentsToCompact, "Compacting segments");
         // Count the compaction task itself + its sub tasks
         numSubmittedTasks += findNumMaxConcurrentSubTasks(config.getTuningConfig()) + 1;
       } else {

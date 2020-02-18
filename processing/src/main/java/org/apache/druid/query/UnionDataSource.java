@@ -46,6 +46,16 @@ public class UnionDataSource implements DataSource
     return dataSources.stream().map(input -> Iterables.getOnlyElement(input.getNames())).collect(Collectors.toList());
   }
 
+  @Override
+  public boolean isCacheable()
+  {
+    // Disables result-level caching for 'union' datasources, which doesn't work currently.
+    // See https://github.com/apache/druid/issues/8713 for reference.
+    // Note that per-segment caching is still effective, since at the time the per-segment cache evaluates a query
+    // for cacheability, it would have already been rewritten to a query on a single table.
+    return false;
+  }
+
   @JsonProperty
   public List<TableDataSource> getDataSources()
   {
