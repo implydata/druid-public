@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.apache.druid</groupId>
         <artifactId>druid</artifactId>
-        <version>0.17.0-iap3-hdp265-SNAPSHOT</version>
+        <version>0.17.0-iap3-hdp265</version>
     </parent>
 
     <artifactId>druid-hll</artifactId>
