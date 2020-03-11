@@ -19,9 +19,13 @@
 
 package org.apache.druid.segment.join.table;
 
+import com.google.common.collect.Maps;
+import com.google.common.primitives.Ints;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntLists;
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import org.apache.druid.java.util.common.IAE;
 import org.apache.druid.java.util.common.ISE;
 import org.apache.druid.segment.DimensionHandlerUtils;
@@ -29,7 +33,6 @@ import org.apache.druid.segment.RowAdapter;
 import org.apache.druid.segment.column.ValueType;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -44,7 +47,8 @@ import java.util.stream.Collectors;
 public class RowBasedIndexedTable<RowType> implements IndexedTable
 {
   private final List<RowType> table;
-  private final List<Map<Object, IntList>> index;
+  private final List<Map<Object, IntList>> objectIndices;
+  private final List<Long2ObjectMap<IntList>> longIndices;
   private final Map<String, ValueType> rowSignature;
   private final List<String> columns;
   private final List<ValueType> columnTypes;
@@ -77,11 +81,13 @@ public class RowBasedIndexedTable<RowType> implements IndexedTable
       );
     }
 
-    index = new ArrayList<>(columns.size());
+    objectIndices = new ArrayList<>(columns.size());
+    longIndices = new ArrayList<>(columns.size());
 
     for (int i = 0; i < columns.size(); i++) {
       final String column = columns.get(i);
-      final Map<Object, IntList> m;
+      final Map<Object, IntList> objectIndexMap;
+      final Long2ObjectMap<IntList> longIndexMap;
       final ValueType columnType = rowSignature.get(column);
 
       columnTypes.add(columnType);
@@ -89,21 +95,37 @@ public class RowBasedIndexedTable<RowType> implements IndexedTable
       if (keyColumns.contains(column)) {
         final Function<RowType, Object> columnFunction = columnFunctions.get(i);
 
-        m = new HashMap<>();
-
+        // TODO: for primary keys, we can cheat here and pre-size the hashmap to reduce collisions
+        if (columnType == ValueType.LONG) {
+          objectIndexMap = null;
+          longIndexMap = new Long2ObjectOpenHashMap<>(capacityForFastUtilMap(table.size()));
+        } else {
+          objectIndexMap = Maps.newHashMapWithExpectedSize(table.size());
+          longIndexMap = null;
+        }
         for (int j = 0; j < table.size(); j++) {
           final RowType row = table.get(j);
-          final Object key = DimensionHandlerUtils.convertObjectToType(columnFunction.apply(row), columnType);
-          if (key != null) {
-            final IntList array = m.computeIfAbsent(key, k -> new IntArrayList());
-            array.add(j);
+          if (columnType == ValueType.LONG) {
+            final Long key = DimensionHandlerUtils.convertObjectToLong(columnFunction.apply(row));
+            if (key != null) {
+              final IntList array = longIndexMap.computeIfAbsent(key.longValue(), k -> new IntArrayList());
+              array.add(j);
+            }
+          } else {
+            final Object key = DimensionHandlerUtils.convertObjectToType(columnFunction.apply(row), columnType);
+            if (key != null) {
+              final IntList array = objectIndexMap.computeIfAbsent(key, k -> new IntArrayList());
+              array.add(j);
+            }
           }
         }
       } else {
-        m = null;
+        objectIndexMap = null;
+        longIndexMap = null;
       }
 
-      index.add(m);
+      objectIndices.add(objectIndexMap);
+      longIndices.add(longIndexMap);
     }
   }
 
@@ -128,28 +150,50 @@ public class RowBasedIndexedTable<RowType> implements IndexedTable
   @Override
   public Index columnIndex(int column)
   {
-    final Map<Object, IntList> indexMap = index.get(column);
-
-    if (indexMap == null) {
-      throw new IAE("Column[%d] is not a key column", column);
-    }
-
     final ValueType columnType = columnTypes.get(column);
 
-    return key -> {
-      final Object convertedKey = DimensionHandlerUtils.convertObjectToType(key, columnType, false);
+    if (columnType == ValueType.LONG) {
+      final Long2ObjectMap<IntList> indexMap = longIndices.get(column);
 
-      if (convertedKey != null) {
-        final IntList found = indexMap.get(convertedKey);
-        if (found != null) {
-          return found;
+      if (indexMap == null) {
+        throw new IAE("Column[%d] is not a key column", column);
+      }
+      return key -> {
+        final Long convertedKey = DimensionHandlerUtils.convertObjectToLong(key);
+
+        if (convertedKey != null) {
+          final IntList found = indexMap.get(convertedKey.longValue());
+          if (found != null) {
+            return found;
+          } else {
+            return IntLists.EMPTY_LIST;
+          }
         } else {
           return IntLists.EMPTY_LIST;
         }
-      } else {
-        return IntLists.EMPTY_LIST;
+      };
+    } else {
+      final Map<Object, IntList> indexMap = objectIndices.get(column);
+
+      if (indexMap == null) {
+        throw new IAE("Column[%d] is not a key column", column);
       }
-    };
+
+      return key -> {
+        final Object convertedKey = DimensionHandlerUtils.convertObjectToType(key, columnType, false);
+
+        if (convertedKey != null) {
+          final IntList found = indexMap.get(convertedKey);
+          if (found != null) {
+            return found;
+          } else {
+            return IntLists.EMPTY_LIST;
+          }
+        } else {
+          return IntLists.EMPTY_LIST;
+        }
+      };
+    }
   }
 
   @Override
@@ -168,5 +212,24 @@ public class RowBasedIndexedTable<RowType> implements IndexedTable
   public int numRows()
   {
     return table.size();
+  }
+
+  /**
+   * copied form {@link Maps#capacity(int)}
+   * @param expectedSize
+   * @return
+   */
+  private static int capacityForFastUtilMap(int expectedSize)
+  {
+    if (expectedSize < 3) {
+      if (expectedSize < 0) {
+        throw new IAE("expectedSize for map should be greater than 0");
+      }
+      return expectedSize + 1;
+    }
+    if (expectedSize < Ints.MAX_POWER_OF_TWO) {
+      return expectedSize + expectedSize / 3;
+    }
+    return Integer.MAX_VALUE; // any large value
   }
 }
