@@ -1910,7 +1910,7 @@ libraries:
   - org.apache.hadoop: hadoop-auth
   - org.apache.hadoop: hadoop-client
   - org.apache.hadoop: hadoop-common
-  - org.apache.hadoop: hadoop-hdfs-client
+  - org.apache.hadoop: hadoop-hdfs
   - org.apache.hadoop: hadoop-mapreduce-client-app
   - org.apache.hadoop: hadoop-mapreduce-client-common
   - org.apache.hadoop: hadoop-mapreduce-client-core
@@ -2392,7 +2392,7 @@ name: Nimbus JOSE+JWT
 license_category: binary
 module: hadoop-client
 license_name: Apache License version 2.0
-version: 4.41.1
+version: 3.9
 libraries:
   - com.nimbusds: nimbus-jose-jwt
 
