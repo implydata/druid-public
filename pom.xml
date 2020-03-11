@@ -29,7 +29,7 @@
 
     <groupId>org.apache.druid</groupId>
     <artifactId>druid</artifactId>
-    <version>0.17.0-iap6-hdp263</version>
+    <version>0.17.0-iap7-hdp263-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Druid</name>
@@ -66,7 +66,7 @@
         <connection>scm:git:ssh://git@github.com/apache/druid.git</connection>
         <developerConnection>scm:git:ssh://git@github.com/apache/druid.git</developerConnection>
         <url>https://github.com/apache/druid.git</url>
-        <tag>druid-0.17.0-iap6-hdp263</tag>
+        <tag>druid-0.17.0-iap6</tag>
     </scm>
 
 
