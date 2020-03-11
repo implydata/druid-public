@@ -33,7 +33,6 @@ import org.apache.druid.segment.filter.Filters;
 import org.apache.druid.segment.filter.OrFilter;
 import org.apache.druid.segment.filter.SelectorFilter;
 import org.apache.druid.segment.join.Equality;
-import org.apache.druid.segment.join.HashJoinSegmentStorageAdapter;
 import org.apache.druid.segment.join.JoinConditionAnalysis;
 import org.apache.druid.segment.join.JoinableClause;
 import org.apache.druid.segment.virtual.ExpressionVirtualColumn;

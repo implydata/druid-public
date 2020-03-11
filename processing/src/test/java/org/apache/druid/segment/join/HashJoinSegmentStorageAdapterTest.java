@@ -1564,10 +1564,23 @@ public class HashJoinSegmentStorageAdapterTest extends BaseHashJoinSegmentStorag
   @Test
   public void test_makeCursors_factToCountryLeft_filterExcludesAllLeftRows()
   {
+    List<JoinableClause> joinableClauses = ImmutableList.of(factToCountryOnIsoCode(JoinType.LEFT));
+
+    JoinFilterPreAnalysis preAnalysis = JoinFilterAnalyzer.preSplitComputeStuff(
+        joinableClauses,
+        VirtualColumns.EMPTY,
+        null,
+        true,
+        true,
+        true,
+        QueryContexts.DEFAULT_ENABLE_JOIN_FILTER_REWRITE_MAX_SIZE_KEY
+    );
+
     JoinTestHelper.verifyCursors(
         new HashJoinSegmentStorageAdapter(
             factSegment.asStorageAdapter(),
-            ImmutableList.of(factToCountryOnIsoCode(JoinType.LEFT))
+            joinableClauses,
+            preAnalysis
         ).makeCursors(
             new SelectorFilter("page", "this matches nothing"),
             Intervals.ETERNITY,

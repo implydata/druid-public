@@ -28,7 +28,6 @@ import org.apache.druid.java.util.common.StringUtils;
 import org.apache.druid.java.util.common.granularity.Granularities;
 import org.apache.druid.java.util.common.guava.Sequence;
 import org.apache.druid.math.expr.ExprMacroTable;
-import org.apache.druid.query.QueryContexts;
 import org.apache.druid.query.dimension.DefaultDimensionSpec;
 import org.apache.druid.query.expression.LookupExprMacro;
 import org.apache.druid.query.filter.SelectorDimFilter;
@@ -139,8 +138,7 @@ public class JoinAndLookupBenchmark
                 )
             )
         ),
-        QueryContexts.DEFAULT_ENABLE_JOIN_FILTER_PUSH_DOWN,
-        QueryContexts.DEFAULT_ENABLE_JOIN_FILTER_REWRITE
+        null
     );
 
     hashJoinLookupLongKeySegment = new HashJoinSegment(
@@ -157,8 +155,8 @@ public class JoinAndLookupBenchmark
                 )
             )
         ),
-        QueryContexts.DEFAULT_ENABLE_JOIN_FILTER_PUSH_DOWN,
-        QueryContexts.DEFAULT_ENABLE_JOIN_FILTER_REWRITE
+        null
+
     );
 
     hashJoinIndexedTableStringKeySegment = new HashJoinSegment(
@@ -175,8 +173,7 @@ public class JoinAndLookupBenchmark
                 )
             )
         ),
-        QueryContexts.DEFAULT_ENABLE_JOIN_FILTER_PUSH_DOWN,
-        QueryContexts.DEFAULT_ENABLE_JOIN_FILTER_REWRITE
+        null
     );
 
     hashJoinIndexedTableLongKeySegment = new HashJoinSegment(
@@ -193,8 +190,7 @@ public class JoinAndLookupBenchmark
                 )
             )
         ),
-        QueryContexts.DEFAULT_ENABLE_JOIN_FILTER_PUSH_DOWN,
-        QueryContexts.DEFAULT_ENABLE_JOIN_FILTER_REWRITE
+        null
     );
 
     final Map<String, String> countryCodeToNameMap = JoinTestHelper.createCountryIsoCodeToNameLookup().getMap();
