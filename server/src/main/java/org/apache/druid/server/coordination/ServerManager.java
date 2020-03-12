@@ -200,7 +200,7 @@ public class ServerManager implements QuerySegmentWalker
         QueryContexts.getEnableJoinFilterRewrite(query),
         QueryContexts.getEnableJoinFilterRewriteValueColumnFilters(query),
         QueryContexts.getJoinFilterRewriteMaxSize(query),
-        query.getFilter().toFilter(),
+        query.getFilter() == null ? null : query.getFilter().toFilter(),
         query.getVirtualColumns()
     );
 
