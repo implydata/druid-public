@@ -168,5 +168,4 @@ public class DataSourcesSnapshot
     }
     return overshadowedSegments;
   }
-
 }

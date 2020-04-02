@@ -102,7 +102,7 @@ To run tests on any druid cluster that is already running, create a configuratio
        "zookeeper_hosts": "<comma-separated list of zookeeper_ip:zookeeper_port>",
     }
 
-Set the environment variable CONFIG_FILE to the name of the configuration file:
+Set the environment variable `CONFIG_FILE` to the name of the configuration file:
 ```
 export CONFIG_FILE=<config file name>
 ```

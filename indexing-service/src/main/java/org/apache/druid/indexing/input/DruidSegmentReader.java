@@ -26,7 +26,6 @@ import org.apache.druid.data.input.InputEntity.CleanableFile;
 import org.apache.druid.data.input.InputRow;
 import org.apache.druid.data.input.IntermediateRowParsingReader;
 import org.apache.druid.data.input.MapBasedInputRow;
-import org.apache.druid.data.input.impl.TimestampSpec;
 import org.apache.druid.java.util.common.DateTimes;
 import org.apache.druid.java.util.common.granularity.Granularities;
 import org.apache.druid.java.util.common.guava.Sequence;
@@ -59,6 +58,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.NoSuchElementException;
 
 public class DruidSegmentReader extends IntermediateRowParsingReader<Map<String, Object>>
 {
@@ -120,7 +120,7 @@ public class DruidSegmentReader extends IntermediateRowParsingReader<Map<String,
   @Override
   protected List<InputRow> parseInputRows(Map<String, Object> intermediateRow) throws ParseException
   {
-    final DateTime timestamp = (DateTime) intermediateRow.get(TimestampSpec.DEFAULT_COLUMN);
+    final DateTime timestamp = (DateTime) intermediateRow.get(ColumnHolder.TIME_COLUMN_NAME);
     return Collections.singletonList(new MapBasedInputRow(timestamp.getMillis(), dimensions, intermediateRow));
   }
 
@@ -203,8 +203,9 @@ public class DruidSegmentReader extends IntermediateRowParsingReader<Map<String,
     {
       this.cursor = cursor;
 
-      timestampColumnSelector =
-          cursor.getColumnSelectorFactory().makeColumnValueSelector(ColumnHolder.TIME_COLUMN_NAME);
+      timestampColumnSelector = cursor
+          .getColumnSelectorFactory()
+          .makeColumnValueSelector(ColumnHolder.TIME_COLUMN_NAME);
 
       dimSelectors = new HashMap<>();
       for (String dim : dimensionNames) {
@@ -219,8 +220,9 @@ public class DruidSegmentReader extends IntermediateRowParsingReader<Map<String,
 
       metSelectors = new HashMap<>();
       for (String metric : metricNames) {
-        final BaseObjectColumnValueSelector metricSelector =
-            cursor.getColumnSelectorFactory().makeColumnValueSelector(metric);
+        final BaseObjectColumnValueSelector metricSelector = cursor
+            .getColumnSelectorFactory()
+            .makeColumnValueSelector(metric);
         metSelectors.put(metric, metricSelector);
       }
     }
@@ -234,9 +236,10 @@ public class DruidSegmentReader extends IntermediateRowParsingReader<Map<String,
     @Override
     public Map<String, Object> next()
     {
+      if (!hasNext()) {
+        throw new NoSuchElementException();
+      }
       final Map<String, Object> theEvent = Maps.newLinkedHashMap();
-      final long timestamp = timestampColumnSelector.getLong();
-      theEvent.put(TimestampSpec.DEFAULT_COLUMN, DateTimes.utc(timestamp));
 
       for (Entry<String, DimensionSelector> dimSelector : dimSelectors.entrySet()) {
         final String dim = dimSelector.getKey();
@@ -264,6 +267,15 @@ public class DruidSegmentReader extends IntermediateRowParsingReader<Map<String,
           theEvent.put(metric, value);
         }
       }
+
+      // Timestamp is added last because we expect that the time column will always be a date time object.
+      // If it is added earlier, it can be overwritten by metrics or dimenstions with the same name.
+      //
+      // If a user names a metric or dimension `__time` it will be overwritten. This case should be rare since
+      // __time is reserved for the time column in druid segments.
+      final long timestamp = timestampColumnSelector.getLong();
+      theEvent.put(ColumnHolder.TIME_COLUMN_NAME, DateTimes.utc(timestamp));
+
       cursor.advance();
       return theEvent;
     }

@@ -155,6 +155,10 @@ public class InFilterTest extends BaseFilterTest
   {
     if (NullHandling.replaceWithDefault()) {
       assertFilterMatches(
+          toInFilter("dim2", "b", "d"),
+          ImmutableList.of("a")
+      );
+      assertFilterMatches(
           toInFilter("dim2", null),
           ImmutableList.of("b", "c", "f")
       );

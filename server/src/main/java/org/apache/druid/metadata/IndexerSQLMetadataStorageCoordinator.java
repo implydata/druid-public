@@ -22,6 +22,7 @@ package org.apache.druid.metadata;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -70,13 +71,11 @@ import java.io.IOException;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.StreamSupport;
 
 /**
  */
@@ -740,9 +739,10 @@ public class IndexerSQLMetadataStorageCoordinator implements IndexerMetadataStor
       return null;
 
     } else {
-      if (existingChunks
-          .stream()
-          .flatMap(holder -> StreamSupport.stream(holder.getObject().spliterator(), false))
+      //noinspection ConstantConditions
+      if (FluentIterable
+          .from(existingChunks)
+          .transformAndConcat(TimelineObjectHolder::getObject)
           .anyMatch(chunk -> !chunk.getObject().getShardSpec().isCompatible(shardSpecFactory.getShardSpecClass()))) {
         // All existing segments should have a compatible shardSpec with shardSpecFactory.
         return null;
@@ -754,14 +754,19 @@ public class IndexerSQLMetadataStorageCoordinator implements IndexerMetadataStor
       if (!existingChunks.isEmpty()) {
         TimelineObjectHolder<String, DataSegment> existingHolder = Iterables.getOnlyElement(existingChunks);
 
-        maxId = StreamSupport.stream(existingHolder.getObject().spliterator(), false)
-                             // Here we check only the segments of the same shardSpec to find out the max partitionId.
-                             // Note that OverwriteShardSpec has the higher range for partitionId than others.
-                             // See PartitionIds.
-                             .filter(chunk -> chunk.getObject().getShardSpec().getClass() == shardSpecFactory.getShardSpecClass())
-                             .max(Comparator.comparing(chunk -> chunk.getObject().getShardSpec().getPartitionNum()))
-                             .map(chunk -> SegmentIdWithShardSpec.fromDataSegment(chunk.getObject()))
-                             .orElse(null);
+        //noinspection ConstantConditions
+        for (DataSegment segment : FluentIterable
+            .from(existingHolder.getObject())
+            .transform(PartitionChunk::getObject)
+            // Here we check only the segments of the same shardSpec to find out the max partitionId.
+            // Note that OverwriteShardSpec has the higher range for partitionId than others.
+            // See PartitionIds.
+            .filter(segment -> segment.getShardSpec().getClass() == shardSpecFactory.getShardSpecClass())) {
+          // Don't use the stream API for performance.
+          if (maxId == null || maxId.getShardSpec().getPartitionNum() < segment.getShardSpec().getPartitionNum()) {
+            maxId = SegmentIdWithShardSpec.fromDataSegment(segment);
+          }
+        }
       }
 
       final List<SegmentIdWithShardSpec> pendings = getPendingSegmentsForIntervalWithHandle(

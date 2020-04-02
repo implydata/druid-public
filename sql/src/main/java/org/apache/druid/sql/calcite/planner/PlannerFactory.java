@@ -26,7 +26,6 @@ import org.apache.calcite.avatica.util.Quoting;
 import org.apache.calcite.config.CalciteConnectionConfig;
 import org.apache.calcite.config.CalciteConnectionConfigImpl;
 import org.apache.calcite.plan.Context;
-import org.apache.calcite.plan.Contexts;
 import org.apache.calcite.plan.ConventionTraitDef;
 import org.apache.calcite.rel.RelCollationTraitDef;
 import org.apache.calcite.schema.SchemaPlus;
@@ -122,7 +121,6 @@ public class PlannerFactory
         .operatorTable(operatorTable)
         .programs(Rules.programs(plannerContext, queryMaker))
         .executor(new DruidRexExecutor(plannerContext))
-        .context(Contexts.EMPTY_CONTEXT)
         .typeSystem(DruidTypeSystem.INSTANCE)
         .defaultSchema(rootSchema.getSubSchema(DruidSchema.NAME))
         .sqlToRelConverterConfig(sqlToRelConverterConfig)

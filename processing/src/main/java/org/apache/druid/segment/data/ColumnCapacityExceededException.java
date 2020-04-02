@@ -17,28 +17,23 @@
  * under the License.
  */
 
-package org.apache.druid.timeline.partition;
+package org.apache.druid.segment.data;
 
-import org.apache.druid.timeline.Overshadowable;
+import com.google.common.annotations.VisibleForTesting;
+import org.apache.druid.java.util.common.StringUtils;
 
-/**
- */
-public class ImmutablePartitionHolder<T extends Overshadowable<T>> extends PartitionHolder<T>
+public class ColumnCapacityExceededException extends RuntimeException
 {
-  protected ImmutablePartitionHolder(OvershadowableManager<T> overshadowableManager)
+  @VisibleForTesting
+  public static String formatMessage(String columnName)
   {
-    super(overshadowableManager);
+    return StringUtils.format(
+        "Too many values to store for %s column, try reducing maxRowsPerSegment",
+        columnName
+    );
   }
-
-  @Override
-  public PartitionChunk<T> remove(PartitionChunk<T> tPartitionChunk)
+  public ColumnCapacityExceededException(String columnName)
   {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public boolean add(PartitionChunk<T> tPartitionChunk)
-  {
-    throw new UnsupportedOperationException();
+    super(formatMessage(columnName));
   }
 }

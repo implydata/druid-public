@@ -622,6 +622,7 @@ public class IndexMergerV9 implements IndexMerger
     // If using default values for null use LongColumnSerializer to allow rollback to previous versions.
     if (NullHandling.replaceWithDefault()) {
       return LongColumnSerializer.create(
+          columnName,
           segmentWriteOutMedium,
           columnName,
           indexSpec.getMetricCompression(),
@@ -629,6 +630,7 @@ public class IndexMergerV9 implements IndexMerger
       );
     } else {
       return LongColumnSerializerV2.create(
+          columnName,
           segmentWriteOutMedium,
           columnName,
           indexSpec.getMetricCompression(),
@@ -647,12 +649,14 @@ public class IndexMergerV9 implements IndexMerger
     // If using default values for null use DoubleColumnSerializer to allow rollback to previous versions.
     if (NullHandling.replaceWithDefault()) {
       return DoubleColumnSerializer.create(
+          columnName,
           segmentWriteOutMedium,
           columnName,
           indexSpec.getMetricCompression()
       );
     } else {
       return DoubleColumnSerializerV2.create(
+          columnName,
           segmentWriteOutMedium,
           columnName,
           indexSpec.getMetricCompression(),
@@ -670,12 +674,14 @@ public class IndexMergerV9 implements IndexMerger
     // If using default values for null use FloatColumnSerializer to allow rollback to previous versions.
     if (NullHandling.replaceWithDefault()) {
       return FloatColumnSerializer.create(
+          columnName,
           segmentWriteOutMedium,
           columnName,
           indexSpec.getMetricCompression()
       );
     } else {
       return FloatColumnSerializerV2.create(
+          columnName,
           segmentWriteOutMedium,
           columnName,
           indexSpec.getMetricCompression(),

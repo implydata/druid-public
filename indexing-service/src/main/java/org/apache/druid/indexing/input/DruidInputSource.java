@@ -25,6 +25,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.FluentIterable;
 import org.apache.druid.client.coordinator.CoordinatorClient;
 import org.apache.druid.data.input.AbstractInputSource;
 import org.apache.druid.data.input.InputEntity;
@@ -41,6 +42,7 @@ import org.apache.druid.indexing.common.RetryPolicy;
 import org.apache.druid.indexing.common.RetryPolicyFactory;
 import org.apache.druid.indexing.common.SegmentLoaderFactory;
 import org.apache.druid.indexing.firehose.WindowedSegmentId;
+import org.apache.druid.java.util.common.CloseableIterators;
 import org.apache.druid.java.util.common.IAE;
 import org.apache.druid.java.util.common.ISE;
 import org.apache.druid.java.util.common.guava.Comparators;
@@ -62,6 +64,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
@@ -166,16 +169,20 @@ public class DruidInputSource extends AbstractInputSource implements SplittableI
     final SegmentLoader segmentLoader = segmentLoaderFactory.manufacturate(temporaryDirectory);
 
     final List<TimelineObjectHolder<String, DataSegment>> timeline = createTimeline();
-
-    final Stream<InputEntity> entityStream = createTimeline()
-        .stream()
-        .flatMap(holder -> {
+    final Iterator<InputEntity> entityIterator = FluentIterable
+        .from(timeline)
+        .transformAndConcat(holder -> {
+          //noinspection ConstantConditions
           final PartitionHolder<DataSegment> partitionHolder = holder.getObject();
-          return partitionHolder
-              .stream()
-              .map(chunk -> new DruidSegmentInputEntity(segmentLoader, chunk.getObject(), holder.getInterval()));
-        });
-
+          //noinspection ConstantConditions
+          return FluentIterable
+              .from(partitionHolder)
+              .transform(chunk -> (InputEntity) new DruidSegmentInputEntity(
+                  segmentLoader,
+                  chunk.getObject(),
+                  holder.getInterval()
+              ));
+        }).iterator();
     final List<String> effectiveDimensions;
     if (dimensions == null) {
       effectiveDimensions = ReingestionTimelineUtils.getUniqueDimensions(
@@ -205,7 +212,7 @@ public class DruidInputSource extends AbstractInputSource implements SplittableI
     return new InputEntityIteratingReader(
         inputRowSchema,
         inputFormat,
-        entityStream,
+        CloseableIterators.withEmptyBaggage(entityIterator),
         temporaryDirectory
     );
   }
