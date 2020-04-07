@@ -17,38 +17,23 @@
  * under the License.
  */
 
-package org.apache.druid.storage.azure;
+package org.apache.druid.segment.data;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.annotations.VisibleForTesting;
+import org.apache.druid.java.util.common.StringUtils;
 
-/**
- * Stores the configuration for segments written to Azure deep storage
- */
-public class AzureDataSegmentConfig
+public class ColumnCapacityExceededException extends RuntimeException
 {
-  @JsonProperty
-  private String container;
-
-  @JsonProperty
-  private String prefix = "";
-
-  public void setContainer(String container)
+  @VisibleForTesting
+  public static String formatMessage(String columnName)
   {
-    this.container = container;
+    return StringUtils.format(
+        "Too many values to store for %s column, try reducing maxRowsPerSegment",
+        columnName
+    );
   }
-
-  public void setPrefix(String prefix)
+  public ColumnCapacityExceededException(String columnName)
   {
-    this.prefix = prefix;
-  }
-
-  public String getContainer()
-  {
-    return container;
-  }
-
-  public String getPrefix()
-  {
-    return prefix;
+    super(formatMessage(columnName));
   }
 }
