@@ -17,18 +17,31 @@
  * under the License.
  */
 
-package org.apache.druid.indexing.common.task.utils;
+package org.apache.druid.segment.filter;
 
-import java.util.concurrent.ThreadLocalRandom;
+import org.apache.druid.query.filter.Filter;
 
-public class RandomIdUtils
+import java.util.Arrays;
+
+public class FilterTestUtils
 {
-  public static String getRandomId()
+  public static AndFilter and(Filter... filters)
   {
-    final StringBuilder suffix = new StringBuilder(8);
-    for (int i = 0; i < Integer.BYTES * 2; ++i) {
-      suffix.append((char) ('a' + ((ThreadLocalRandom.current().nextInt() >>> (i * 4)) & 0x0F)));
-    }
-    return suffix.toString();
+    return new AndFilter(Arrays.asList(filters));
+  }
+
+  public static OrFilter or(Filter... filters)
+  {
+    return new OrFilter(Arrays.asList(filters));
+  }
+
+  public static NotFilter not(Filter filter)
+  {
+    return new NotFilter(filter);
+  }
+
+  public static SelectorFilter selector(final String fieldName, final String value)
+  {
+    return new SelectorFilter(fieldName, value, null);
   }
 }
