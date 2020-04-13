@@ -30,7 +30,7 @@
     <parent>
         <artifactId>druid</artifactId>
         <groupId>org.apache.druid</groupId>
-        <version>0.18.0-iap-preview7</version>
+        <version>0.18.0-iap-preview8-SNAPSHOT</version>
     </parent>
 
     <dependencies>
