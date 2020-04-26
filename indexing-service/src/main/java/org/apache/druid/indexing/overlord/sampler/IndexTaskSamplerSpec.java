@@ -58,7 +58,7 @@ public class IndexTaskSamplerSpec implements SamplerSpec
     this.dataSchema = Preconditions.checkNotNull(ingestionSpec, "[spec] is required").getDataSchema();
 
     Preconditions.checkNotNull(ingestionSpec.getIOConfig(), "[spec.ioConfig] is required");
-
+    System.out.println(ingestionSpec.getIOConfig().isIndexNull());
     if (ingestionSpec.getIOConfig().getInputSource() != null) {
       this.inputSource = ingestionSpec.getIOConfig().getInputSource();
       if (ingestionSpec.getIOConfig().getInputSource().needsFormat()) {

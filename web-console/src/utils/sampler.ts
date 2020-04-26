@@ -193,6 +193,7 @@ function makeSamplerIoConfig(
   sampleStrategy: SampleStrategy,
 ): IoConfig {
   ioConfig = deepSet(ioConfig || {}, 'type', specType);
+  ioConfig = deepSet(ioConfig || {}, 'inputFormat.indexNull', true);
   if (specType === 'kafka') {
     ioConfig = deepSet(ioConfig, 'useEarliestOffset', sampleStrategy === 'start');
   } else if (specType === 'kinesis') {
