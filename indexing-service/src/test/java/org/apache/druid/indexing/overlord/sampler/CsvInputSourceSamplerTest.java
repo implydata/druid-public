@@ -65,7 +65,8 @@ public class CsvInputSourceSamplerTest
         inputSource,
         inputFormat,
         dataSchema,
-        null
+        null,
+        false
     );
 
     Assert.assertEquals(4, response.getNumRowsRead());

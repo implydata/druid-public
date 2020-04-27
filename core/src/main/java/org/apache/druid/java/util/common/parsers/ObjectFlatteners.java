@@ -48,6 +48,15 @@ public class ObjectFlatteners
       final FlattenerMaker<T> flattenerMaker
   )
   {
+   return create(flattenSpec,flattenerMaker, false);
+  }
+
+  public static <T> ObjectFlattener<T> create(
+      final JSONPathSpec flattenSpec,
+      final FlattenerMaker<T> flattenerMaker,
+      final Boolean indexNull
+  )
+  {
     final Map<String, Function<T, Object>> extractors = new LinkedHashMap<>();
 
     for (final JSONPathFieldSpec fieldSpec : flattenSpec.getFields()) {
@@ -77,6 +86,9 @@ public class ObjectFlatteners
       @Override
       public Map<String, Object> flatten(final T obj)
       {
+       if (indexNull) {
+        return toMap(obj);
+       }
         return new AbstractMap<String, Object>()
         {
           @Override

@@ -31,18 +31,19 @@ import java.io.File;
  */
 public abstract class AbstractInputSource implements InputSource
 {
-  @Override
   public InputSourceReader reader(
       InputRowSchema inputRowSchema,
       @Nullable InputFormat inputFormat,
-      File temporaryDirectory
+      File temporaryDirectory,
+      Boolean indexNull
   )
   {
     if (needsFormat()) {
       return formattableReader(
           inputRowSchema,
           Preconditions.checkNotNull(inputFormat, "inputFormat"),
-          temporaryDirectory
+          temporaryDirectory,
+          indexNull
       );
     } else {
       return fixedFormatReader(inputRowSchema, temporaryDirectory);
@@ -52,7 +53,8 @@ public abstract class AbstractInputSource implements InputSource
   protected InputSourceReader formattableReader(
       InputRowSchema inputRowSchema,
       InputFormat inputFormat,
-      File temporaryDirectory
+      File temporaryDirectory,
+      Boolean indexNull
   )
   {
     throw new UnsupportedOperationException("Implement this method properly if needsFormat() = true");

@@ -81,7 +81,8 @@ public class RecordSupplierInputSourceTest extends InitializedNullHandlingTest
             Collections.emptyList()
         ),
         inputFormat,
-        temporaryFolder.newFolder()
+        temporaryFolder.newFolder(),
+        false
     );
 
     int read = 0;

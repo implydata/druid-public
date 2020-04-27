@@ -103,7 +103,7 @@ public abstract class SeekableStreamSamplerSpec<PartitionIdType, SequenceOffsetT
       );
     }
 
-    return inputSourceSampler.sample(inputSource, inputFormat, dataSchema, samplerConfig);
+    return inputSourceSampler.sample(inputSource, inputFormat, dataSchema, samplerConfig, false);
   }
 
   protected abstract RecordSupplier<PartitionIdType, SequenceOffsetType> createRecordSupplier();

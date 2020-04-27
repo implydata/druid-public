@@ -102,7 +102,8 @@ public class IndexTaskSamplerSpecTest extends EasyMockSupport
         EasyMock.capture(capturedInputSource),
         EasyMock.capture(capturedInputFormat),
         EasyMock.capture(capturedDataSchema),
-        EasyMock.capture(capturedSamplerConfig)
+        EasyMock.capture(capturedSamplerConfig),
+        false
     )).andReturn(new SamplerResponse(0, 0, null));
 
     replayAll();

@@ -205,7 +205,8 @@ public class DruidInputSource extends AbstractInputSource implements SplittableI
         inputRowSchema,
         inputFormat,
         entityIterator,
-        temporaryDirectory
+        temporaryDirectory,
+        false
     );
   }
 

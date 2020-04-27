@@ -184,7 +184,8 @@ public class LocalInputSource extends AbstractInputSource implements SplittableI
   protected InputSourceReader formattableReader(
       InputRowSchema inputRowSchema,
       InputFormat inputFormat,
-      @Nullable File temporaryDirectory
+      @Nullable File temporaryDirectory,
+      Boolean indexNull
   )
   {
     //noinspection ConstantConditions
@@ -192,7 +193,8 @@ public class LocalInputSource extends AbstractInputSource implements SplittableI
         inputRowSchema,
         inputFormat,
         Iterators.transform(getFileIterator(), FileEntity::new),
-        temporaryDirectory
+        temporaryDirectory,
+        indexNull
     );
   }
 

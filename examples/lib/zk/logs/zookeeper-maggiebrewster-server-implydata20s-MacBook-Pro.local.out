@@ -1,0 +1,29 @@
+2020-04-17 14:05:37,025 [myid:] - INFO  [main:QuorumPeerConfig@173] - Reading configuration from: /Users/maggiebrewster/apache-zookeeper-3.6.0-bin/bin/../conf/zoo.cfg
+2020-04-17 14:05:37,040 [myid:] - INFO  [main:QuorumPeerConfig@459] - clientPortAddress is 0.0.0.0:2181
+2020-04-17 14:05:37,040 [myid:] - INFO  [main:QuorumPeerConfig@463] - secureClientPort is not set
+2020-04-17 14:05:37,040 [myid:] - INFO  [main:QuorumPeerConfig@479] - observerMasterPort is not set
+2020-04-17 14:05:37,040 [myid:] - INFO  [main:QuorumPeerConfig@496] - metricsProvider.className is org.apache.zookeeper.metrics.impl.DefaultMetricsProvider
+2020-04-17 14:05:37,055 [myid:] - INFO  [main:DatadirCleanupManager@78] - autopurge.snapRetainCount set to 3
+2020-04-17 14:05:37,055 [myid:] - INFO  [main:DatadirCleanupManager@79] - autopurge.purgeInterval set to 0
+2020-04-17 14:05:37,055 [myid:] - INFO  [main:DatadirCleanupManager@101] - Purge task is not scheduled.
+2020-04-17 14:05:37,055 [myid:] - WARN  [main:QuorumPeerMain@138] - Either no config or no quorum defined in config, running in standalone mode
+2020-04-17 14:05:37,056 [myid:] - INFO  [main:ManagedUtil@45] - Log4j found with jmx enabled.
+2020-04-17 14:05:37,063 [myid:] - INFO  [main:QuorumPeerConfig@173] - Reading configuration from: /Users/maggiebrewster/apache-zookeeper-3.6.0-bin/bin/../conf/zoo.cfg
+2020-04-17 14:05:37,063 [myid:] - INFO  [main:QuorumPeerConfig@459] - clientPortAddress is 0.0.0.0:2181
+2020-04-17 14:05:37,063 [myid:] - INFO  [main:QuorumPeerConfig@463] - secureClientPort is not set
+2020-04-17 14:05:37,063 [myid:] - INFO  [main:QuorumPeerConfig@479] - observerMasterPort is not set
+2020-04-17 14:05:37,064 [myid:] - INFO  [main:QuorumPeerConfig@496] - metricsProvider.className is org.apache.zookeeper.metrics.impl.DefaultMetricsProvider
+2020-04-17 14:05:37,077 [myid:] - INFO  [main:ZooKeeperServerMain@122] - Starting server
+2020-04-17 14:05:37,088 [myid:] - INFO  [main:ServerMetrics@62] - ServerMetrics initialized with provider org.apache.zookeeper.metrics.impl.DefaultMetricsProvider@7c30a502
+2020-04-17 14:05:37,090 [myid:] - INFO  [main:FileTxnSnapLog@124] - zookeeper.snapshot.trust.empty : false
+2020-04-17 14:05:37,388 [myid:] - ERROR [main:ZooKeeperServerMain@80] - Unable to access datadir, exiting abnormally
+org.apache.zookeeper.server.persistence.FileTxnSnapLog$DatadirException: Unable to create data directory /home/user/zoo-keeper-data/version-2
+	at org.apache.zookeeper.server.persistence.FileTxnSnapLog.<init>(FileTxnSnapLog.java:136)
+	at org.apache.zookeeper.server.ZooKeeperServerMain.runFromConfig(ZooKeeperServerMain.java:137)
+	at org.apache.zookeeper.server.ZooKeeperServerMain.initializeAndRun(ZooKeeperServerMain.java:112)
+	at org.apache.zookeeper.server.ZooKeeperServerMain.main(ZooKeeperServerMain.java:67)
+	at org.apache.zookeeper.server.quorum.QuorumPeerMain.initializeAndRun(QuorumPeerMain.java:140)
+	at org.apache.zookeeper.server.quorum.QuorumPeerMain.main(QuorumPeerMain.java:90)
+Unable to access datadir, exiting abnormally
+2020-04-17 14:05:37,391 [myid:] - INFO  [main:ZKAuditProvider@42] - ZooKeeper audit is disabled.
+2020-04-17 14:05:37,394 [myid:] - ERROR [main:ServiceUtils@42] - Exiting JVM with code 3

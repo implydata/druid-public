@@ -85,7 +85,8 @@ public class InputSourceSampler
       // inputFormat can be null only if inputSource.needsFormat() = false or parser is specified.
       @Nullable final InputFormat inputFormat,
       @Nullable final DataSchema dataSchema,
-      @Nullable final SamplerConfig samplerConfig
+      @Nullable final SamplerConfig samplerConfig,
+      final Boolean indexNull
   )
   {
     Preconditions.checkNotNull(inputSource, "inputSource required");
@@ -108,7 +109,8 @@ public class InputSourceSampler
         nonNullDataSchema,
         inputSource,
         inputFormat,
-        tempDir
+        tempDir,
+        indexNull
     );
     try (final CloseableIterator<InputRowListPlusRawValues> iterator = reader.sample();
          final IncrementalIndex<Aggregator> index = buildIncrementalIndex(nonNullSamplerConfig, nonNullDataSchema);
@@ -188,7 +190,8 @@ public class InputSourceSampler
       DataSchema dataSchema,
       InputSource inputSource,
       @Nullable InputFormat inputFormat,
-      File tempDir
+      File tempDir,
+      Boolean indexNull
   )
   {
     final List<String> metricsNames = Arrays.stream(dataSchema.getAggregators())
@@ -200,7 +203,7 @@ public class InputSourceSampler
         metricsNames
     );
 
-    InputSourceReader reader = inputSource.reader(inputRowSchema, inputFormat, tempDir);
+    InputSourceReader reader = inputSource.reader(inputRowSchema, inputFormat, tempDir, indexNull);
 
     if (samplerConfig.getTimeoutMs() > 0) {
       reader = new TimedShutoffInputSourceReader(reader, DateTimes.nowUtc().plusMillis(samplerConfig.getTimeoutMs()));

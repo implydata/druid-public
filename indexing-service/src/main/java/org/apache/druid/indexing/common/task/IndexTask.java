@@ -749,6 +749,7 @@ public class IndexTask extends AbstractBatchIndexTask implements ChatHandler
     final List<String> metricsNames = Arrays.stream(ingestionSchema.getDataSchema().getAggregators())
                                             .map(AggregatorFactory::getName)
                                             .collect(Collectors.toList());
+    System.out.println("indexTask indexNull?");
     final InputSourceReader inputSourceReader = ingestionSchema.getDataSchema().getTransformSpec().decorate(
         inputSource.reader(
             new InputRowSchema(
@@ -757,7 +758,8 @@ public class IndexTask extends AbstractBatchIndexTask implements ChatHandler
                 metricsNames
             ),
             inputSource.needsFormat() ? getInputFormat(ingestionSchema) : null,
-            tmpDir
+            tmpDir,
+            false
         )
     );
 

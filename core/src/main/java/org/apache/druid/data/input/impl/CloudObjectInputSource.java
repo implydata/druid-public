@@ -143,14 +143,16 @@ public abstract class CloudObjectInputSource extends AbstractInputSource
   protected InputSourceReader formattableReader(
       InputRowSchema inputRowSchema,
       InputFormat inputFormat,
-      @Nullable File temporaryDirectory
+      @Nullable File temporaryDirectory,
+      Boolean indexNull
   )
   {
     return new InputEntityIteratingReader(
         inputRowSchema,
         inputFormat,
         createSplits(inputFormat, null).flatMap(split -> split.get().stream()).map(this::createEntity).iterator(),
-        temporaryDirectory
+        temporaryDirectory,
+        indexNull
     );
   }
 

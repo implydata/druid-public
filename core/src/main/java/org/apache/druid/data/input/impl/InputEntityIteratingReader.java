@@ -44,28 +44,32 @@ public class InputEntityIteratingReader implements InputSourceReader
   private final InputFormat inputFormat;
   private final CloseableIterator<InputEntity> sourceIterator;
   private final File temporaryDirectory;
+  private final Boolean indexNull;
 
   public InputEntityIteratingReader(
       InputRowSchema inputRowSchema,
       InputFormat inputFormat,
       Iterator<? extends InputEntity> sourceIterator,
-      File temporaryDirectory
+      File temporaryDirectory,
+      Boolean indexNull
   )
   {
-    this(inputRowSchema, inputFormat, CloseableIterators.withEmptyBaggage(sourceIterator), temporaryDirectory);
+    this(inputRowSchema, inputFormat, CloseableIterators.withEmptyBaggage(sourceIterator), temporaryDirectory, indexNull);
   }
 
   public InputEntityIteratingReader(
       InputRowSchema inputRowSchema,
       InputFormat inputFormat,
       CloseableIterator<? extends InputEntity> sourceCloseableIterator,
-      File temporaryDirectory
+      File temporaryDirectory,
+      Boolean indexNull
   )
   {
     this.inputRowSchema = inputRowSchema;
     this.inputFormat = inputFormat;
     this.sourceIterator = (CloseableIterator<InputEntity>) sourceCloseableIterator;
     this.temporaryDirectory = temporaryDirectory;
+    this.indexNull = indexNull;
   }
 
   @Override
@@ -74,7 +78,7 @@ public class InputEntityIteratingReader implements InputSourceReader
     return createIterator(entity -> {
       // InputEntityReader is stateful and so a new one should be created per entity.
       try {
-        final InputEntityReader reader = inputFormat.createReader(inputRowSchema, entity, temporaryDirectory);
+        final InputEntityReader reader = inputFormat.createReader(inputRowSchema, entity, temporaryDirectory, indexNull);
         return reader.read();
       }
       catch (IOException e) {
@@ -89,7 +93,7 @@ public class InputEntityIteratingReader implements InputSourceReader
     return createIterator(entity -> {
       // InputEntityReader is stateful and so a new one should be created per entity.
       try {
-        final InputEntityReader reader = inputFormat.createReader(inputRowSchema, entity, temporaryDirectory);
+        final InputEntityReader reader = inputFormat.createReader(inputRowSchema, entity, temporaryDirectory, indexNull);
         return reader.sample();
       }
       catch (IOException e) {

@@ -217,7 +217,8 @@ public class PartialDimensionDistributionTask extends PerfectRollupWorkerTask
                 metricsNames
             ),
             inputFormat,
-            toolbox.getIndexingTmpDir()
+            toolbox.getIndexingTmpDir(),
+            false
         )
     );
 

@@ -150,14 +150,14 @@ public class InputSourceSamplerTest extends InitializedNullHandlingTest
     expectedException.expect(NullPointerException.class);
     expectedException.expectMessage("inputSource required");
 
-    inputSourceSampler.sample(null, null, null, null);
+    inputSourceSampler.sample(null, null, null, null, null);
   }
 
   @Test
   public void testNoDataSchema()
   {
     final InputSource inputSource = createInputSource(getTestRows(), null);
-    final SamplerResponse response = inputSourceSampler.sample(inputSource, createInputFormat(), null, null);
+    final SamplerResponse response = inputSourceSampler.sample(inputSource, createInputFormat(), null, null, false);
 
     Assert.assertEquals(6, response.getNumRowsRead());
     Assert.assertEquals(0, response.getNumRowsIndexed());
@@ -229,7 +229,8 @@ public class InputSourceSamplerTest extends InitializedNullHandlingTest
         inputSource,
         createInputFormat(),
         null,
-        new SamplerConfig(3, null)
+        new SamplerConfig(3, null),
+        false
     );
 
     Assert.assertEquals(3, response.getNumRowsRead());
@@ -276,7 +277,7 @@ public class InputSourceSamplerTest extends InitializedNullHandlingTest
     final InputSource inputSource = createInputSource(getTestRows(), dataSchema);
     final InputFormat inputFormat = createInputFormat();
 
-    SamplerResponse response = inputSourceSampler.sample(inputSource, inputFormat, dataSchema, null);
+    SamplerResponse response = inputSourceSampler.sample(inputSource, inputFormat, dataSchema, null, false);
 
     Assert.assertEquals(6, response.getNumRowsRead());
     Assert.assertEquals(6, response.getNumRowsIndexed());
@@ -385,7 +386,7 @@ public class InputSourceSamplerTest extends InitializedNullHandlingTest
     final InputSource inputSource = createInputSource(getTestRows(), dataSchema);
     final InputFormat inputFormat = createInputFormat();
 
-    SamplerResponse response = inputSourceSampler.sample(inputSource, inputFormat, dataSchema, null);
+    SamplerResponse response = inputSourceSampler.sample(inputSource, inputFormat, dataSchema, null, false);
 
     Assert.assertEquals(6, response.getNumRowsRead());
     Assert.assertEquals(5, response.getNumRowsIndexed());
@@ -485,7 +486,7 @@ public class InputSourceSamplerTest extends InitializedNullHandlingTest
     final InputSource inputSource = createInputSource(getTestRows(), dataSchema);
     final InputFormat inputFormat = createInputFormat();
 
-    SamplerResponse response = inputSourceSampler.sample(inputSource, inputFormat, dataSchema, null);
+    SamplerResponse response = inputSourceSampler.sample(inputSource, inputFormat, dataSchema, null, false);
 
     Assert.assertEquals(6, response.getNumRowsRead());
     Assert.assertEquals(5, response.getNumRowsIndexed());
@@ -591,7 +592,7 @@ public class InputSourceSamplerTest extends InitializedNullHandlingTest
     final InputSource inputSource = createInputSource(getTestRows(), dataSchema);
     final InputFormat inputFormat = createInputFormat();
 
-    SamplerResponse response = inputSourceSampler.sample(inputSource, inputFormat, dataSchema, null);
+    SamplerResponse response = inputSourceSampler.sample(inputSource, inputFormat, dataSchema, null, false);
 
     Assert.assertEquals(6, response.getNumRowsRead());
     Assert.assertEquals(5, response.getNumRowsIndexed());
@@ -702,7 +703,7 @@ public class InputSourceSamplerTest extends InitializedNullHandlingTest
     final InputSource inputSource = createInputSource(getTestRows(), dataSchema);
     final InputFormat inputFormat = createInputFormat();
 
-    SamplerResponse response = inputSourceSampler.sample(inputSource, inputFormat, dataSchema, null);
+    SamplerResponse response = inputSourceSampler.sample(inputSource, inputFormat, dataSchema, null, false);
 
     Assert.assertEquals(6, response.getNumRowsRead());
     Assert.assertEquals(5, response.getNumRowsIndexed());
@@ -785,7 +786,7 @@ public class InputSourceSamplerTest extends InitializedNullHandlingTest
     final InputSource inputSource = createInputSource(getTestRows(), dataSchema);
     final InputFormat inputFormat = createInputFormat();
 
-    SamplerResponse response = inputSourceSampler.sample(inputSource, inputFormat, dataSchema, null);
+    SamplerResponse response = inputSourceSampler.sample(inputSource, inputFormat, dataSchema, null, false);
 
     Assert.assertEquals(6, response.getNumRowsRead());
     Assert.assertEquals(5, response.getNumRowsIndexed());
@@ -856,7 +857,7 @@ public class InputSourceSamplerTest extends InitializedNullHandlingTest
     final InputSource inputSource = createInputSource(getTestRows(), dataSchema);
     final InputFormat inputFormat = createInputFormat();
 
-    SamplerResponse response = inputSourceSampler.sample(inputSource, inputFormat, dataSchema, null);
+    SamplerResponse response = inputSourceSampler.sample(inputSource, inputFormat, dataSchema, null, false);
 
     Assert.assertEquals(6, response.getNumRowsRead());
     Assert.assertEquals(5, response.getNumRowsIndexed());
@@ -945,7 +946,7 @@ public class InputSourceSamplerTest extends InitializedNullHandlingTest
     final InputSource inputSource = createInputSource(getTestRows(), dataSchema);
     final InputFormat inputFormat = createInputFormat();
 
-    SamplerResponse response = inputSourceSampler.sample(inputSource, inputFormat, dataSchema, null);
+    SamplerResponse response = inputSourceSampler.sample(inputSource, inputFormat, dataSchema, null, false);
 
     Assert.assertEquals(6, response.getNumRowsRead());
     Assert.assertEquals(5, response.getNumRowsIndexed());
@@ -1013,7 +1014,7 @@ public class InputSourceSamplerTest extends InitializedNullHandlingTest
     final InputSource inputSource = createInputSource(getTestRows(), dataSchema);
     final InputFormat inputFormat = createInputFormat();
 
-    SamplerResponse response = inputSourceSampler.sample(inputSource, inputFormat, dataSchema, null);
+    SamplerResponse response = inputSourceSampler.sample(inputSource, inputFormat, dataSchema, null, false);
 
     Assert.assertEquals(5, response.getNumRowsRead());
     Assert.assertEquals(4, response.getNumRowsIndexed());

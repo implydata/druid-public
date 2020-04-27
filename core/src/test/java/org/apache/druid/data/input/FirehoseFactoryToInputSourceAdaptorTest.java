@@ -73,7 +73,8 @@ public class FirehoseFactoryToInputSourceAdaptorTest
             Collections.emptyList()
         ),
         null,
-        null
+        null,
+        false
     );
     final List<InputRow> result = new ArrayList<>();
     try (CloseableIterator<InputRow> iterator = reader.read()) {

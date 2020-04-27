@@ -74,7 +74,8 @@ public class InputEntityIteratingReaderTest
             0
         ),
         files.stream().flatMap(file -> ImmutableList.of(new FileEntity(file)).stream()).iterator(),
-        temporaryFolder.newFolder()
+        temporaryFolder.newFolder(),
+        false
     );
 
     try (CloseableIterator<InputRow> iterator = firehose.read()) {

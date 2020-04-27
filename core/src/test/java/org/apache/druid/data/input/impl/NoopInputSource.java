@@ -51,7 +51,8 @@ public class NoopInputSource implements InputSource
   public InputSourceReader reader(
       InputRowSchema inputRowSchema,
       @Nullable InputFormat inputFormat,
-      @Nullable File temporaryDirectory
+      @Nullable File temporaryDirectory,
+      Boolean indexNull
   )
   {
     throw new UnsupportedOperationException();

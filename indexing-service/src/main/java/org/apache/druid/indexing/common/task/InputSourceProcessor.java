@@ -115,7 +115,8 @@ public class InputSourceProcessor
                 metricsNames
             ),
             inputFormat,
-            tmpDir
+            tmpDir,
+            false
         )
     );
     try (
