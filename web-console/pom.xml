@@ -28,7 +28,7 @@
   <parent>
     <groupId>org.apache.druid</groupId>
     <artifactId>druid</artifactId>
-    <version>0.18.0-iap4-hdp263</version>
+    <version>0.18.0-iap5-hdp263-SNAPSHOT</version>
   </parent>
 
   <properties>
