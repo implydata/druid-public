@@ -2550,7 +2550,7 @@ name: Nimbus JOSE+JWT
 license_category: binary
 module: hadoop-client
 license_name: Apache License version 2.0
-version: 3.9
+version: 4.41.1
 libraries:
   - com.nimbusds: nimbus-jose-jwt
 
