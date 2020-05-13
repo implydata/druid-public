@@ -233,11 +233,11 @@
   </suppress>
   <suppress>
     <notes><![CDATA[
-     file name:  hadoop-*-2.7.3.2.6.3.0-235.jar
+     file name:  hadoop-*-2.7.3.2.6.5.0-292.jar
 
      from HDP 2.6.3 in druid-hdfs-storage
      ]]></notes>
-    <packageUrl regex="true">^pkg:maven/org\.apache\.hadoop/hadoop\-.*@2.7.3.2.6.3.0-235$</packageUrl>
+    <packageUrl regex="true">^pkg:maven/org\.apache\.hadoop/hadoop\-.*@2.7.3.2.6.5.0-292$</packageUrl>
     <cvssBelow>10</cvssBelow>
   </suppress>
   <suppress>
