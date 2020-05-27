@@ -15,9 +15,7 @@
 
 
 
-before_install:
-  - echo "debug jenkins pipeline"
-  - exit
+exit
 
 language: java
 
