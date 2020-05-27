@@ -15,6 +15,9 @@
 
 
 
+before_install:
+  - echo "debug jenkins pipeline"
+  - exit
 
 language: java
 
@@ -36,9 +39,6 @@ env:
       MAVEN_SKIP="-Pskip-static-checks -Ddruid.console.skip=true -Dmaven.javadoc.skip=true"
     - MAVEN_SKIP_TESTS="-Pskip-tests"
 
-before_install:
-  - echo "debug jenkins pipeline"
-  - exit
 
 # Add various options to make 'mvn install' fast and skip javascript compile (-Ddruid.console.skip=true) since it is not
 # needed. Depending on network speeds, "mvn -q install" may take longer than the default 10 minute timeout to print any
