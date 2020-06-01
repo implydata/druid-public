@@ -40,7 +40,7 @@ pipeline {
                     }
                     axis {
                         name 'STORAGE'
-                        values 'hdfs', 'gcs','s3','kinesis', 'azure'
+                        values 's3' //,'hdfs', 'gcs','kinesis', 'azure'
                     }
                 }
                 stages{
