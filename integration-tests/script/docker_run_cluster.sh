@@ -39,7 +39,7 @@ fi
 # Start docker containers for all Druid processes and dependencies
 {
   # Start Hadoop docker if needed
-  if [ -n "$DRUID_INTEGRATION_TEST_START_HADOOP_DOCKER" ] && [ "$DRUID_INTEGRATION_TEST_START_HADOOP_DOCKER" == "true" ]
+  if [ -n "$DRUID_INTEGRATION_TEST_START_HADOOP_DOCKER" ] && [ "$DRUID_INTEGRATION_TEST_START_HADOOP_DOCKER" == true ]
   then
     # Start Hadoop docker container
     docker-compose -f ${DOCKERDIR}/docker-compose.druid-hadoop.yml up -d
