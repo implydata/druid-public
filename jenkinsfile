@@ -20,6 +20,7 @@ pipeline {
         // Various options to make execution of maven goals faster (e.g., mvn install)
         MAVEN_SKIP       = "-Danimal.sniffer.skip=true -Dcheckstyle.skip=true -Ddruid.console.skip=true -Denforcer.skip=true -Dforbiddenapis.skip=true -Dmaven.javadoc.skip=true -Dpmd.skip=true -Dspotbugs.skip=true"
         MAVEN_SKIP_TESTS = "-Djacoco.skip=true"
+        PATH             = "/home/jenkins/bin:/home/jenkins/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"
     }
 
     stages {
@@ -40,7 +41,7 @@ pipeline {
                     }
                     axis {
                         name 'STORAGE'
-                        values 'azure' //,'s3','hdfs', 'gcs','kinesis'
+                        values 's3','kinesis', 'azure'//'hdfs', 'gcs'
                     }
                 }
                 stages{
@@ -74,8 +75,8 @@ pipeline {
                                         """, label: "kinesis-deep-storage"
                                     }
                                 } else if ( env.STORAGE == 'azure' ){
-                                    withCredentials([azureStorage('imply-azure-blob')]) {
-                                        writeFile file: "jenkins/azure-config", text: "druid_storage_type=azure\ndruid_azure_account=${AZURE_STORAGE_ACCOUNT_NAME}\ndruid_azure_key=${AZURE_STORAGE_ACCOUNT_KEY}\ndruid_azure_container=imply-qa-testing\ndruid_extensions_loadList=[\"druid-azure-extensions\",\"druid-hdfs-storage\"]"
+                                    withCredentials([usernamePassword(credentialsId: 'azure_credentials', usernameVariable: 'AZURE_ACCOUNT', passwordVariable: 'AZURE_KEY')]) {
+                                        writeFile file: "jenkins/azure-config", text: "druid_storage_type=azure\ndruid_azure_account=$AZURE_ACCOUNT\ndruid_azure_key=$AZURE_KEY\ndruid_azure_container=imply-qa-testing\ndruid_extensions_loadList=[\"druid-azure-extensions\",\"druid-hdfs-storage\"]"
                                         sh script: """
                                             export MAVEN_OPTS="-Xms4g -Xmx4g -XX:MaxDirectMemorySize=2048m"
                                             ${MVN} verify -P integration-tests -pl integration-tests -Dgroups=azure-deep-storage -Doverride.config.path=${WORKSPACE}/jenkins/azure-config -Djvm.runtime=${env.JDK} -Ddruid.test.config.cloudBucket=imply-qa-testing -Ddruid.test.config.cloudPath=qa-druid-test/ -Dstart.hadoop.docker=true -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS}
