@@ -38,7 +38,7 @@ else
 fi
 
 # Build Hadoop docker if needed
-if [ -n "$DRUID_INTEGRATION_TEST_START_HADOOP_DOCKER" ] && [ "$DRUID_INTEGRATION_TEST_START_HADOOP_DOCKER" == true ]
+if [ -n "$DRUID_INTEGRATION_TEST_START_HADOOP_DOCKER" ] && [ "$DRUID_INTEGRATION_TEST_START_HADOOP_DOCKER" == "true" ]
 then
   docker build -t druid-it/hadoop:2.8.5 $HADOOP_DOCKER_DIR
 fi

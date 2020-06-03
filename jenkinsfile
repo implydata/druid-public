@@ -20,6 +20,7 @@ pipeline {
         // Various options to make execution of maven goals faster (e.g., mvn install)
         MAVEN_SKIP       = "-Danimal.sniffer.skip=true -Dcheckstyle.skip=true -Ddruid.console.skip=true -Denforcer.skip=true -Dforbiddenapis.skip=true -Dmaven.javadoc.skip=true -Dpmd.skip=true -Dspotbugs.skip=true"
         MAVEN_SKIP_TESTS = "-Djacoco.skip=true"
+        PATH             = "/home/jenkins/bin:/home/jenkins/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"
     }
 
     stages {
@@ -40,7 +41,7 @@ pipeline {
                     }
                     axis {
                         name 'STORAGE'
-                        values 'azure','s3'//,'hdfs', 'gcs','kinesis'
+                        values 's3'//,'hdfs', 'gcs','kinesis', 'azure',
                     }
                 }
                 stages{
