@@ -45,11 +45,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
@@ -65,11 +60,6 @@
             </activation>
 
             <dependencies>
-                <dependency>
-                    <groupId>io.springfox</groupId>
-                    <artifactId>springfox-swagger2</artifactId>
-                </dependency>
-
                 <dependency>
                     <groupId>com.squareup.okhttp3</groupId>
                     <artifactId>okhttp</artifactId>
