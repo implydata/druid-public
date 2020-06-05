@@ -1,0 +1,62 @@
+{
+  "version": "0.17.0",
+  "modules": [
+    {
+      "name": "org.apache.druid.common.gcp.GcpModule",
+      "artifact": "druid-gcp-common",
+      "version": "0.17.0"
+    },
+    {
+      "name": "org.apache.druid.common.aws.AWSModule",
+      "artifact": "druid-aws-common",
+      "version": "0.17.0"
+    },
+    {
+      "name": "org.apache.druid.query.aggregation.histogram.ApproximateHistogramDruidModule",
+      "artifact": "druid-histogram",
+      "version": "0.17.0"
+    },
+    {
+      "name": "org.apache.druid.query.aggregation.datasketches.theta.SketchModule",
+      "artifact": "druid-datasketches",
+      "version": "0.17.0"
+    },
+    {
+      "name": "org.apache.druid.query.aggregation.datasketches.theta.oldapi.OldApiSketchModule",
+      "artifact": "druid-datasketches",
+      "version": "0.17.0"
+    },
+    {
+      "name": "org.apache.druid.query.aggregation.datasketches.quantiles.DoublesSketchModule",
+      "artifact": "druid-datasketches",
+      "version": "0.17.0"
+    },
+    {
+      "name": "org.apache.druid.query.aggregation.datasketches.tuple.ArrayOfDoublesSketchModule",
+      "artifact": "druid-datasketches",
+      "version": "0.17.0"
+    },
+    {
+      "name": "org.apache.druid.query.aggregation.datasketches.hll.HllSketchModule",
+      "artifact": "druid-datasketches",
+      "version": "0.17.0"
+    },
+    {
+      "name": "org.apache.druid.server.lookup.namespace.NamespaceExtractionModule",
+      "artifact": "druid-lookups-cached-global",
+      "version": "0.17.0"
+    },
+    {
+      "name": "org.apache.druid.metadata.storage.postgresql.PostgreSQLMetadataStorageModule",
+      "artifact": "postgresql-metadata-storage",
+      "version": "0.17.0"
+    }
+  ],
+  "memory": {
+    "maxMemory": 1073741824,
+    "totalMemory": 1073741824,
+    "freeMemory": 1016787424,
+    "usedMemory": 56954400,
+    "directMemory": 6471811072
+  }
+}
