@@ -1789,6 +1789,7 @@
                             <target>${maven.compiler.target}</target>
                             <showWarnings>false</showWarnings>
                             <compilerArgs>
+                                <arg>-XepExcludedPaths:.*/target/generated-sources/.*</arg>
                                 <arg>-XepDisableWarningsInGeneratedCode</arg>
 
                                 <arg>-Xep:ClassCanBeStatic:ERROR</arg>
