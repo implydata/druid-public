@@ -19,12 +19,12 @@
 
 package org.apache.druid.tests.contract.util;
 
-import lombok.SneakyThrows;
 import org.apache.druid.client.model.DataSource;
 import org.apache.druid.client.model.ServerStatus;
 import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 
 public class SwaggerSpecUtil
@@ -62,19 +62,27 @@ public class SwaggerSpecUtil
     return parseJsonValues(String.class, GET_DATA_SOURCES_DIMENSIONS);
   }
 
-  @SneakyThrows
   private static <T> T parseJsonValue(Class<T> clazz, String jsonFileName)
   {
-    return new ObjectMapper().readValue(new File(EXAMPLES_PATH + File.separator + jsonFileName), clazz);
+    try {
+      return new ObjectMapper().readValue(new File(EXAMPLES_PATH + File.separator + jsonFileName), clazz);
+    }
+    catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 
-  @SneakyThrows
   private static <T> List<T> parseJsonValues(Class<T> clazz, String jsonFileName)
   {
     ObjectMapper objectMapper = new ObjectMapper();
-    return objectMapper.readValue(
-        new File(EXAMPLES_PATH + File.separator + jsonFileName),
-        objectMapper.getTypeFactory().constructCollectionType(List.class, clazz)
-    );
+    try {
+      return objectMapper.readValue(
+          new File(EXAMPLES_PATH + File.separator + jsonFileName),
+          objectMapper.getTypeFactory().constructCollectionType(List.class, clazz)
+      );
+    }
+    catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 }
