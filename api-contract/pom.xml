@@ -50,91 +50,44 @@
             <scope>provided</scope>
         </dependency>
 
+        <!--  okhttp-gson dependencies  -->
+
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>logging-interceptor</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.gsonfire</groupId>
+            <artifactId>gson-fire</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.swagger</groupId>
+            <artifactId>swagger-annotations</artifactId>
+            <version>1.5.20</version>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.okio</groupId>
+            <artifactId>okio</artifactId>
+            <version>2.6.0</version>
+        </dependency>
     </dependencies>
-
-    <profiles>
-        <profile>
-            <id>generate-api-client</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-
-            <dependencies>
-                <dependency>
-                    <groupId>com.squareup.okhttp3</groupId>
-                    <artifactId>okhttp</artifactId>
-                </dependency>
-
-                <dependency>
-                    <groupId>com.google.code.gson</groupId>
-                    <artifactId>gson</artifactId>
-                </dependency>
-
-                <dependency>
-                    <groupId>com.google.code.findbugs</groupId>
-                    <artifactId>jsr305</artifactId>
-                </dependency>
-
-                <dependency>
-                    <groupId>com.squareup.okhttp3</groupId>
-                    <artifactId>logging-interceptor</artifactId>
-                </dependency>
-
-                <dependency>
-                    <groupId>io.gsonfire</groupId>
-                    <artifactId>gson-fire</artifactId>
-                </dependency>
-
-                <dependency>
-                    <groupId>io.swagger</groupId>
-                    <artifactId>swagger-annotations</artifactId>
-                    <version>1.5.20</version>
-                </dependency>
-                <dependency>
-                    <groupId>com.squareup.okio</groupId>
-                    <artifactId>okio</artifactId>
-                    <version>2.6.0</version>
-                </dependency>
-            </dependencies>
-
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.openapitools</groupId>
-                        <artifactId>openapi-generator-maven-plugin</artifactId>
-                        <version>4.3.1</version>
-                        <executions>
-                            <execution>
-                                <id>generate-java-client-api</id>
-                                <goals>
-                                    <goal>generate</goal>
-                                </goals>
-                                <configuration>
-                                    <inputSpec>${project.basedir}/src/main/resources/schema/druid-api.yml</inputSpec>
-                                    <output>${project.build.directory}/generated-sources/api-client</output>
-                                    <generatorName>java</generatorName>
-                                    <generateModelTests>false</generateModelTests>
-                                    <generateApiTests>false</generateApiTests>
-<!--                                      <configHelp>true</configHelp>-->
-
-                                    <configOptions>
-                                        <sourceFolder>src/gen/java/main</sourceFolder>
-                                        <modelPackage>org.apache.druid.client.model</modelPackage>
-                                        <apiPackage>org.apache.druid.client.api</apiPackage>
-                                        <invokerPackage>org.apache.druid.client.invoker</invokerPackage>
-
-                                        <library>okhttp-gson</library>
-
-                                        <dateLibrary>java8</dateLibrary>
-                                    </configOptions>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 
     <build>
         <plugins>
@@ -151,6 +104,39 @@
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.openapitools</groupId>
+                <artifactId>openapi-generator-maven-plugin</artifactId>
+                <version>4.3.1</version>
+                <executions>
+                    <execution>
+                        <id>generate-java-client-api</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <inputSpec>${project.basedir}/src/main/resources/schema/druid-api.yml</inputSpec>
+                            <output>${project.build.directory}/generated-sources/api-client</output>
+                            <generatorName>java</generatorName>
+                            <generateModelTests>false</generateModelTests>
+                            <generateApiTests>false</generateApiTests>
+                            <!--                                      <configHelp>true</configHelp>-->
+
+                            <configOptions>
+                                <sourceFolder>src/gen/java/main</sourceFolder>
+                                <modelPackage>org.apache.druid.client.model</modelPackage>
+                                <apiPackage>org.apache.druid.client.api</apiPackage>
+                                <invokerPackage>org.apache.druid.client.invoker</invokerPackage>
+
+                                <library>okhttp-gson</library>
+
+                                <dateLibrary>java8</dateLibrary>
+                            </configOptions>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

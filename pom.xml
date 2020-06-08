@@ -485,11 +485,6 @@
                 <version>${jackson.version}</version>
             </dependency>
             <dependency>
-              <groupId>com.fasterxml.jackson.dataformat</groupId>
-              <artifactId>jackson-dataformat-yaml</artifactId>
-              <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>com.fasterxml.jackson.jaxrs</groupId>
                 <artifactId>jackson-jaxrs-smile-provider</artifactId>
                 <version>${jackson.version}</version>
