@@ -83,4 +83,8 @@
     <Bug pattern="SWL_SLEEP_WITH_LOCK_HELD"/>
     <Bug pattern="UL_UNRELEASED_LOCK_EXCEPTION_PATH"/>
     <Bug pattern="URF_UNREAD_FIELD"/>
+
+<!--    Exclude api-contract client  -->
+
+    <Package name="org.apache.druid.client.invoker" />
 </FindBugsFilter>
