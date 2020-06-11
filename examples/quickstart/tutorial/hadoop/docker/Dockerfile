@@ -51,7 +51,7 @@ ENV JAVA_HOME /usr/lib/jvm/zulu-8
 ENV PATH $PATH:$JAVA_HOME/bin
 
 # hadoop
-RUN curl -s http://apache.mirrors.pair.com/hadoop/core/hadoop-2.8.5/hadoop-2.8.5.tar.gz | tar -xz -C /usr/local/
+RUN curl -s https://archive.apache.org/dist/hadoop/core/hadoop-2.8.5/hadoop-2.8.5.tar.gz | tar -xz -C /usr/local/
 RUN cd /usr/local && ln -s ./hadoop-2.8.5 hadoop
 
 ENV HADOOP_PREFIX /usr/local/hadoop

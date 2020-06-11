@@ -49,6 +49,10 @@ pipeline {
                         steps {
                             script{
                                 checkout scm
+                                //Replace archive.apache.org to artifactory URL in hadoop docker file. It's required for speed up pipeline
+                                sh script: """
+                                    sed -ie 's,https://archive.apache.org,http://artifactory.qa.imply.io/artifactory/archive-apache-org,g' ${WORKSPACE}/examples/quickstart/tutorial/hadoop/docker/Dockerfile
+                                """
                                 withCredentials([file(credentialsId: 'maven-artifactory-settings', variable: 'MVN_SETTINGS_PATH')]){
                                     sh script: """
                                                                     mkdir -p ${HOME}/.m2/
