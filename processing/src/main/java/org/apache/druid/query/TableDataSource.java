@@ -102,6 +102,11 @@ public class TableDataSource implements DataSource
       return false;
     }
 
+    if ((o instanceof GlobalTableDataSource || this instanceof GlobalTableDataSource) &&
+        !getClass().equals(o.getClass())) {
+      return false;
+    }
+
     TableDataSource that = (TableDataSource) o;
 
     if (!name.equals(that.name)) {
