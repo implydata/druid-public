@@ -41,7 +41,7 @@ pipeline {
                     }
                     axis {
                         name 'STORAGE'
-                        values 's3','kinesis', 'azure'//'hdfs', 'gcs'
+                        values 's3', 'kinesis', 'azure'//'hdfs', 'gcs'
                     }
                 }
                 stages{
@@ -63,11 +63,16 @@ pipeline {
                                                                 """, label: "build maven"
                                 }
                                 if ( env.STORAGE == 's3') {
+                                    if (env.CHANGE_ID) {
+                                        cloudpath = 'pr'
+                                    } else {
+                                        cloudpath = 'test'
+                                    }
                                     withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: 'aws_s3_access', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
-                                        writeFile file: "jenkins/s3-config", text: "druid_storage_type=s3\ndruid_storage_bucket=druid-qa\ndruid_storage_baseKey=test\ndruid_s3_accessKey=${AWS_ACCESS_KEY_ID}\ndruid_s3_secretKey=${AWS_SECRET_ACCESS_KEY}\nAWS_REGION=us-east-1\ndruid_extensions_loadList=[\"druid-s3-extensions\",\"druid-hdfs-storage\"]"
+                                        writeFile file: "jenkins/s3-config", text: "druid_storage_type=s3\ndruid_storage_bucket=druid-qa\ndruid_storage_baseKey=${cloudpath}\ndruid_s3_accessKey=${AWS_ACCESS_KEY_ID}\ndruid_s3_secretKey=${AWS_SECRET_ACCESS_KEY}\nAWS_REGION=us-east-1\ndruid_extensions_loadList=[\"druid-s3-extensions\",\"druid-hdfs-storage\"]"
                                         sh script: """
                                             export MAVEN_OPTS="-Xms4g -Xmx4g -XX:MaxDirectMemorySize=2048m"
-                                            ${MVN} verify -P integration-tests -pl integration-tests -Dgroups=s3-deep-storage -Doverride.config.path=${WORKSPACE}/jenkins/s3-config -Djvm.runtime=${env.JDK} -Ddruid.test.config.cloudBucket=druid-qa -Ddruid.test.config.cloudPath=test/ -Dstart.hadoop.docker=true  -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS}
+                                            ${MVN} verify -P integration-tests -pl integration-tests -Dgroups=s3-deep-storage -Doverride.config.path=${WORKSPACE}/jenkins/s3-config -Djvm.runtime=${env.JDK} -Ddruid.test.config.cloudBucket=druid-qa -Ddruid.test.config.cloudPath=${cloudpath}/ -Dstart.hadoop.docker=true -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS}
                                         """, label: "s3-deep-storage with ${env.JDK}"
                                     }
                                 } else if ( env.STORAGE == 'kinesis') {
