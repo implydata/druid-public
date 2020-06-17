@@ -28,14 +28,15 @@ import java.util.Set;
 /**
  * Represents a source... of data... for a query. Analogous to the "FROM" clause in SQL.
  */
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", defaultImpl = LegacyDataSource.class)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", defaultImpl = TableDataSource.class)
 @JsonSubTypes({
     @JsonSubTypes.Type(value = TableDataSource.class, name = "table"),
     @JsonSubTypes.Type(value = QueryDataSource.class, name = "query"),
     @JsonSubTypes.Type(value = UnionDataSource.class, name = "union"),
     @JsonSubTypes.Type(value = JoinDataSource.class, name = "join"),
     @JsonSubTypes.Type(value = LookupDataSource.class, name = "lookup"),
-    @JsonSubTypes.Type(value = InlineDataSource.class, name = "inline")
+    @JsonSubTypes.Type(value = InlineDataSource.class, name = "inline"),
+    @JsonSubTypes.Type(value = GlobalTableDataSource.class, name = "globalTable")
 })
 public interface DataSource
 {
