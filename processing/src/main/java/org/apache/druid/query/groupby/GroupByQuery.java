@@ -251,8 +251,8 @@ public class GroupByQuery extends BaseQuery<ResultRow>
     return subtotalsSpec;
   }
 
-  @Override
   @JsonProperty
+  @Override
   public VirtualColumns getVirtualColumns()
   {
     return virtualColumns;
