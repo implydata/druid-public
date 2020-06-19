@@ -12,25 +12,25 @@ pipeline {
 
     //Set global env
     environment {
-        SONARTOKEN       = credentials('token-sonarqube')
-        HARBORTOKEN      = credentials('harbor-implydata-username')
-        DOCKER_IP        = "127.0.0.1"  // for integration tests
-        BUILD_CONTAINER  = "harbor.qa.imply.io/tools/build:20200304"
-        MVN              = "mvn -B"
+        SONARTOKEN = credentials('token-sonarqube')
+        HARBORTOKEN = credentials('harbor-implydata-username')
+        DOCKER_IP = "127.0.0.1"  // for integration tests
+        BUILD_CONTAINER = "harbor.qa.imply.io/tools/build:20200304"
+        MVN = "mvn -B"
         // Various options to make execution of maven goals faster (e.g., mvn install)
-        MAVEN_SKIP       = "-Danimal.sniffer.skip=true -Dcheckstyle.skip=true -Ddruid.console.skip=true -Denforcer.skip=true -Dforbiddenapis.skip=true -Dmaven.javadoc.skip=true -Dpmd.skip=true -Dspotbugs.skip=true"
+        MAVEN_SKIP = "-Danimal.sniffer.skip=true -Dcheckstyle.skip=true -Ddruid.console.skip=true -Denforcer.skip=true -Dforbiddenapis.skip=true -Dmaven.javadoc.skip=true -Dpmd.skip=true -Dspotbugs.skip=true"
         MAVEN_SKIP_TESTS = "-Djacoco.skip=true"
-        PATH             = "/home/jenkins/bin:/home/jenkins/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"
+        PATH = "/home/jenkins/bin:/home/jenkins/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"
     }
 
     stages {
-        stage('Deep tests'){
+        stage('Deep tests') {
             matrix {
                 when {
                     expression { params.TEST_TYPE == 'fast' || 'medium' }
                     beforeAgent true
                 }
-                agent {label 'jenkinsOnDemand'}
+                agent { label 'jenkinsOnDemand' }
                 tools {
                     maven 'apache-maven'
                 }
@@ -41,19 +41,19 @@ pipeline {
                     }
                     axis {
                         name 'STORAGE'
-                        values 's3', 'kinesis', 'azure'//'hdfs', 'gcs'
+                        values 'kinesis', 's3', 'azure'//'hdfs', 'gcs'
                     }
                 }
-                stages{
-                    stage ('Build '){
+                stages {
+                    stage('Build ') {
                         steps {
-                            script{
+                            script {
                                 checkout scm
                                 //Replace archive.apache.org to artifactory URL in hadoop docker file. It's required for speed up pipeline
                                 sh script: """
                                     sed -ie 's,https://archive.apache.org,http://artifactory.qa.imply.io/artifactory/archive-apache-org,g' ${WORKSPACE}/examples/quickstart/tutorial/hadoop/docker/Dockerfile
                                 """
-                                withCredentials([file(credentialsId: 'maven-artifactory-settings', variable: 'MVN_SETTINGS_PATH')]){
+                                withCredentials([file(credentialsId: 'maven-artifactory-settings', variable: 'MVN_SETTINGS_PATH')]) {
                                     sh script: """
                                                                     mkdir -p ${HOME}/.m2/
                                                                     cp ${env.MVN_SETTINGS_PATH} ${HOME}/.m2/settings.xml
@@ -62,7 +62,13 @@ pipeline {
                                                                     ${MVN} install -U -q -DskipTests
                                                                 """, label: "build maven"
                                 }
-                                if ( env.STORAGE == 's3') {
+                            }
+                        }
+                    }
+                    stage('Tests') {
+                        steps {
+                            script {
+                                if (env.STORAGE == 's3') {
                                     if (env.CHANGE_ID) {
                                         cloudpath = 'pr'
                                     } else {
@@ -75,15 +81,17 @@ pipeline {
                                             ${MVN} verify -P integration-tests -pl integration-tests -Dgroups=s3-deep-storage -Doverride.config.path=${WORKSPACE}/jenkins/s3-config -Djvm.runtime=${env.JDK} -Ddruid.test.config.cloudBucket=druid-qa -Ddruid.test.config.cloudPath=${cloudpath}/ -Dstart.hadoop.docker=true -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS}
                                         """, label: "s3-deep-storage with ${env.JDK}"
                                     }
-                                } else if ( env.STORAGE == 'kinesis') {
-                                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: 'aws_s3_access', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
-                                        writeFile file: "jenkins/kinesis-config", text: "druid_kinesis_accessKey=${AWS_ACCESS_KEY_ID}\ndruid_kinesis_secretKey=${AWS_SECRET_ACCESS_KEY}\nAWS_REGION=us-east-1\ndruid_extensions_loadList=[\"druid-kinesis-indexing-service\"]"
-                                        sh script: """
+                                } else if (env.STORAGE == 'kinesis') {
+                                    lock('awsResource') {
+                                        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: 'aws_s3_access', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
+                                            writeFile file: "jenkins/kinesis-config", text: "druid_kinesis_accessKey=${AWS_ACCESS_KEY_ID}\ndruid_kinesis_secretKey=${AWS_SECRET_ACCESS_KEY}\nAWS_REGION=us-east-1\ndruid_extensions_loadList=[\"druid-kinesis-indexing-service\"]"
+                                            sh script: """
                                             export MAVEN_OPTS="-Xms4g -Xmx4g -XX:MaxDirectMemorySize=2048m"
                                             ${MVN} verify -P integration-tests -pl integration-tests -Dgroups=kinesis-index -Doverride.config.path=${WORKSPACE}/jenkins/kinesis-config -Djvm.runtime=${env.JDK} -Ddruid.test.config.streamEndpoint=kinesis.us-east-1.amazonaws.com -Dstart.hadoop.docker=true -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS}
                                         """, label: "kinesis-deep-storage"
+                                        }
                                     }
-                                } else if ( env.STORAGE == 'azure' ){
+                                } else if (env.STORAGE == 'azure') {
                                     withCredentials([usernamePassword(credentialsId: 'azure_credentials', usernameVariable: 'AZURE_ACCOUNT', passwordVariable: 'AZURE_KEY')]) {
                                         writeFile file: "jenkins/azure-config", text: "druid_storage_type=azure\ndruid_azure_account=$AZURE_ACCOUNT\ndruid_azure_key=$AZURE_KEY\ndruid_azure_container=imply-qa-testing\ndruid_extensions_loadList=[\"druid-azure-extensions\",\"druid-hdfs-storage\"]"
                                         sh script: """
@@ -91,8 +99,8 @@ pipeline {
                                             ${MVN} verify -P integration-tests -pl integration-tests -Dgroups=azure-deep-storage -Doverride.config.path=${WORKSPACE}/jenkins/azure-config -Djvm.runtime=${env.JDK} -Ddruid.test.config.cloudBucket=imply-qa-testing -Ddruid.test.config.cloudPath=qa-druid-test/ -Dstart.hadoop.docker=true -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS}
                                         """, label: "azure-deep-storage with ${env.JDK}"
                                     }
-                                } else if ( env.STORAGE == 'gcs' ){
-                                    withCredentials([file(credentialsId: 'gcs-bucket-qa', variable: 'GC_KEY')]){
+                                } else if (env.STORAGE == 'gcs') {
+                                    withCredentials([file(credentialsId: 'gcs-bucket-qa', variable: 'GC_KEY')]) {
                                         writeFile file: "${WORKSPACE}/jenkins/gcs-config", text: "druid_storage_type=google\ndruid_google_bucket=imply-qa-testing\ndruid_google_prefix=gcs-test\ndruid_extensions_loadList=[\"druid-google-extensions\",\"druid-hdfs-storage\"]\nGOOGLE_APPLICATION_CREDENTIALS=/shared/docker/credentials/creds.json"
                                         sh script: """
                                             mkdir -p ${WORKSPACE}/jenkins/gcs
@@ -104,7 +112,7 @@ pipeline {
                                             ${MVN} verify -P integration-tests -pl integration-tests -Dgroups=gcs-deep-storage -Doverride.config.path=${WORKSPACE}/jenkins/gcs-config -Djvm.runtime=${env.JDK} -Dresource.file.dir.path=${WORKSPACE}/jenkins/gcs/ -Ddruid.test.config.cloudBucket=imply-qa-testing -Ddruid.test.config.cloudPath=gcs-test -Dstart.hadoop.docker=true -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS}
                                         """, label: "gcs-deep-storage with ${env.JDK}"
                                     }
-                                } else if ( env.STORAGE == 'hdfs' ){
+                                } else if (env.STORAGE == 'hdfs') {
                                     writeFile file: "${WORKSPACE}/jenkins/hdfs-config", text: "druid_storage_type=hdfs\n" +
                                             "druid_storage_storageDirectory=/druid/segments\n" +
                                             "druid_extensions_loadList=[\"druid-hdfs-storage\", , \"druid-parquet-extensions\", \"druid-orc-extensions\"]\n" +
@@ -122,4 +130,6 @@ pipeline {
             }
         }
     }
-}  
+}
+
+
