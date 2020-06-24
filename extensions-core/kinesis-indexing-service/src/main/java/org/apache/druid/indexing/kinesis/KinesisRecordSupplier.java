@@ -97,7 +97,8 @@ public class KinesisRecordSupplier implements RecordSupplier<String, String>
   {
     final boolean isIOException = ex.getCause() instanceof IOException;
     final boolean isTimeout = "RequestTimeout".equals(ex.getErrorCode());
-    return isIOException || isTimeout;
+    final boolean isInternalError = ex.getStatusCode() == 500 || ex.getStatusCode() == 503;
+    return isIOException || isTimeout || isInternalError;
   }
 
   private class PartitionResource
@@ -738,6 +739,23 @@ public class KinesisRecordSupplier implements RecordSupplier<String, String>
           log.warn(e1, "Thread interrupted!");
           Thread.currentThread().interrupt();
           break;
+        }
+      }
+      catch (AmazonServiceException ase) {
+        if (isServiceExceptionRecoverable(ase)) {
+          log.warn(ase, "encounted unknown recoverable AWS exception, retrying in [%,dms]", PROVISIONED_THROUGHPUT_EXCEEDED_BACKOFF_MS);
+          try {
+            Thread.sleep(PROVISIONED_THROUGHPUT_EXCEEDED_BACKOFF_MS);
+            continue;
+          }
+          catch (InterruptedException e1) {
+            log.warn(e1, "Thread interrupted!");
+            Thread.currentThread().interrupt();
+            break;
+          }
+        } else {
+          log.warn(ase, "encounted unknown unrecoverable AWS exception, will not retry");
+          throw new RuntimeException(ase);
         }
       }
 
