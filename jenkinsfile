@@ -41,7 +41,7 @@ pipeline {
                     }
                     axis {
                         name 'STORAGE'
-                        values 'kinesis', 's3', 'azure'//'hdfs', 'gcs'
+                        values 's3', 'azure', 'kinesis'//, 'hdfs', 'gcs'
                     }
                 }
                 stages {
@@ -69,35 +69,55 @@ pipeline {
                         steps {
                             script {
                                 if (env.STORAGE == 's3') {
-                                    if (env.CHANGE_ID) {
-                                        cloudpath = 'pr'
-                                    } else {
-                                        cloudpath = 'test'
-                                    }
                                     withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: 'aws_s3_access', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
-                                        writeFile file: "jenkins/s3-config", text: "druid_storage_type=s3\ndruid_storage_bucket=druid-qa\ndruid_storage_baseKey=${cloudpath}\ndruid_s3_accessKey=${AWS_ACCESS_KEY_ID}\ndruid_s3_secretKey=${AWS_SECRET_ACCESS_KEY}\nAWS_REGION=us-east-1\ndruid_extensions_loadList=[\"druid-s3-extensions\",\"druid-hdfs-storage\"]"
+                                        def cloudpath = UUID.randomUUID().toString()
                                         sh script: """
+                                            aws s3 sync ${WORKSPACE}/integration-tests/src/test/resources/data/batch_index/json/ s3://druid-qa/${cloudpath} --exclude "*" --include "wikipedia_index_data*.json"
+                                        """
+                                        writeFile file: "jenkins/s3-config", text: "druid_storage_type=s3\ndruid_storage_bucket=druid-qa\ndruid_storage_baseKey=${cloudpath}\ndruid_s3_accessKey=${AWS_ACCESS_KEY_ID}\ndruid_s3_secretKey=${AWS_SECRET_ACCESS_KEY}\nAWS_REGION=us-east-1\ndruid_extensions_loadList=[\"druid-s3-extensions\",\"druid-hdfs-storage\"]"
+                                        try {
+                                            sh script: """
                                             export MAVEN_OPTS="-Xms4g -Xmx4g -XX:MaxDirectMemorySize=2048m"
                                             ${MVN} verify -P integration-tests -pl integration-tests -Dgroups=s3-deep-storage -Doverride.config.path=${WORKSPACE}/jenkins/s3-config -Djvm.runtime=${env.JDK} -Ddruid.test.config.cloudBucket=druid-qa -Ddruid.test.config.cloudPath=${cloudpath}/ -Dstart.hadoop.docker=true -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS}
                                         """, label: "s3-deep-storage with ${env.JDK}"
+                                        }
+                                        finally {
+                                            sh script: """
+                                            aws s3 rm s3://druid-qa/${cloudpath}  --recursive
+                                        """
+                                        }
+
                                     }
                                 } else if (env.STORAGE == 'kinesis') {
                                     lock('awsResource') {
                                         withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: 'aws_s3_access', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
                                             writeFile file: "jenkins/kinesis-config", text: "druid_kinesis_accessKey=${AWS_ACCESS_KEY_ID}\ndruid_kinesis_secretKey=${AWS_SECRET_ACCESS_KEY}\nAWS_REGION=us-east-1\ndruid_extensions_loadList=[\"druid-kinesis-indexing-service\"]"
                                             sh script: """
-                                            export MAVEN_OPTS="-Xms4g -Xmx4g -XX:MaxDirectMemorySize=2048m"
-                                            ${MVN} verify -P integration-tests -pl integration-tests -Dgroups=kinesis-index -Doverride.config.path=${WORKSPACE}/jenkins/kinesis-config -Djvm.runtime=${env.JDK} -Ddruid.test.config.streamEndpoint=kinesis.us-east-1.amazonaws.com -Dstart.hadoop.docker=true -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS}
-                                        """, label: "kinesis-deep-storage"
+                                                export MAVEN_OPTS="-Xms4g -Xmx4g -XX:MaxDirectMemorySize=2048m"
+                                                ${MVN} verify -P integration-tests -pl integration-tests -Dgroups=kinesis-index -Doverride.config.path=${WORKSPACE}/jenkins/kinesis-config -Djvm.runtime=${env.JDK} -Ddruid.test.config.streamEndpoint=kinesis.us-east-1.amazonaws.com -Dstart.hadoop.docker=true -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS}
+                                            """, label: "kinesis-deep-storage"
                                         }
                                     }
                                 } else if (env.STORAGE == 'azure') {
                                     withCredentials([usernamePassword(credentialsId: 'azure_credentials', usernameVariable: 'AZURE_ACCOUNT', passwordVariable: 'AZURE_KEY')]) {
-                                        writeFile file: "jenkins/azure-config", text: "druid_storage_type=azure\ndruid_azure_account=$AZURE_ACCOUNT\ndruid_azure_key=$AZURE_KEY\ndruid_azure_container=imply-qa-testing\ndruid_extensions_loadList=[\"druid-azure-extensions\",\"druid-hdfs-storage\"]"
+                                        def containerName = UUID.randomUUID().toString()
                                         sh script: """
+                                            curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+                                            az storage container create -n ${containerName} --public-access blob --account-name $AZURE_ACCOUNT --account-key $AZURE_KEY
+                                            az storage blob upload-batch --account-name $AZURE_ACCOUNT --account-key $AZURE_KEY -d ${containerName} -s ${WORKSPACE}/integration-tests/src/test/resources/data/batch_index/json/ --pattern "wikipedia_index_data*.json"
+                                        """
+                                        try {
+                                            writeFile file: "jenkins/azure-config", text: "druid_storage_type=azure\ndruid_azure_account=$AZURE_ACCOUNT\ndruid_azure_key=$AZURE_KEY\ndruid_azure_container=${containerName}\ndruid_extensions_loadList=[\"druid-azure-extensions\",\"druid-hdfs-storage\"]"
+                                            sh script: """
                                             export MAVEN_OPTS="-Xms4g -Xmx4g -XX:MaxDirectMemorySize=2048m"
-                                            ${MVN} verify -P integration-tests -pl integration-tests -Dgroups=azure-deep-storage -Doverride.config.path=${WORKSPACE}/jenkins/azure-config -Djvm.runtime=${env.JDK} -Ddruid.test.config.cloudBucket=imply-qa-testing -Ddruid.test.config.cloudPath=qa-druid-test/ -Dstart.hadoop.docker=true -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS}
+                                            ${MVN} verify -P integration-tests -pl integration-tests -Dgroups=azure-deep-storage -Doverride.config.path=${WORKSPACE}/jenkins/azure-config -Djvm.runtime=${env.JDK} -Ddruid.test.config.cloudBucket=${containerName} -Ddruid.test.config.cloudPath= -Dstart.hadoop.docker=true -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS}
                                         """, label: "azure-deep-storage with ${env.JDK}"
+                                        }
+                                        finally {
+                                            sh script: """
+                                                 az storage container delete -n ${containerName} --account-name $AZURE_ACCOUNT --account-key $AZURE_KEY
+                                            """
+                                        }
                                     }
                                 } else if (env.STORAGE == 'gcs') {
                                     withCredentials([file(credentialsId: 'gcs-bucket-qa', variable: 'GC_KEY')]) {
