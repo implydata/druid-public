@@ -27,7 +27,7 @@
   <parent>
     <groupId>org.apache.druid</groupId>
     <artifactId>druid</artifactId>
-    <version>0.18.0-iap10-SNAPSHOT</version>
+    <version>0.18.0-iap9-hdp2650</version>
   </parent>
 
   <prerequisites>
