@@ -1,13 +1,13 @@
 pipeline {
-    agent none  
-    
+    agent none
+
     options {
         timeout(time: 1, unit: 'HOURS')
         skipDefaultCheckout true
     }
 
-    parameters { 
-        choice(name: 'TEST_TYPE', choices: ['fast', 'medium', 'slow'], description: 'What test are run?') 
+    parameters {
+        choice(name: 'TEST_TYPE', choices: ['fast', 'medium', 'slow'], description: 'What test are run?')
     }
 
     //Set global env
@@ -19,8 +19,8 @@ pipeline {
         MVN_OPTS         = "export MAVEN_OPTS=\"-Xms4g -Xmx8g -XX:MaxDirectMemorySize=2048m\""
         // Various options to make execution of maven goals faster (e.g., mvn install)
         MAVEN_SKIP       = "-Danimal.sniffer.skip=true -Dcheckstyle.skip=true -Ddruid.console.skip=true -Denforcer.skip=true -Dforbiddenapis.skip=true -Dmaven.javadoc.skip=true -Dpmd.skip=true -Dspotbugs.skip=true"
-        MAVEN_SKIP_TESTS = "-DskipTests -Djacoco.skip=true"        
-    }   
+        MAVEN_SKIP_TESTS = "-DskipTests -Djacoco.skip=true"
+    }
 
     stages {
         stage('Basic test'){
@@ -30,15 +30,15 @@ pipeline {
             agent {label 'jenkins-slave'}
             tools {
                 maven 'apache-maven'
-            }            
+            }
             stages{
                 stage('Git checkout') {
                     steps{
                         checkout scm
                     }
-                }   
+                }
 
-                stage('Install'){ 
+                stage('Install'){
                     steps{
                         container('jnlp'){
                             sh script: "export ${env.MVN_OPTS} && ${env.MVN} clean install -q -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS} -T 1C", label: "Maven install"
@@ -59,50 +59,50 @@ pipeline {
                     }
                 }
 
-                stage('Tests') {          
-                    parallel {   
-                        stage ('animal sniffer checks'){    
+                stage('Tests') {
+                    parallel {
+                        stage ('animal sniffer checks'){
                             steps {
-                                container('jnlp'){    
+                                container('jnlp'){
                                     sh script: "${env.MVN} animal-sniffer:check --fail-at-end", label: "animal sniffer"
                                 }
                             }
                         }
-                        stage ('checkstyle'){                            
+                        stage ('checkstyle'){
                             steps {
                                 container('jnlp'){
                                     sh script: "${env.MVN} checkstyle:checkstyle --fail-at-end",label: "checkstyle"
                                 }
                             }
                         }
-                        stage ('enforcer checks'){                             
+                        stage ('enforcer checks'){
                             steps {
                                 container('jnlp'){
                                     sh script: "${env.MVN} enforcer:enforce --fail-at-end", label: "enforcer checks"
                                 }
                             }
                         }
-                        stage ('forbidden api checks'){                           
+                        stage ('forbidden api checks'){
                             steps {
                                 container('jnlp'){
                                     sh script: "${env.MVN} forbiddenapis:check forbiddenapis:testCheck --fail-at-end", label: "forbidden api checks"
                                 }
                             }
                         }
-                        stage ('pmd checks'){                            
+                        stage ('pmd checks'){
                             steps {
                                 container('jnlp'){
                                     sh script: "${env.MVN} pmd:check --fail-at-end", label: "pmd checks"
                                 }
                             }
                         }
-                        stage ('spotbugs checks'){                             
+                        stage ('spotbugs checks'){
                             steps {
                                 container('jnlp'){
                                     sh script: "${env.MVN} spotbugs:check --fail-at-end -pl '!benchmarks' -T 1C", label: "spotbugs checks"
                                 }
                             }
-                        }                                                                                               
+                        }
                     }
                 }
             }
@@ -110,19 +110,19 @@ pipeline {
         stage('Deep tests'){
             when {
                 expression { params.TEST_TYPE == 'medium'}
-            } 
+            }
            parallel{
                 stage('Deep tests 1'){
                     agent {label 'jenkins-slave'}
                     tools {
                         maven 'apache-maven'
-                    }            
-                    stages{  
+                    }
+                    stages{
                         stage('Git checkout') {
                             steps{
                                 checkout scm
                             }
-                        }   
+                        }
 
                         stage('Install'){
                             steps{
@@ -139,8 +139,8 @@ pipeline {
                                     """, label: "Install prerequsite"
                                 }
                             }
-                        }     
-                        stage ('license checks'){        
+                        }
+                        stage ('license checks'){
                             steps {
                                 container('jnlp'){
                                     sh script: """
@@ -153,7 +153,7 @@ pipeline {
                                 }
                             }
                         }
-                        stage ('compile_strict_jdk8'){                         
+                        stage ('compile_strict_jdk8'){
                             steps {
                                 container('jnlp'){
                                     sh script: "export ${env.MVN_OPTS} && ${env.MVN} clean -Pstrict compile test-compile --fail-at-end -pl '!benchmarks' ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS}",label: "compile_strict"
@@ -162,18 +162,18 @@ pipeline {
                         }
                     }
                 }
-                
+
                 stage('Deep Tests 2') {
                     agent {label 'jenkins-slave'}
                     tools {
                         maven 'apache-maven'
-                    }             
-                    stages{  
+                    }
+                    stages{
                         stage('Git checkout') {
                             steps{
                                 checkout scm
                             }
-                        }   
+                        }
 
                         stage('Install'){
                             steps{
@@ -190,8 +190,8 @@ pipeline {
                                     """, label: "Install prerequsite"
                                 }
                             }
-                        }     
-                        stage ('analyze dependencies'){         
+                        }
+                        stage ('analyze dependencies'){
                             steps {
                                 container('jnlp'){
                                     sh script: "export ${env.MVN_OPTS} && ${MVN} ${MAVEN_SKIP} dependency:analyze -DoutputXML=true -DignoreNonCompile=true -DfailOnWarning=true", label: "analyze dependencies"
@@ -214,9 +214,9 @@ pipeline {
                                         https://maven.apache.org/plugins/maven-dependency-plugin/analyze-mojo.html
                                     """
                                 }
-                            }                    
+                            }
                         }
-                        stage ('test_processing_module_jdk8'){      
+                        stage ('test_processing_module_jdk8'){
                             steps {
                                 container('jnlp'){
                                     sh script: """
@@ -230,8 +230,8 @@ pipeline {
                                 success {
                                     sh script: "${MVN} -pl processing jacoco:report", label: "create jacoco report"
                                 }
-                            }     
-                        }                
+                            }
+                        }
                     }
                 }
 
@@ -239,13 +239,13 @@ pipeline {
                     agent {label 'jenkins-slave'}
                     tools {
                         maven 'apache-maven'
-                    }              
-                    stages{  
+                    }
+                    stages{
                         stage('Git checkout') {
                             steps{
                                 checkout scm
                             }
-                        }   
+                        }
 
                         stage('Install'){
                             steps{
@@ -262,8 +262,8 @@ pipeline {
                                     """, label: "Install prerequsite"
                                 }
                             }
-                        }                      
-                        stage ('package_check_jdk8'){       
+                        }
+                        stage ('package_check_jdk8'){
                             steps {
                                 container('jnlp'){
                                     sh script: """
@@ -273,7 +273,7 @@ pipeline {
                                 }
                             }
                         }
-                        stage ('security vulnerabilities'){       
+                        stage ('security vulnerabilities'){
                             steps {
                                 container('jnlp'){
                                     sh script: "export ${env.MVN_OPTS} && ${env.MVN} dependency-check:check --fail-at-end", label: "security vulnerabilities"
@@ -289,26 +289,26 @@ pipeline {
                                         information, see https://jeremylong.github.io/DependencyCheck/general/suppression.html).
                                     """
                                 }
-                            }                    
-                        }                                                                                                             
+                            }
+                        }
                     }
-                }      
+                }
             }
         }
-        stage('SonarQube analysis') {  
+        stage('SonarQube analysis') {
             when {
-                expression { params.TEST_TYPE == 'fast' || 'medium' }
-            } 
+                expression { false }
+            }
             agent {label 'jenkins-slave'}
             tools {
                 maven 'apache-maven'
-            }                      
+            }
             stages{
                 stage('Git checkout') {
                     steps{
                         checkout scm
                     }
-                }   
+                }
 
                 stage('Install'){
                     steps{
@@ -325,8 +325,8 @@ pipeline {
                             """, label: "Install prerequsite"
                         }
                     }
-                }  
-                stage('SonarQube') {                                            
+                }
+                stage('SonarQube') {
                     steps{
                         script {
                             //Here is place for run linter and save report
@@ -363,17 +363,17 @@ pipeline {
                                 }
                         }
                     }
-                } 
-                
+                }
+
                 stage ('Artifactory upload') {
                     steps {
                         rtUpload (
-                            serverId: 'artifactory', 
+                            serverId: 'artifactory',
                             specPath: 'spec-upload.json'
                         )
                     }
-                }     
-                
+                }
+
                 stage ('Publish build info') {
                     steps {
                         rtPublishBuildInfo (
@@ -381,7 +381,7 @@ pipeline {
                         )
                     }
                 }
-        
+
                 stage ('Xray scan') {
                     steps {
                         xrayScan (
@@ -390,7 +390,7 @@ pipeline {
                         )
                     }
                 }
-                
+
                 stage('Build docker'){
                     steps{
                         script {
@@ -403,14 +403,14 @@ pipeline {
                                         docker build --network=host -t harbor.qa.imply.io/druid/druid-mysql:${GIT_COMMIT} -f ./distribution/docker/Dockerfile .
                                         docker push harbor.qa.imply.io/druid/druid-mysql:${GIT_COMMIT}
                                         docker build --network=host -t harbor.qa.imply.io/druid/druid-java11:${GIT_COMMIT} -f ./distribution/docker/Dockerfile .
-                                        docker push harbor.qa.imply.io/druid/druid-java11:${GIT_COMMIT}                                    
-                                """, label: "Build and push docker"      
+                                        docker push harbor.qa.imply.io/druid/druid-java11:${GIT_COMMIT}
+                                """, label: "Build and push docker"
                             }
-                        }  
+                        }
                     }
                     post {
                         success {
-                            script { 
+                            script {
                                 //set tag verified on commit
                                 withCredentials([usernamePassword(credentialsId: 'github-implydata-username', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
                                     sh script: 'git config --global user.email "jenkins@qa.imply.io" && git config --global user.name "Jenkins"',label: "Set global user and email for git"
@@ -419,13 +419,13 @@ pipeline {
                                 }
                             }
                         }
-                    }                            
-                }                  
-            }     
-        }        
+                    }
+                }
+            }
+        }
     }
     //Send slack notification
     post {
         regression { slackSend color: 'danger', message: "Job ${env.JOB_NAME} build ${env.BUILD_NUMBER} failed. See logs ${BUILD_URL}console" }
-    }         
-}  
+    }
+}
