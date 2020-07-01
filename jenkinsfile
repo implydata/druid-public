@@ -27,7 +27,7 @@ pipeline {
             when {
                 expression { params.TEST_TYPE == 'fast' || 'medium'}
             }
-            agent {label 'jenkins-jenkins-slave'}
+            agent {label POD_LABEL}
             tools {
                 maven 'apache-maven'
             }            
@@ -113,7 +113,7 @@ pipeline {
             } 
            parallel{
                 stage('Deep tests 1'){
-                    agent {label 'jenkins-jenkins-slave'}
+                    agent {label POD_LABEL}
                     tools {
                         maven 'apache-maven'
                     }            
@@ -164,7 +164,7 @@ pipeline {
                 }
                 
                 stage('Deep Tests 2') {
-                    agent {label 'jenkins-jenkins-slave'}
+                    agent {label POD_LABEL}
                     tools {
                         maven 'apache-maven'
                     }             
@@ -236,7 +236,7 @@ pipeline {
                 }
 
                 stage('Deep Tests 3') {
-                    agent {label 'jenkins-jenkins-slave'}
+                    agent {label POD_LABEL}
                     tools {
                         maven 'apache-maven'
                     }              
@@ -299,7 +299,7 @@ pipeline {
             when {
                 expression { params.TEST_TYPE == 'fast' || 'medium' }
             } 
-            agent {label 'jenkins-jenkins-slave'}
+            agent {label POD_LABEL}
             tools {
                 maven 'apache-maven'
             }                      
