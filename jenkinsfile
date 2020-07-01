@@ -40,7 +40,7 @@ pipeline {
 
                 stage('Install'){ 
                     steps{
-                        container('build'){
+                        container('jnlp'){
                             sh script: "export ${env.MVN_OPTS} && ${env.MVN} clean install -q -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS} -T 1C", label: "Maven install"
                             sh script: """
                                 mkdir -p /var/cache/apt/archives/partial/
@@ -63,42 +63,42 @@ pipeline {
                     parallel {   
                         stage ('animal sniffer checks'){    
                             steps {
-                                container('build'){    
+                                container('jnlp'){    
                                     sh script: "${env.MVN} animal-sniffer:check --fail-at-end", label: "animal sniffer"
                                 }
                             }
                         }
                         stage ('checkstyle'){                            
                             steps {
-                                container('build'){
+                                container('jnlp'){
                                     sh script: "${env.MVN} checkstyle:checkstyle --fail-at-end",label: "checkstyle"
                                 }
                             }
                         }
                         stage ('enforcer checks'){                             
                             steps {
-                                container('build'){
+                                container('jnlp'){
                                     sh script: "${env.MVN} enforcer:enforce --fail-at-end", label: "enforcer checks"
                                 }
                             }
                         }
                         stage ('forbidden api checks'){                           
                             steps {
-                                container('build'){
+                                container('jnlp'){
                                     sh script: "${env.MVN} forbiddenapis:check forbiddenapis:testCheck --fail-at-end", label: "forbidden api checks"
                                 }
                             }
                         }
                         stage ('pmd checks'){                            
                             steps {
-                                container('build'){
+                                container('jnlp'){
                                     sh script: "${env.MVN} pmd:check --fail-at-end", label: "pmd checks"
                                 }
                             }
                         }
                         stage ('spotbugs checks'){                             
                             steps {
-                                container('build'){
+                                container('jnlp'){
                                     sh script: "${env.MVN} spotbugs:check --fail-at-end -pl '!benchmarks' -T 1C", label: "spotbugs checks"
                                 }
                             }
@@ -126,7 +126,7 @@ pipeline {
 
                         stage('Install'){
                             steps{
-                                container('build'){
+                                container('jnlp'){
                                     unstash 'm2'
                                     unstash 'core-druid'
                                     unstash 'processing-druid'
@@ -142,7 +142,7 @@ pipeline {
                         }     
                         stage ('license checks'){        
                             steps {
-                                container('build'){
+                                container('jnlp'){
                                     sh script: """
                                     export ${env.MVN_OPTS}
                                     ${env.MVN} apache-rat:check -Prat --fail-at-end -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn -Drat.consoleOutput=true -Drat.numUnapprovedLicenses=100
@@ -155,7 +155,7 @@ pipeline {
                         }
                         stage ('compile_strict_jdk8'){                         
                             steps {
-                                container('build'){
+                                container('jnlp'){
                                     sh script: "export ${env.MVN_OPTS} && ${env.MVN} clean -Pstrict compile test-compile --fail-at-end -pl '!benchmarks' ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS}",label: "compile_strict"
                                 }
                             }
@@ -177,7 +177,7 @@ pipeline {
 
                         stage('Install'){
                             steps{
-                                container('build'){
+                                container('jnlp'){
                                     unstash 'm2'
                                     unstash 'core-druid'
                                     unstash 'processing-druid'
@@ -193,7 +193,7 @@ pipeline {
                         }     
                         stage ('analyze dependencies'){         
                             steps {
-                                container('build'){
+                                container('jnlp'){
                                     sh script: "export ${env.MVN_OPTS} && ${MVN} ${MAVEN_SKIP} dependency:analyze -DoutputXML=true -DignoreNonCompile=true -DfailOnWarning=true", label: "analyze dependencies"
                                 }
                             }
@@ -218,7 +218,7 @@ pipeline {
                         }
                         stage ('test_processing_module_jdk8'){      
                             steps {
-                                container('build'){
+                                container('jnlp'){
                                     sh script: """
                                     unset _JAVA_OPTIONS
                                     export ${env.MVN_OPTS}
@@ -249,7 +249,7 @@ pipeline {
 
                         stage('Install'){
                             steps{
-                                container('build'){
+                                container('jnlp'){
                                     unstash 'm2'
                                     unstash 'core-druid'
                                     unstash 'processing-druid'
@@ -265,7 +265,7 @@ pipeline {
                         }                      
                         stage ('package_check_jdk8'){       
                             steps {
-                                container('build'){
+                                container('jnlp'){
                                     sh script: """
                                     export ${env.MVN_OPTS}
                                     ${env.MVN} clean install -Pdist -Pbundle-contrib-exts --fail-at-end -pl '!benchmarks' ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS} -Ddruid.console.skip=false -T1C
@@ -275,7 +275,7 @@ pipeline {
                         }
                         stage ('security vulnerabilities'){       
                             steps {
-                                container('build'){
+                                container('jnlp'){
                                     sh script: "export ${env.MVN_OPTS} && ${env.MVN} dependency-check:check --fail-at-end", label: "security vulnerabilities"
                                 }
                             }
@@ -312,7 +312,7 @@ pipeline {
 
                 stage('Install'){
                     steps{
-                        container('build'){
+                        container('jnlp'){
                             unstash 'm2'
                             unstash 'core-druid'
                             unstash 'processing-druid'
@@ -394,7 +394,7 @@ pipeline {
                 stage('Build docker'){
                     steps{
                         script {
-                            container('build'){
+                            container('jnlp'){
                                 GIT_TAG_COMMIT = sh(script: 'git describe --tags --always', returnStdout: true).trim()
                                 sh script: """
                                         docker login harbor.qa.imply.io --username ${HARBORTOKEN_USR} --password ${HARBORTOKEN_PSW}
