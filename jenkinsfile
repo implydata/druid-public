@@ -24,7 +24,7 @@ pipeline {
 
     stages {
         stage('Pipeline') {
-            agent any
+            agent none
             when {
                 anyOf {
                     triggeredBy cause: "UserIdCause"
