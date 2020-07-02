@@ -1,3 +1,17 @@
+def wrap_expression = { body ->
+    allOf {
+        expression {
+            body()
+        }
+        anyOf {
+            triggeredBy cause: "UserIdCause"
+            changeRequest()
+            branch pattern: "\\d\\.\\d\\d\\.\\d-iap", comparator: "REGEXP"
+        }
+    }
+    beforeAgent true
+}
+
 pipeline {
     agent none
 
@@ -25,7 +39,7 @@ pipeline {
     stages {
         stage('Basic test'){
             when {
-                expression { params.TEST_TYPE == 'fast' || 'medium'}
+                wrap_expression { params.TEST_TYPE == 'fast' || 'medium'}
             }
             agent {label 'jenkins-slave'}
             tools {
@@ -109,7 +123,7 @@ pipeline {
         }
         stage('Deep tests'){
             when {
-                expression { params.TEST_TYPE == 'medium'}
+                wrap_expression { params.TEST_TYPE == 'medium'}
             }
             parallel{
                 stage('Deep tests 1'){
@@ -297,7 +311,7 @@ pipeline {
         }
         stage('SonarQube analysis') {
             when {
-                expression { false }
+                wrap_expression { false }
             }
             agent {label 'jenkins-slave'}
             tools {
