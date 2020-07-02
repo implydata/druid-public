@@ -111,7 +111,7 @@ pipeline {
             when {
                 expression { params.TEST_TYPE == 'medium'}
             }
-           parallel{
+            parallel{
                 stage('Deep tests 1'){
                     agent {label 'jenkins-slave'}
                     tools {
