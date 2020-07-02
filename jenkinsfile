@@ -123,7 +123,7 @@ pipeline {
                 }
                 beforeAgent true
             }
-            parallel{
+            stages {
                 stage('Deep tests 1'){
                     agent {label 'jenkins-slave'}
                     tools {
