@@ -135,7 +135,6 @@ pipeline {
                                 checkout scm
                             }
                         }
-
                         stage('Install'){
                             steps{
                                 container('jnlp'){
