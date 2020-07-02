@@ -310,6 +310,7 @@ pipeline {
         stage('SonarQube analysis') {
             when {
                 expression { false }
+                beforeAgent true
             }
             agent {label 'jenkins-slave'}
             tools {
