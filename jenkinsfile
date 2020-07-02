@@ -22,412 +22,411 @@ pipeline {
         MAVEN_SKIP_TESTS = "-DskipTests -Djacoco.skip=true"
     }
 
-    stages {
-        stage('Basic test'){
-            when {
-                expression { params.TEST_TYPE == 'fast' || 'medium'}
-                anyOf {
-                    triggeredBy cause: "UserIdCause"
-                    changeRequest()
-                    branch pattern: "\\d\\.\\d\\d\\.\\d-iap", comparator: "REGEXP"
-                }
-                beforeAgent true
-            }
-            agent {label 'jenkins-slave'}
-            tools {
-                maven 'apache-maven'
-            }
-            stages{
-                stage('Git checkout') {
-                    steps{
-                        checkout scm
-                    }
-                }
 
-                stage('Install'){
-                    steps{
-                        container('jnlp'){
-                            sh script: "export ${env.MVN_OPTS} && ${env.MVN} clean install -q -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS} -T 1C", label: "Maven install"
-                            sh script: """
-                                mkdir -p /var/cache/apt/archives/partial/
-                                apt-get update && apt-get install python3 python3-pip python3-setuptools -y
-                                pip3 install wheel
-                                pip3 install pyyaml
-                            """, label: "Install prerequsite"
-                        }
-                    }
-                    post {
-                        success{
-                            stash allowEmpty: true, includes: '/root/.m2/**', name: 'm2'
-                            stash allowEmpty: true, includes: 'core/**', name: 'core-druid'
-                            stash allowEmpty: true, includes: 'processing/**', name: 'processing-druid'
-                        }
-                    }
-                }
-
-                stage('Tests') {
-                    parallel {
-                        stage ('animal sniffer checks'){
-                            steps {
-                                container('jnlp'){
-                                    sh script: "${env.MVN} animal-sniffer:check --fail-at-end", label: "animal sniffer"
-                                }
-                            }
-                        }
-                        stage ('checkstyle'){
-                            steps {
-                                container('jnlp'){
-                                    sh script: "${env.MVN} checkstyle:checkstyle --fail-at-end",label: "checkstyle"
-                                }
-                            }
-                        }
-                        stage ('enforcer checks'){
-                            steps {
-                                container('jnlp'){
-                                    sh script: "${env.MVN} enforcer:enforce --fail-at-end", label: "enforcer checks"
-                                }
-                            }
-                        }
-                        stage ('forbidden api checks'){
-                            steps {
-                                container('jnlp'){
-                                    sh script: "${env.MVN} forbiddenapis:check forbiddenapis:testCheck --fail-at-end", label: "forbidden api checks"
-                                }
-                            }
-                        }
-                        stage ('pmd checks'){
-                            steps {
-                                container('jnlp'){
-                                    sh script: "${env.MVN} pmd:check --fail-at-end", label: "pmd checks"
-                                }
-                            }
-                        }
-                        stage ('spotbugs checks'){
-                            steps {
-                                container('jnlp'){
-                                    sh script: "${env.MVN} spotbugs:check --fail-at-end -pl '!benchmarks' -T 1C", label: "spotbugs checks"
-                                }
-                            }
-                        }
-                    }
-                }
+    stage('Pipeline') {
+        agent any
+        when {
+            anyOf {
+                triggeredBy cause: "UserIdCause"
+                changeRequest()
+                branch pattern: "\\d\\.\\d\\d\\.\\d-iap", comparator: "REGEXP"
             }
+            beforeAgent true
         }
-        stage('Deep tests'){
-            when {
-                expression { params.TEST_TYPE == 'medium'}
-                anyOf {
-                    triggeredBy cause: "UserIdCause"
-                    changeRequest()
-                    branch pattern: "\\d\\.\\d\\d\\.\\d-iap", comparator: "REGEXP"
+        stages {
+            stage('Basic test'){
+                when {
+                    expression { params.TEST_TYPE == 'fast' || 'medium'}
                 }
-                beforeAgent true
-            }
-            parallel{
-                stage('Deep tests 1'){
-                    agent {label 'jenkins-slave'}
-                    tools {
-                        maven 'apache-maven'
-                    }
-                    stages{
-                        stage('Git checkout') {
-                            steps{
-                                checkout scm
-                            }
-                        }
-                        stage('Install'){
-                            steps{
-                                container('jnlp'){
-                                    unstash 'm2'
-                                    unstash 'core-druid'
-                                    unstash 'processing-druid'
-                                    //sh script: "export ${env.MVN_OPTS} && ${env.MVN} clean install -q -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS} -T1C", label: "Maven install"
-                                    sh script: """
-                                        mkdir -p /var/cache/apt/archives/partial/
-                                        apt-get update && apt-get install python3 python3-pip python3-setuptools -y
-                                        pip3 install wheel
-                                        pip3 install pyyaml
-                                    """, label: "Install prerequsite"
-                                }
-                            }
-                        }
-                        stage ('license checks'){
-                            steps {
-                                container('jnlp'){
-                                    sh script: """
-                                    export ${env.MVN_OPTS}
-                                    ${env.MVN} apache-rat:check -Prat --fail-at-end -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn -Drat.consoleOutput=true -Drat.numUnapprovedLicenses=100
-                                    mkdir -p target
-                                    distribution/bin/generate-license-dependency-reports.py . target --clean-maven-artifact-transfer --parallel 2
-                                    distribution/bin/check-licenses.py licenses.yaml target/license-reports
-                                    """, label: "license checks"
-                                }
-                            }
-                        }
-                        stage ('compile_strict_jdk8'){
-                            steps {
-                                container('jnlp'){
-                                    sh script: "export ${env.MVN_OPTS} && ${env.MVN} clean -Pstrict compile test-compile --fail-at-end -pl '!benchmarks' ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS}",label: "compile_strict"
-                                }
-                            }
+                agent {label 'jenkins-slave'}
+                tools {
+                    maven 'apache-maven'
+                }
+                stages{
+                    stage('Git checkout') {
+                        steps{
+                            checkout scm
                         }
                     }
-                }
 
-                stage('Deep Tests 2') {
-                    agent {label 'jenkins-slave'}
-                    tools {
-                        maven 'apache-maven'
-                    }
-                    stages{
-                        stage('Git checkout') {
-                            steps{
-                                checkout scm
-                            }
-                        }
-
-                        stage('Install'){
-                            steps{
-                                container('jnlp'){
-                                    unstash 'm2'
-                                    unstash 'core-druid'
-                                    unstash 'processing-druid'
-                                    //sh script: "export ${env.MVN_OPTS} && ${env.MVN} clean install -q -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS} -T1C", label: "Maven install"
-                                    sh script: """
-                                        mkdir -p /var/cache/apt/archives/partial/
-                                        apt-get update && apt-get install python3 python3-pip python3-setuptools -y
-                                        pip3 install wheel
-                                        pip3 install pyyaml
-                                    """, label: "Install prerequsite"
-                                }
-                            }
-                        }
-                        stage ('analyze dependencies'){
-                            steps {
-                                container('jnlp'){
-                                    sh script: "export ${env.MVN_OPTS} && ${MVN} ${MAVEN_SKIP} dependency:analyze -DoutputXML=true -DignoreNonCompile=true -DfailOnWarning=true", label: "analyze dependencies"
-                                }
-                            }
-                            post {
-                                failure{
-                                    echo """
-                                    FAILURE EXPLANATION:
-                                        The dependency analysis has found a dependency that is either:
-                                        1) Used and undeclared: These are available as a transitive dependency but should be explicitly
-                                        added to the POM to ensure the dependency version. The XML to add the dependencies to the POM is
-                                        shown above.
-                                        2) Unused and declared: These are not needed and removing them from the POM will speed up the build
-                                        and reduce the artifact size. The dependencies to remove are shown above.
-                                        If there are false positive dependency analysis warnings, they can be suppressed:
-                                        https://maven.apache.org/plugins/maven-dependency-plugin/analyze-mojo.html#usedDependencies
-                                        https://maven.apache.org/plugins/maven-dependency-plugin/examples/exclude-dependencies-from-dependency-analysis.html
-                                        For more information, refer to:
-                                        https://maven.apache.org/plugins/maven-dependency-plugin/analyze-mojo.html
-                                    """
-                                }
-                            }
-                        }
-                        stage ('test_processing_module_jdk8'){
-                            steps {
-                                container('jnlp'){
-                                    sh script: """
-                                    unset _JAVA_OPTIONS
-                                    export ${env.MVN_OPTS}
-                                    ${env.MVN} test -pl processing ${MAVEN_SKIP} -Dremoteresources.skip=true
-                                    """, label: "test_processing_module"
-                                }
-                            }
-                            post {
-                                success {
-                                    sh script: "${MVN} -pl processing jacoco:report", label: "create jacoco report"
-                                }
-                            }
-                        }
-                    }
-                }
-
-                stage('Deep Tests 3') {
-                    agent {label 'jenkins-slave'}
-                    tools {
-                        maven 'apache-maven'
-                    }
-                    stages{
-                        stage('Git checkout') {
-                            steps{
-                                checkout scm
-                            }
-                        }
-
-                        stage('Install'){
-                            steps{
-                                container('jnlp'){
-                                    unstash 'm2'
-                                    unstash 'core-druid'
-                                    unstash 'processing-druid'
-                                    //sh script: "export ${env.MVN_OPTS} && ${env.MVN} clean install -q -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS} -T1C", label: "Maven install"
-                                    sh script: """
-                                        mkdir -p /var/cache/apt/archives/partial/
-                                        apt-get update && apt-get install python3 python3-pip python3-setuptools -y
-                                        pip3 install wheel
-                                        pip3 install pyyaml
-                                    """, label: "Install prerequsite"
-                                }
-                            }
-                        }
-                        stage ('package_check_jdk8'){
-                            steps {
-                                container('jnlp'){
-                                    sh script: """
-                                    export ${env.MVN_OPTS}
-                                    ${env.MVN} clean install -Pdist -Pbundle-contrib-exts --fail-at-end -pl '!benchmarks' ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS} -Ddruid.console.skip=false -T1C
-                                    """, label: "package check"
-                                }
-                            }
-                        }
-                        stage ('security vulnerabilities'){
-                            steps {
-                                container('jnlp'){
-                                    sh script: "export ${env.MVN_OPTS} && ${env.MVN} dependency-check:check --fail-at-end", label: "security vulnerabilities"
-                                }
-                            }
-                            post {
-                                failure{
-                                    echo """
-                                    FAILURE EXPLANATION:
-                                        The OWASP dependency check has found security vulnerabilities. Please use a newer version
-                                        of the dependency that does not have vulenerabilities. If the analysis has false positives,
-                                        they can be suppressed by adding entries to owasp-dependency-check-suppressions.xml (for more
-                                        information, see https://jeremylong.github.io/DependencyCheck/general/suppression.html).
-                                    """
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        stage('SonarQube analysis') {
-            when {
-                expression { false }
-                beforeAgent true
-            }
-            agent {label 'jenkins-slave'}
-            tools {
-                maven 'apache-maven'
-            }
-            stages{
-                stage('Git checkout') {
-                    steps{
-                        checkout scm
-                    }
-                }
-
-                stage('Install'){
-                    steps{
-                        container('jnlp'){
-                            unstash 'm2'
-                            unstash 'core-druid'
-                            unstash 'processing-druid'
-                            //sh script: "export ${env.MVN_OPTS} && ${env.MVN} clean install -q -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS} -T1C", label: "Maven install"
-                            sh script: """
-                                mkdir -p /var/cache/apt/archives/partial/
-                                apt-get update && apt-get install python3 python3-pip python3-setuptools -y
-                                pip3 install wheel
-                                pip3 install pyyaml
-                            """, label: "Install prerequsite"
-                        }
-                    }
-                }
-                stage('SonarQube') {
-                    steps{
-                        script {
-                            //Here is place for run linter and save report
-                            sh script: "echo Run linter and save report",label: "Run linter"
-                            //Run sonar scanner
-                                container('sonar'){
-                                    sh script: "apt update && apt install -y nodejs"
-                                    def scannerHome = tool 'sonar';
-                                    withSonarQubeEnv('sonar') { // If you have configured more than one global server connection, you can specify its name
-                                        if (env.CHANGE_ID == null) {
-                                            sh script:"${scannerHome}/bin/sonar-scanner -X \
-                                                -Dsonar.projectName=qa-druid \
-                                                -Dsonar.projectKey=qa-druid \
-                                                -Dsonar.sources=. \
-                                                -Dsonar.branch.name=${env.BRANCH_NAME} \
-                                                -Dsonar.java.binaries=**/target/classes \
-                                                -Dsonar.host.url=https://sonar.qa.imply.io \
-                                                -Dsonar.login=${env.SONARTOKEN}", label: "Run sonar-scanner for branch"
-                                        } else {
-                                            sh script: "${scannerHome}/bin/sonar-scanner -X \
-                                                -Dsonar.projectName=qa-druid \
-                                                -Dsonar.projectKey=qa-druid \
-                                                -Dsonar.sources=. \
-                                                -Dsonar.java.binaries=**/target/classes \
-                                                -Dsonar.pullrequest.github.repository=implydata/qa-druid \
-                                                -Dsonar.pullrequest.key=${env.CHANGE_ID} \
-                                                -Dsonar.pullrequest.branch=${env.CHANGE_BRANCH} \
-                                                -Dsonar.pullrequest.base=${env.CHANGE_TARGET} \
-                                                -Dsonar.host.url=https://sonar.qa.imply.io \
-                                                -Dsonar.login=${env.SONARTOKEN}", label: "Run sonar-scanner for PR"
-                                        }
-                                    }
-                                waitForQualityGate abortPipeline: true
-                                }
-                        }
-                    }
-                }
-
-                stage ('Artifactory upload') {
-                    steps {
-                        rtUpload (
-                            serverId: 'artifactory',
-                            specPath: 'spec-upload.json'
-                        )
-                    }
-                }
-
-                stage ('Publish build info') {
-                    steps {
-                        rtPublishBuildInfo (
-                            serverId: 'artifactory'
-                        )
-                    }
-                }
-
-                stage ('Xray scan') {
-                    steps {
-                        xrayScan (
-                            serverId: 'artifactory',
-                            failBuild: false
-                        )
-                    }
-                }
-
-                stage('Build docker'){
-                    steps{
-                        script {
+                    stage('Install'){
+                        steps{
                             container('jnlp'){
-                                GIT_TAG_COMMIT = sh(script: 'git describe --tags --always', returnStdout: true).trim()
+                                sh script: "export ${env.MVN_OPTS} && ${env.MVN} clean install -q -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS} -T 1C", label: "Maven install"
                                 sh script: """
-                                        docker login harbor.qa.imply.io --username ${HARBORTOKEN_USR} --password ${HARBORTOKEN_PSW}
-                                        docker build --network=host -t harbor.qa.imply.io/druid/druid:${GIT_COMMIT} -f ./distribution/docker/Dockerfile .
-                                        docker push harbor.qa.imply.io/druid/druid:${GIT_COMMIT}
-                                        docker build --network=host -t harbor.qa.imply.io/druid/druid-mysql:${GIT_COMMIT} -f ./distribution/docker/Dockerfile .
-                                        docker push harbor.qa.imply.io/druid/druid-mysql:${GIT_COMMIT}
-                                        docker build --network=host -t harbor.qa.imply.io/druid/druid-java11:${GIT_COMMIT} -f ./distribution/docker/Dockerfile .
-                                        docker push harbor.qa.imply.io/druid/druid-java11:${GIT_COMMIT}
-                                """, label: "Build and push docker"
+                                    mkdir -p /var/cache/apt/archives/partial/
+                                    apt-get update && apt-get install python3 python3-pip python3-setuptools -y
+                                    pip3 install wheel
+                                    pip3 install pyyaml
+                                """, label: "Install prerequsite"
+                            }
+                        }
+                        post {
+                            success{
+                                stash allowEmpty: true, includes: '/root/.m2/**', name: 'm2'
+                                stash allowEmpty: true, includes: 'core/**', name: 'core-druid'
+                                stash allowEmpty: true, includes: 'processing/**', name: 'processing-druid'
                             }
                         }
                     }
-                    post {
-                        success {
+
+                    stage('Tests') {
+                        parallel {
+                            stage ('animal sniffer checks'){
+                                steps {
+                                    container('jnlp'){
+                                        sh script: "${env.MVN} animal-sniffer:check --fail-at-end", label: "animal sniffer"
+                                    }
+                                }
+                            }
+                            stage ('checkstyle'){
+                                steps {
+                                    container('jnlp'){
+                                        sh script: "${env.MVN} checkstyle:checkstyle --fail-at-end",label: "checkstyle"
+                                    }
+                                }
+                            }
+                            stage ('enforcer checks'){
+                                steps {
+                                    container('jnlp'){
+                                        sh script: "${env.MVN} enforcer:enforce --fail-at-end", label: "enforcer checks"
+                                    }
+                                }
+                            }
+                            stage ('forbidden api checks'){
+                                steps {
+                                    container('jnlp'){
+                                        sh script: "${env.MVN} forbiddenapis:check forbiddenapis:testCheck --fail-at-end", label: "forbidden api checks"
+                                    }
+                                }
+                            }
+                            stage ('pmd checks'){
+                                steps {
+                                    container('jnlp'){
+                                        sh script: "${env.MVN} pmd:check --fail-at-end", label: "pmd checks"
+                                    }
+                                }
+                            }
+                            stage ('spotbugs checks'){
+                                steps {
+                                    container('jnlp'){
+                                        sh script: "${env.MVN} spotbugs:check --fail-at-end -pl '!benchmarks' -T 1C", label: "spotbugs checks"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            stage('Deep tests'){
+                when {
+                    expression { params.TEST_TYPE == 'medium'}
+                }
+                parallel{
+                    stage('Deep tests 1'){
+                        agent {label 'jenkins-slave'}
+                        tools {
+                            maven 'apache-maven'
+                        }
+                        stages{
+                            stage('Git checkout') {
+                                steps{
+                                    checkout scm
+                                }
+                            }
+                            stage('Install'){
+                                steps{
+                                    container('jnlp'){
+                                        unstash 'm2'
+                                        unstash 'core-druid'
+                                        unstash 'processing-druid'
+                                        //sh script: "export ${env.MVN_OPTS} && ${env.MVN} clean install -q -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS} -T1C", label: "Maven install"
+                                        sh script: """
+                                            mkdir -p /var/cache/apt/archives/partial/
+                                            apt-get update && apt-get install python3 python3-pip python3-setuptools -y
+                                            pip3 install wheel
+                                            pip3 install pyyaml
+                                        """, label: "Install prerequsite"
+                                    }
+                                }
+                            }
+                            stage ('license checks'){
+                                steps {
+                                    container('jnlp'){
+                                        sh script: """
+                                        export ${env.MVN_OPTS}
+                                        ${env.MVN} apache-rat:check -Prat --fail-at-end -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn -Drat.consoleOutput=true -Drat.numUnapprovedLicenses=100
+                                        mkdir -p target
+                                        distribution/bin/generate-license-dependency-reports.py . target --clean-maven-artifact-transfer --parallel 2
+                                        distribution/bin/check-licenses.py licenses.yaml target/license-reports
+                                        """, label: "license checks"
+                                    }
+                                }
+                            }
+                            stage ('compile_strict_jdk8'){
+                                steps {
+                                    container('jnlp'){
+                                        sh script: "export ${env.MVN_OPTS} && ${env.MVN} clean -Pstrict compile test-compile --fail-at-end -pl '!benchmarks' ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS}",label: "compile_strict"
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    stage('Deep Tests 2') {
+                        agent {label 'jenkins-slave'}
+                        tools {
+                            maven 'apache-maven'
+                        }
+                        stages{
+                            stage('Git checkout') {
+                                steps{
+                                    checkout scm
+                                }
+                            }
+
+                            stage('Install'){
+                                steps{
+                                    container('jnlp'){
+                                        unstash 'm2'
+                                        unstash 'core-druid'
+                                        unstash 'processing-druid'
+                                        //sh script: "export ${env.MVN_OPTS} && ${env.MVN} clean install -q -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS} -T1C", label: "Maven install"
+                                        sh script: """
+                                            mkdir -p /var/cache/apt/archives/partial/
+                                            apt-get update && apt-get install python3 python3-pip python3-setuptools -y
+                                            pip3 install wheel
+                                            pip3 install pyyaml
+                                        """, label: "Install prerequsite"
+                                    }
+                                }
+                            }
+                            stage ('analyze dependencies'){
+                                steps {
+                                    container('jnlp'){
+                                        sh script: "export ${env.MVN_OPTS} && ${MVN} ${MAVEN_SKIP} dependency:analyze -DoutputXML=true -DignoreNonCompile=true -DfailOnWarning=true", label: "analyze dependencies"
+                                    }
+                                }
+                                post {
+                                    failure{
+                                        echo """
+                                        FAILURE EXPLANATION:
+                                            The dependency analysis has found a dependency that is either:
+                                            1) Used and undeclared: These are available as a transitive dependency but should be explicitly
+                                            added to the POM to ensure the dependency version. The XML to add the dependencies to the POM is
+                                            shown above.
+                                            2) Unused and declared: These are not needed and removing them from the POM will speed up the build
+                                            and reduce the artifact size. The dependencies to remove are shown above.
+                                            If there are false positive dependency analysis warnings, they can be suppressed:
+                                            https://maven.apache.org/plugins/maven-dependency-plugin/analyze-mojo.html#usedDependencies
+                                            https://maven.apache.org/plugins/maven-dependency-plugin/examples/exclude-dependencies-from-dependency-analysis.html
+                                            For more information, refer to:
+                                            https://maven.apache.org/plugins/maven-dependency-plugin/analyze-mojo.html
+                                        """
+                                    }
+                                }
+                            }
+                            stage ('test_processing_module_jdk8'){
+                                steps {
+                                    container('jnlp'){
+                                        sh script: """
+                                        unset _JAVA_OPTIONS
+                                        export ${env.MVN_OPTS}
+                                        ${env.MVN} test -pl processing ${MAVEN_SKIP} -Dremoteresources.skip=true
+                                        """, label: "test_processing_module"
+                                    }
+                                }
+                                post {
+                                    success {
+                                        sh script: "${MVN} -pl processing jacoco:report", label: "create jacoco report"
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    stage('Deep Tests 3') {
+                        agent {label 'jenkins-slave'}
+                        tools {
+                            maven 'apache-maven'
+                        }
+                        stages{
+                            stage('Git checkout') {
+                                steps{
+                                    checkout scm
+                                }
+                            }
+
+                            stage('Install'){
+                                steps{
+                                    container('jnlp'){
+                                        unstash 'm2'
+                                        unstash 'core-druid'
+                                        unstash 'processing-druid'
+                                        //sh script: "export ${env.MVN_OPTS} && ${env.MVN} clean install -q -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS} -T1C", label: "Maven install"
+                                        sh script: """
+                                            mkdir -p /var/cache/apt/archives/partial/
+                                            apt-get update && apt-get install python3 python3-pip python3-setuptools -y
+                                            pip3 install wheel
+                                            pip3 install pyyaml
+                                        """, label: "Install prerequsite"
+                                    }
+                                }
+                            }
+                            stage ('package_check_jdk8'){
+                                steps {
+                                    container('jnlp'){
+                                        sh script: """
+                                        export ${env.MVN_OPTS}
+                                        ${env.MVN} clean install -Pdist -Pbundle-contrib-exts --fail-at-end -pl '!benchmarks' ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS} -Ddruid.console.skip=false -T1C
+                                        """, label: "package check"
+                                    }
+                                }
+                            }
+                            stage ('security vulnerabilities'){
+                                steps {
+                                    container('jnlp'){
+                                        sh script: "export ${env.MVN_OPTS} && ${env.MVN} dependency-check:check --fail-at-end", label: "security vulnerabilities"
+                                    }
+                                }
+                                post {
+                                    failure{
+                                        echo """
+                                        FAILURE EXPLANATION:
+                                            The OWASP dependency check has found security vulnerabilities. Please use a newer version
+                                            of the dependency that does not have vulenerabilities. If the analysis has false positives,
+                                            they can be suppressed by adding entries to owasp-dependency-check-suppressions.xml (for more
+                                            information, see https://jeremylong.github.io/DependencyCheck/general/suppression.html).
+                                        """
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            stage('SonarQube analysis') {
+                when {
+                    expression { false }
+                }
+                agent {label 'jenkins-slave'}
+                tools {
+                    maven 'apache-maven'
+                }
+                stages{
+                    stage('Git checkout') {
+                        steps{
+                            checkout scm
+                        }
+                    }
+
+                    stage('Install'){
+                        steps{
+                            container('jnlp'){
+                                unstash 'm2'
+                                unstash 'core-druid'
+                                unstash 'processing-druid'
+                                //sh script: "export ${env.MVN_OPTS} && ${env.MVN} clean install -q -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS} -T1C", label: "Maven install"
+                                sh script: """
+                                    mkdir -p /var/cache/apt/archives/partial/
+                                    apt-get update && apt-get install python3 python3-pip python3-setuptools -y
+                                    pip3 install wheel
+                                    pip3 install pyyaml
+                                """, label: "Install prerequsite"
+                            }
+                        }
+                    }
+                    stage('SonarQube') {
+                        steps{
                             script {
-                                //set tag verified on commit
-                                withCredentials([usernamePassword(credentialsId: 'github-implydata-username', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
-                                    sh script: 'git config --global user.email "jenkins@qa.imply.io" && git config --global user.name "Jenkins"',label: "Set global user and email for git"
-                                    sh script: "git tag -a verified-${BRANCH_NAME}-${params.TEST_TYPE}-${BUILD_NUMBER} -m 'build verified by Jenkins - ${BUILD_URL} and tag verified-${BRANCH_NAME}-${params.TEST_TYPE}-${BUILD_NUMBER}'",label: "Set tag virified"
-                                    sh script: 'git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/implydata/qa-druid.git/ --tags', label: "Push tag to remote"
+                                //Here is place for run linter and save report
+                                sh script: "echo Run linter and save report",label: "Run linter"
+                                //Run sonar scanner
+                                    container('sonar'){
+                                        sh script: "apt update && apt install -y nodejs"
+                                        def scannerHome = tool 'sonar';
+                                        withSonarQubeEnv('sonar') { // If you have configured more than one global server connection, you can specify its name
+                                            if (env.CHANGE_ID == null) {
+                                                sh script:"${scannerHome}/bin/sonar-scanner -X \
+                                                    -Dsonar.projectName=qa-druid \
+                                                    -Dsonar.projectKey=qa-druid \
+                                                    -Dsonar.sources=. \
+                                                    -Dsonar.branch.name=${env.BRANCH_NAME} \
+                                                    -Dsonar.java.binaries=**/target/classes \
+                                                    -Dsonar.host.url=https://sonar.qa.imply.io \
+                                                    -Dsonar.login=${env.SONARTOKEN}", label: "Run sonar-scanner for branch"
+                                            } else {
+                                                sh script: "${scannerHome}/bin/sonar-scanner -X \
+                                                    -Dsonar.projectName=qa-druid \
+                                                    -Dsonar.projectKey=qa-druid \
+                                                    -Dsonar.sources=. \
+                                                    -Dsonar.java.binaries=**/target/classes \
+                                                    -Dsonar.pullrequest.github.repository=implydata/qa-druid \
+                                                    -Dsonar.pullrequest.key=${env.CHANGE_ID} \
+                                                    -Dsonar.pullrequest.branch=${env.CHANGE_BRANCH} \
+                                                    -Dsonar.pullrequest.base=${env.CHANGE_TARGET} \
+                                                    -Dsonar.host.url=https://sonar.qa.imply.io \
+                                                    -Dsonar.login=${env.SONARTOKEN}", label: "Run sonar-scanner for PR"
+                                            }
+                                        }
+                                    waitForQualityGate abortPipeline: true
+                                    }
+                            }
+                        }
+                    }
+
+                    stage ('Artifactory upload') {
+                        steps {
+                            rtUpload (
+                                serverId: 'artifactory',
+                                specPath: 'spec-upload.json'
+                            )
+                        }
+                    }
+
+                    stage ('Publish build info') {
+                        steps {
+                            rtPublishBuildInfo (
+                                serverId: 'artifactory'
+                            )
+                        }
+                    }
+
+                    stage ('Xray scan') {
+                        steps {
+                            xrayScan (
+                                serverId: 'artifactory',
+                                failBuild: false
+                            )
+                        }
+                    }
+
+                    stage('Build docker'){
+                        steps{
+                            script {
+                                container('jnlp'){
+                                    GIT_TAG_COMMIT = sh(script: 'git describe --tags --always', returnStdout: true).trim()
+                                    sh script: """
+                                            docker login harbor.qa.imply.io --username ${HARBORTOKEN_USR} --password ${HARBORTOKEN_PSW}
+                                            docker build --network=host -t harbor.qa.imply.io/druid/druid:${GIT_COMMIT} -f ./distribution/docker/Dockerfile .
+                                            docker push harbor.qa.imply.io/druid/druid:${GIT_COMMIT}
+                                            docker build --network=host -t harbor.qa.imply.io/druid/druid-mysql:${GIT_COMMIT} -f ./distribution/docker/Dockerfile .
+                                            docker push harbor.qa.imply.io/druid/druid-mysql:${GIT_COMMIT}
+                                            docker build --network=host -t harbor.qa.imply.io/druid/druid-java11:${GIT_COMMIT} -f ./distribution/docker/Dockerfile .
+                                            docker push harbor.qa.imply.io/druid/druid-java11:${GIT_COMMIT}
+                                    """, label: "Build and push docker"
+                                }
+                            }
+                        }
+                        post {
+                            success {
+                                script {
+                                    //set tag verified on commit
+                                    withCredentials([usernamePassword(credentialsId: 'github-implydata-username', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
+                                        sh script: 'git config --global user.email "jenkins@qa.imply.io" && git config --global user.name "Jenkins"',label: "Set global user and email for git"
+                                        sh script: "git tag -a verified-${BRANCH_NAME}-${params.TEST_TYPE}-${BUILD_NUMBER} -m 'build verified by Jenkins - ${BUILD_URL} and tag verified-${BRANCH_NAME}-${params.TEST_TYPE}-${BUILD_NUMBER}'",label: "Set tag virified"
+                                        sh script: 'git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/implydata/qa-druid.git/ --tags', label: "Push tag to remote"
+                                    }
                                 }
                             }
                         }
@@ -436,6 +435,8 @@ pipeline {
             }
         }
     }
+
+
     //Send slack notification
     post {
         regression { slackSend color: 'danger', message: "Job ${env.JOB_NAME} build ${env.BUILD_NUMBER} failed. See logs ${BUILD_URL}console" }
