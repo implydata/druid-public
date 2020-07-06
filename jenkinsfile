@@ -25,7 +25,9 @@ pipeline {
             agent { kubernetes { yamlFile 'jenkins-jdk8-pod.yaml'; defaultContainer 'jdk' } }
             stages{
                 stage('Git checkout'){
-                    sh script: 'echo $HOME'
+                    steps {
+                        sh script: 'echo $HOME'
+                    }
                 }
             }
 
