@@ -27,6 +27,9 @@ pipeline {
                 stage('Git checkout'){
                     steps {
                         sh script: 'echo $HOME'
+                        sh script: 'echo testtesttest > output.txt'
+                        sh script: 'exit 1'
+                        stash allowEmpty: true, includes: 'output.txt', name: 'test'
                     }
                 }
             }
