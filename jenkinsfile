@@ -39,7 +39,8 @@ pipeline {
         stage('Basic test'){
             agent {
                 kubernetes {
-                    yamlFile 'jenkins-pod.yaml'
+                    yamlFile 'jenkins-jdk8-pod.yaml'
+                    defaultContainer 'jdk'
                 }
             }
             tools {
@@ -54,14 +55,8 @@ pipeline {
 
                 stage('Install'){
                     steps{
-                        container('jdk-8'){
+                        container('jdk'){
                             sh script: "export ${env.MVN_OPTS} && ${env.MVN} clean install -q -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS} -T 1C", label: "Maven install"
-                            sh script: """
-                                mkdir -p /var/cache/apt/archives/partial/
-                                apt-get update && apt-get install python3 python3-pip python3-setuptools -y
-                                pip3 install wheel
-                                pip3 install pyyaml
-                            """, label: "Install prerequsite"
                         }
                     }
                     post {
@@ -77,49 +72,37 @@ pipeline {
                     parallel {
                         stage ('animal sniffer checks'){
                             steps {
-                                container('jdk-8'){
-                                    sh script: "${env.MVN} animal-sniffer:check --fail-at-end", label: "animal sniffer"
-                                }
+                                sh script: "${env.MVN} animal-sniffer:check --fail-at-end", label: "animal sniffer"
                             }
                         }
                         stage ('checkstyle'){
                             steps {
-                                container('jdk-8'){
-                                    sh script: "${env.MVN} checkstyle:checkstyle --fail-at-end",label: "checkstyle"
-                                }
+                                sh script: "${env.MVN} checkstyle:checkstyle --fail-at-end",label: "checkstyle"
                             }
                         }
                         stage ('enforcer checks'){
                             steps {
-                                container('jdk-8'){
-                                    sh script: "${env.MVN} enforcer:enforce --fail-at-end", label: "enforcer checks"
-                                }
+                                sh script: "${env.MVN} enforcer:enforce --fail-at-end", label: "enforcer checks"
                             }
                         }
                         stage ('forbidden api checks'){
                             steps {
-                                container('jdk-8'){
-                                    sh script: "${env.MVN} forbiddenapis:check forbiddenapis:testCheck --fail-at-end", label: "forbidden api checks"
-                                }
+                                sh script: "${env.MVN} forbiddenapis:check forbiddenapis:testCheck --fail-at-end", label: "forbidden api checks"
                             }
                         }
                         stage ('pmd checks'){
                             steps {
-                                container('jdk-8'){
-                                    sh script: "${env.MVN} pmd:check --fail-at-end", label: "pmd checks"
-                                }
+                                sh script: "${env.MVN} pmd:check --fail-at-end", label: "pmd checks"
                             }
                         }
                         stage ('spotbugs checks'){
                             steps {
-                                container('jdk-8'){
-                                    sh script: "${env.MVN} spotbugs:check --fail-at-end -pl '!benchmarks' -T 1C", label: "spotbugs checks"
-                                }
+                                sh script: "${env.MVN} spotbugs:check --fail-at-end -pl '!benchmarks' -T 1C", label: "spotbugs checks"
                             }
                         }
                         stage('license checks') {
                             steps {
-                                container('jdk-8'){
+                                container('jdk'){
                                     sh script: """
                                         export ${env.MVN_OPTS}
                                         ${env.MVN} apache-rat:check -Prat --fail-at-end -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn -Drat.consoleOutput=true -Drat.numUnapprovedLicenses=100
@@ -127,6 +110,8 @@ pipeline {
                                 }
                                 container('python'){
                                     sh script: """
+                                        pip install wheel
+                                        pip install pyyaml
                                         mkdir -p target
                                         distribution/bin/generate-license-dependency-reports.py . target --clean-maven-artifact-transfer --parallel 2
                                         distribution/bin/check-licenses.py licenses.yaml target/license-reports
