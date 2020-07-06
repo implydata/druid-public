@@ -60,14 +60,9 @@ pipeline {
                 stage('Install'){
                     steps{
                         sh script: "${env.MVN_OPTS} && ${env.MVN} clean install -q -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS} -T 1C", label: "Maven install"
-                        sh script: "ls -lat /root/.m2/repository"
-                    }
-                    post {
-                        success{
-                            stash allowEmpty: true, includes: '/root/.m2/**', name: 'm2'
-                            stash allowEmpty: true, includes: 'core/**', name: 'core-druid'
-                            stash allowEmpty: true, includes: 'processing/**', name: 'processing-druid'
-                        }
+                        stash allowEmpty: true, includes: '/root/.m2/**', name: 'm2'
+                        stash allowEmpty: true, includes: 'core/**', name: 'core-druid'
+                        stash allowEmpty: true, includes: 'processing/**', name: 'processing-druid'
                     }
                 }
 
@@ -109,7 +104,6 @@ pipeline {
                                 unstash 'm2'
                                 unstash 'core-druid'
                                 unstash 'processing-druid'
-                                sh script: "ls -lat /root/.m2/repository"
                                 sh script: """
                                     ${env.MVN_OPTS}
                                     ${env.MVN} apache-rat:check -Prat --fail-at-end -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn -Drat.consoleOutput=true -Drat.numUnapprovedLicenses=100
