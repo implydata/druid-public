@@ -13,9 +13,6 @@ pipeline {
 
     //Set global env
     environment {
-        SONARTOKEN       = credentials('token-sonarqube')
-        HARBORTOKEN      = credentials('harbor-implydata-username')
-        DOCKER_IP        = "127.0.0.1"  // for integration tests
         MVN              = "mvn -B"
         MVN_OPTS         = "export MAVEN_OPTS=\"-Xms4g -Xmx8g -XX:MaxDirectMemorySize=2048m\""
         // Various options to make execution of maven goals faster (e.g., mvn install)
@@ -50,7 +47,8 @@ pipeline {
 
                 stage('Install'){
                     steps{
-                        sh script: "export ${env.MVN_OPTS} && ${env.MVN} clean install -q -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS} -T 1C", label: "Maven install"
+                        sh script: "${env.MVN_OPTS} && ${env.MVN} clean install -q -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS} -T 1C", label: "Maven install"
+                        sh script: "ls -lat /root/.m2/repository"
                     }
                     post {
                         success{
@@ -99,8 +97,9 @@ pipeline {
                                 unstash 'm2'
                                 unstash 'core-druid'
                                 unstash 'processing-druid'
+                                sh script: "ls -lat /root/.m2/repository"
                                 sh script: """
-                                    export ${env.MVN_OPTS}
+                                    ${env.MVN_OPTS}
                                     ${env.MVN} apache-rat:check -Prat --fail-at-end -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn -Drat.consoleOutput=true -Drat.numUnapprovedLicenses=100
 
                                     mkdir -p /var/cache/apt/archives/partial/
