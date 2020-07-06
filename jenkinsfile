@@ -6,10 +6,6 @@ pipeline {
         skipDefaultCheckout true
     }
 
-    parameters {
-        choice(name: 'TEST_TYPE', choices: ['fast', 'medium', 'slow'], description: 'What test are run?')
-    }
-
     //Set global env
     environment {
         SONARTOKEN       = credentials('token-sonarqube')
@@ -24,9 +20,6 @@ pipeline {
 
     stages {
         stage('Basic test'){
-            when {
-                expression { params.TEST_TYPE == 'fast' || 'medium'}
-            }
             agent {label 'jenkins-slave'}
             tools {
                 maven 'apache-maven'
@@ -108,9 +101,6 @@ pipeline {
             }
         }
         stage('Deep tests'){
-            when {
-                expression { params.TEST_TYPE == 'medium'}
-            }
             parallel{
                 stage('Deep tests 1'){
                     agent {label 'jenkins-slave'}
