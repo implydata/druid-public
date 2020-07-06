@@ -60,7 +60,7 @@ pipeline {
                 stage('Install'){
                     steps{
                         sh script: "${env.MVN_OPTS} && ${env.MVN} clean install -q -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS} -T 1C", label: "Maven install"
-                        stash allowEmpty: true, includes: '/root/.m2/**', name: 'm2'
+                        dir('/root/.m2') { stash allowEmpty: true, includes: '**', name: 'm2' }
                         stash allowEmpty: true, includes: 'core/**', name: 'core-druid'
                         stash allowEmpty: true, includes: 'processing/**', name: 'processing-druid'
                     }
@@ -101,7 +101,7 @@ pipeline {
                         stage('license checks') {
                             agent { kubernetes { yamlFile 'jenkins-jdk8-pod.yaml'; defaultContainer 'jdk' } }
                             steps {
-                                unstash 'm2'
+                                dir('/root/.m2') { unstash 'm2' }
                                 unstash 'core-druid'
                                 unstash 'processing-druid'
                                 sh script: """
