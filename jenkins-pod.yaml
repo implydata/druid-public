@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: jdk-8
+    image: maven:3.6.3-jdk-8
+    command:
+      - sleep
+    args:
+      - infinity
+  - name: jdk-11
+    image: maven:3.6.3-jdk-11
+    command:
+      - sleep
+    args:
+      - infinity
+  - name: python
+    image: python:3.8.3-buster
+    command:
+      - sleep
+    args:
+      - infinity
