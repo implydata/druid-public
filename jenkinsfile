@@ -60,7 +60,10 @@ pipeline {
                 stage('Install'){
                     steps{
                         sh script: "${env.MVN_OPTS} && ${env.MVN} clean install -q -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS} -T 1C", label: "Maven install"
-                        dir('/root/.m2') { stash allowEmpty: true, includes: '**', name: 'm2' }
+                        dir('/root/.m2') {
+                            sh script: "ls -lat"
+                            stash allowEmpty: true, includes: '**', name: 'm2'
+                        }
                         stash allowEmpty: true, includes: 'core/**', name: 'core-druid'
                         stash allowEmpty: true, includes: 'processing/**', name: 'processing-druid'
                     }
