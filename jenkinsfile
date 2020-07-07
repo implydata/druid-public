@@ -13,7 +13,7 @@ pipeline {
 
     //Set global env
     environment {
-        MVN              = "mvn -B"
+        MVN              = "mvn -B -Dmaven.repo.local=.m2/repository"
         MVN_OPTS         = "export MAVEN_OPTS=\"-Xms4g -Xmx8g -XX:MaxDirectMemorySize=2048m\""
         // Various options to make execution of maven goals faster (e.g., mvn install)
         MAVEN_SKIP       = "-Danimal.sniffer.skip=true -Dcheckstyle.skip=true -Ddruid.console.skip=true -Denforcer.skip=true -Dforbiddenapis.skip=true -Dmaven.javadoc.skip=true -Dpmd.skip=true -Dspotbugs.skip=true"
@@ -47,9 +47,6 @@ pipeline {
     stages {
         stage('Basic test'){
             agent { kubernetes { yamlFile 'jenkins-jdk8-pod.yaml'; defaultContainer 'jdk' } }
-            tools {
-                maven 'apache-maven'
-            }
             stages{
                 stage('Git checkout') {
                     steps{
@@ -60,10 +57,7 @@ pipeline {
                 stage('Install'){
                     steps{
                         sh script: "${env.MVN_OPTS} && ${env.MVN} clean install -q -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS} -T 1C", label: "Maven install"
-                        dir('/root/.m2') {
-                            sh script: "ls -lat"
-                            stash allowEmpty: true, includes: '**', name: 'm2'
-                        }
+                        stash allowEmpty: true, includes: '.m2/**', name: 'm2'
                         stash allowEmpty: true, includes: 'core/**', name: 'core-druid'
                         stash allowEmpty: true, includes: 'processing/**', name: 'processing-druid'
                     }
@@ -104,7 +98,8 @@ pipeline {
                         stage('license checks') {
                             agent { kubernetes { yamlFile 'jenkins-jdk8-pod.yaml'; defaultContainer 'jdk' } }
                             steps {
-                                dir('/root/.m2') { unstash 'm2' }
+                                checkout scm
+                                unstash 'm2'
                                 unstash 'core-druid'
                                 unstash 'processing-druid'
                                 sh script: """
