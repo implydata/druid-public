@@ -8,7 +8,6 @@ pipeline {
 
     options {
         timeout(time: 1, unit: 'HOURS')
-        skipDefaultCheckout true
     }
 
     //Set global env
@@ -48,12 +47,6 @@ pipeline {
         stage('Basic test'){
             agent { kubernetes { yamlFile 'jenkins-jdk8-pod.yaml'; defaultContainer 'jdk' } }
             stages{
-                stage('Git checkout') {
-                    steps{
-                        checkout scm
-                    }
-                }
-
                 stage('Install'){
                     steps{
                         sh script: "${env.MVN_OPTS} && ${env.MVN} clean install -q -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS} -T 1C", label: "Maven install"
@@ -98,13 +91,14 @@ pipeline {
                         stage('license checks') {
                             agent { kubernetes { yamlFile 'jenkins-jdk8-pod.yaml'; defaultContainer 'jdk' } }
                             steps {
-                                checkout scm
                                 unstash 'm2'
                                 unstash 'core-druid'
                                 unstash 'processing-druid'
                                 sh script: """
                                     ${env.MVN_OPTS}
-                                    ${env.MVN} apache-rat:check -Prat --fail-at-end -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn -Drat.consoleOutput=true -Drat.numUnapprovedLicenses=100
+                                    ${env.MVN} apache-rat:check -Prat --fail-at-end \
+                                        -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
+                                        -Drat.consoleOutput=true -Drat.numUnapprovedLicenses=100
 
                                     mkdir -p /var/cache/apt/archives/partial/
                                     apt-get update -y && apt-get install python3 python3-pip python3-setuptools -y
