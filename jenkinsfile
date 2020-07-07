@@ -49,7 +49,11 @@ pipeline {
             stages{
                 stage('Install'){
                     steps{
-                        sh script: "${env.MVN_OPTS} && ${env.MVN} clean install -q -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS} -T 1C", label: "Maven install"
+                        withCredentials([file(credentialsId: 'maven-artifactory-settings', variable: 'MVN_SETTINGS_PATH')]) {
+                            sh script: "mkdir -p .m2"
+                            sh script: 'cp $MVN_SETTINGS_PATH .m2/settings.xml'
+                            sh script: "${env.MVN_OPTS} && ${env.MVN} clean install -q -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS} -T 1C", label: "Maven install"
+                        }
                         stash allowEmpty: true, includes: '.m2/**', name: 'm2'
                         stash allowEmpty: true, includes: 'core/**', name: 'core-druid'
                         stash allowEmpty: true, includes: 'processing/**', name: 'processing-druid'
