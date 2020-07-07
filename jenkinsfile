@@ -96,7 +96,10 @@ pipeline {
                                 unstash 'processing-druid'
                                 sh script: """
                                     ${env.MVN_OPTS}
-                                    ${env.MVN} apache-rat:check -Prat --fail-at-end \
+                                    echo -e '#!/bin/bash\nPATH=/usr/bin:\$PATH exec ${env.MVN} \$@' > /usr/local/sbin/mvn
+                                    chmod u+x /usr/local/sbin/mvn
+
+                                    mvn apache-rat:check -Prat --fail-at-end \
                                         -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
                                         -Drat.consoleOutput=true -Drat.numUnapprovedLicenses=100
 
