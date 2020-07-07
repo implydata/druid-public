@@ -1970,7 +1970,7 @@
                                 <exclude>src/**/*.snap</exclude>
                                 <exclude>examples/conf/**</exclude>
                                 <exclude>.asf.yaml</exclude>
-                                <exclude>.m2/repository/**</exclude>
+                                <exclude>.m2/**</exclude>
                                 <exclude>jenkinsfile</exclude>
                                 <exclude>jenkins-*.yaml</exclude>
                             </excludes>
