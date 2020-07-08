@@ -69,57 +69,57 @@ pipeline {
                 stage('Install') {
                     parallel {
                         stage('Maven install') {
-                            steps{
+                            steps { script { spotSteps {
                                 sh script: "${env.MVN_OPTS} && ${env.MVN} clean install -q -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS} -T 1C", label: "Maven install"
                                 stash allowEmpty: true, includes: '.m2/**', name: 'm2'
                                 stash allowEmpty: true, includes: 'core/**', name: 'core-druid'
                                 stash allowEmpty: true, includes: 'processing/**', name: 'processing-druid'
-                            }
+                            } } }
                         }
                         stage('Python install') {
-                            steps{
+                            steps { script { spotSteps {
                                 sh script: """
                                     apt-get update -y && apt-get install python3 python3-pip python3-setuptools -y
                                     pip3 install wheel pyyaml
                                 """, label: "Python install"
-                            }
+                            } } }
                         }
                     }
                 }
                 stage('Checks'){
                     parallel {
                         stage ('animal sniffer checks'){
-                            steps {
+                            steps { script { spotSteps {
                                 sh script: "${env.MVN} animal-sniffer:check --fail-at-end", label: "animal sniffer"
-                            }
+                            } } }
                         }
                         stage ('checkstyle'){
-                            steps {
+                            steps { script { spotSteps {
                                 sh script: "${env.MVN} checkstyle:checkstyle --fail-at-end",label: "checkstyle"
-                            }
+                            } } }
                         }
                         stage ('enforcer checks'){
-                            steps {
+                            steps { script { spotSteps {
                                 sh script: "${env.MVN} enforcer:enforce --fail-at-end", label: "enforcer checks"
-                            }
+                            } } }
                         }
                         stage ('forbidden api checks'){
-                            steps {
+                            steps { script { spotSteps {
                                 sh script: "${env.MVN} forbiddenapis:check forbiddenapis:testCheck --fail-at-end", label: "forbidden api checks"
-                            }
+                            } } }
                         }
                         stage ('pmd checks'){
-                            steps {
+                            steps { script { spotSteps {
                                 sh script: "${env.MVN} pmd:check --fail-at-end", label: "pmd checks"
-                            }
+                            } } }
                         }
                         stage ('spotbugs checks'){
-                            steps {
+                            steps { script { spotSteps {
                                 sh script: "${env.MVN} spotbugs:check --fail-at-end -pl '!benchmarks' -T 1C", label: "spotbugs checks"
-                            }
+                            } } }
                         }
                         stage ('license checks'){
-                            steps {
+                            steps { script { spotSteps {
                                 sh script: """
                                     ${env.MVN_OPTS}
                                     mkdir -p /tmp/bin
@@ -134,7 +134,7 @@ pipeline {
                                     distribution/bin/generate-license-dependency-reports.py . target --clean-maven-artifact-transfer --parallel 2
                                     distribution/bin/check-licenses.py licenses.yaml target/license-reports
                                 """, label: "license checks"
-                            }
+                            } } }
                         }
                     }
                 }
@@ -145,11 +145,9 @@ pipeline {
             parallel{
                 stage('Long job test') {
                     agent { docker { image 'maven:3.6.3-jdk-8'; args '--memory=8g --memory-reservation=4g'; label 'jenkinsSpot' } }
-                    steps {
-                        script { spotSteps {
-                            sh script: "sleep 1800"
-                        }}
-                    }
+                    steps { script { spotSteps {
+                        sh script: "sleep 1800"
+                    } } }
 
                 }
             }
