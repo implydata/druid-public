@@ -146,7 +146,7 @@ pipeline {
                 stage('Long job test') {
                     agent { docker { image 'maven:3.6.3-jdk-8'; args '--memory=8g --memory-reservation=4g'; label 'jenkinsSpot' } }
                     script { spotSteps {
-                        script sh: "sleep 1800"
+                        sh script: "sleep 1800"
                     }}
                 }
             }
