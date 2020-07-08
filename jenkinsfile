@@ -48,68 +48,57 @@ pipeline {
             // agent { kubernetes { yamlFile 'jenkins-jdk8-pod.yaml'; defaultContainer 'jdk' } }
             // agent { docker { image 'maven:3.6.3-jdk-8'; args '--memory=8g --memory-reservation=4g'; label 'jenkinsSpot' } }
     stages{
-        stage('Install'){
+        stage('Install and checks'){
             agent { docker { image 'maven:3.6.3-jdk-8'; args '--memory=8g --memory-reservation=4g'; label 'jenkinsSpot' } }
-            steps{
-                sh script: "${env.MVN_OPTS} && ${env.MVN} clean install -q -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS} -T 1C", label: "Maven install"
-                stash allowEmpty: true, includes: '.m2/**', name: 'm2'
-                stash allowEmpty: true, includes: 'core/**', name: 'core-druid'
-                stash allowEmpty: true, includes: 'processing/**', name: 'processing-druid'
+            stages {
+                stage('Install') {
+                    steps{
+                        sh script: "${env.MVN_OPTS} && ${env.MVN} clean install -q -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS} -T 1C", label: "Maven install"
+                        stash allowEmpty: true, includes: '.m2/**', name: 'm2'
+                        stash allowEmpty: true, includes: 'core/**', name: 'core-druid'
+                        stash allowEmpty: true, includes: 'processing/**', name: 'processing-druid'
+                    }
+                }
+                stage('Checks'){
+                    parallel {
+                        stage ('animal sniffer checks'){
+                            steps {
+                                sh script: "${env.MVN} animal-sniffer:check --fail-at-end", label: "animal sniffer"
+                            }
+                        }
+                        stage ('checkstyle'){
+                            steps {
+                                sh script: "${env.MVN} checkstyle:checkstyle --fail-at-end",label: "checkstyle"
+                            }
+                        }
+                        stage ('enforcer checks'){
+                            steps {
+                                sh script: "${env.MVN} enforcer:enforce --fail-at-end", label: "enforcer checks"
+                            }
+                        }
+                        stage ('forbidden api checks'){
+                            steps {
+                                sh script: "${env.MVN} forbiddenapis:check forbiddenapis:testCheck --fail-at-end", label: "forbidden api checks"
+                            }
+                        }
+                        stage ('pmd checks'){
+                            steps {
+                                sh script: "${env.MVN} pmd:check --fail-at-end", label: "pmd checks"
+                            }
+                        }
+                        stage ('spotbugs checks'){
+                            steps {
+                                sh script: "${env.MVN} spotbugs:check --fail-at-end -pl '!benchmarks' -T 1C", label: "spotbugs checks"
+                            }
+                        }
+                    }
+                }
             }
         }
 
         stage('Tests') {
-            parallel {
-                stage('Checks') {
-                    agent { docker { image 'maven:3.6.3-jdk-8'; args '--memory=8g --memory-reservation=4g'; label 'jenkinsSpot' } }
-                    stages {
-                        stage('Unstash'){
-                            steps {
-                                unstash 'm2'
-                                unstash 'core-druid'
-                                unstash 'processing-druid'
-                            }
-                        }
-                        stage('Maven steps'){
-                            parallel {
-                                stage ('animal sniffer checks'){
-                                    steps {
-                                        sh script: "${env.MVN} animal-sniffer:check --fail-at-end", label: "animal sniffer"
-                                    }
-                                }
-                                stage ('checkstyle'){
-                                    steps {
-                                        sh script: "${env.MVN} checkstyle:checkstyle --fail-at-end",label: "checkstyle"
-                                    }
-                                }
-                                stage ('enforcer checks'){
-                                    steps {
-                                        sh script: "${env.MVN} enforcer:enforce --fail-at-end", label: "enforcer checks"
-                                    }
-                                }
-                                stage ('forbidden api checks'){
-                                    steps {
-                                        sh script: "${env.MVN} forbiddenapis:check forbiddenapis:testCheck --fail-at-end", label: "forbidden api checks"
-                                    }
-                                }
-                                stage ('pmd checks'){
-                                    steps {
-                                        sh script: "${env.MVN} pmd:check --fail-at-end", label: "pmd checks"
-                                    }
-                                }
-                                stage ('spotbugs checks'){
-                                    steps {
-                                        sh script: "${env.MVN} spotbugs:check --fail-at-end -pl '!benchmarks' -T 1C", label: "spotbugs checks"
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                }
-
+            parallel{
                 stage('License checks') {
-                    // agent { kubernetes { yamlFile 'jenkins-jdk8-pod.yaml'; defaultContainer 'jdk' } }
                     agent { docker { image 'maven:3.6.3-jdk-8'; args '--memory=8g --memory-reservation=4g'; label 'jenkinsSpot' } }
                     steps {
                         unstash 'm2'
