@@ -4,7 +4,7 @@ def spotSteps = { body ->
     body.delegate = config
 
     try {
-        timeout(time: timeoutMinutes, unit: 'MINUTES') {
+        timeout(time: 30, unit: 'MINUTES') {
             body()
         }
     } catch(err) {
