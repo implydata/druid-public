@@ -1,15 +1,15 @@
 def spotSteps = { body ->
-    def config = [:]
-    body.resolveStrategy = Closure.OWNER_FIRST
-    body.delegate = config
-
-    try {
-        timeout(time: 30, unit: 'MINUTES') {
+    while(true) {
+        try {
             body()
+            break
+        } catch(err) {
+            if (err instanceof org.jenkinsci.plugins.workflow.steps.FlowInterruptedException) {
+                continue
+            } else {
+                throw err
+            }
         }
-    } catch(err) {
-        echo "Exception: ${err}"
-        throw err
     }
 }
 
