@@ -43,82 +43,101 @@ pipeline {
     //     }
     // }
 
-    stages {
-        stage('Basic test'){
+    // stages {
+    //     stage('Basic test'){
             // agent { kubernetes { yamlFile 'jenkins-jdk8-pod.yaml'; defaultContainer 'jdk' } }
+            // agent { docker { image 'maven:3.6.3-jdk-8'; args '--memory=8g --memory-reservation=4g'; label 'jenkinsSpot' } }
+    stages{
+        stage('Install'){
             agent { docker { image 'maven:3.6.3-jdk-8'; args '--memory=8g --memory-reservation=4g'; label 'jenkinsSpot' } }
-            stages{
-                stage('Install'){
-                    steps{
-                        sh script: "${env.MVN_OPTS} && ${env.MVN} clean install -q -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS} -T 1C", label: "Maven install"
-                        stash allowEmpty: true, includes: '.m2/**', name: 'm2'
-                        stash allowEmpty: true, includes: 'core/**', name: 'core-druid'
-                        stash allowEmpty: true, includes: 'processing/**', name: 'processing-druid'
-                    }
-                }
+            steps{
+                sh script: "${env.MVN_OPTS} && ${env.MVN} clean install -q -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS} -T 1C", label: "Maven install"
+                stash allowEmpty: true, includes: '.m2/**', name: 'm2'
+                stash allowEmpty: true, includes: 'core/**', name: 'core-druid'
+                stash allowEmpty: true, includes: 'processing/**', name: 'processing-druid'
+            }
+        }
 
-                stage('Tests') {
-                    parallel {
-                        stage ('animal sniffer checks'){
-                            steps {
-                                sh script: "${env.MVN} animal-sniffer:check --fail-at-end", label: "animal sniffer"
-                            }
-                        }
-                        stage ('checkstyle'){
-                            steps {
-                                sh script: "${env.MVN} checkstyle:checkstyle --fail-at-end",label: "checkstyle"
-                            }
-                        }
-                        stage ('enforcer checks'){
-                            steps {
-                                sh script: "${env.MVN} enforcer:enforce --fail-at-end", label: "enforcer checks"
-                            }
-                        }
-                        stage ('forbidden api checks'){
-                            steps {
-                                sh script: "${env.MVN} forbiddenapis:check forbiddenapis:testCheck --fail-at-end", label: "forbidden api checks"
-                            }
-                        }
-                        stage ('pmd checks'){
-                            steps {
-                                sh script: "${env.MVN} pmd:check --fail-at-end", label: "pmd checks"
-                            }
-                        }
-                        stage ('spotbugs checks'){
-                            steps {
-                                sh script: "${env.MVN} spotbugs:check --fail-at-end -pl '!benchmarks' -T 1C", label: "spotbugs checks"
-                            }
-                        }
-                        stage('license checks') {
-                            // agent { kubernetes { yamlFile 'jenkins-jdk8-pod.yaml'; defaultContainer 'jdk' } }
-                            agent { docker { image 'maven:3.6.3-jdk-8'; args '--memory=8g --memory-reservation=4g'; label 'jenkinsSpot' } }
+        stage('Tests') {
+            parallel {
+                stage('Checks') {
+                    agent { docker { image 'maven:3.6.3-jdk-8'; args '--memory=8g --memory-reservation=4g'; label 'jenkinsSpot' } }
+                    stages {
+                        stage('Unstash'){
                             steps {
                                 unstash 'm2'
                                 unstash 'core-druid'
                                 unstash 'processing-druid'
-                                sh script: """
-                                    ${env.MVN_OPTS}
-                                    echo -e '#!/bin/bash\nPATH=/usr/bin:\$PATH exec ${env.MVN} \$@' > /usr/local/sbin/mvn
-                                    chmod u+x /usr/local/sbin/mvn
-
-                                    mvn apache-rat:check -Prat --fail-at-end \
-                                        -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
-                                        -Drat.consoleOutput=true -Drat.numUnapprovedLicenses=100
-
-                                    mkdir -p /var/cache/apt/archives/partial/
-                                    apt-get update -y && apt-get install python3 python3-pip python3-setuptools -y
-                                    pip3 install wheel pyyaml
-
-                                    mkdir -p target
-                                    distribution/bin/generate-license-dependency-reports.py . target --clean-maven-artifact-transfer --parallel 2
-                                    distribution/bin/check-licenses.py licenses.yaml target/license-reports
-                                """, label: "license checks"
                             }
                         }
+                        stage('Maven steps'){
+                            parallel {
+                                stage ('animal sniffer checks'){
+                                    steps {
+                                        sh script: "${env.MVN} animal-sniffer:check --fail-at-end", label: "animal sniffer"
+                                    }
+                                }
+                                stage ('checkstyle'){
+                                    steps {
+                                        sh script: "${env.MVN} checkstyle:checkstyle --fail-at-end",label: "checkstyle"
+                                    }
+                                }
+                                stage ('enforcer checks'){
+                                    steps {
+                                        sh script: "${env.MVN} enforcer:enforce --fail-at-end", label: "enforcer checks"
+                                    }
+                                }
+                                stage ('forbidden api checks'){
+                                    steps {
+                                        sh script: "${env.MVN} forbiddenapis:check forbiddenapis:testCheck --fail-at-end", label: "forbidden api checks"
+                                    }
+                                }
+                                stage ('pmd checks'){
+                                    steps {
+                                        sh script: "${env.MVN} pmd:check --fail-at-end", label: "pmd checks"
+                                    }
+                                }
+                                stage ('spotbugs checks'){
+                                    steps {
+                                        sh script: "${env.MVN} spotbugs:check --fail-at-end -pl '!benchmarks' -T 1C", label: "spotbugs checks"
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                }
+
+                stage('License checks') {
+                    // agent { kubernetes { yamlFile 'jenkins-jdk8-pod.yaml'; defaultContainer 'jdk' } }
+                    agent { docker { image 'maven:3.6.3-jdk-8'; args '--memory=8g --memory-reservation=4g'; label 'jenkinsSpot' } }
+                    steps {
+                        unstash 'm2'
+                        unstash 'core-druid'
+                        unstash 'processing-druid'
+                        sh script: """
+                            ${env.MVN_OPTS}
+                            echo -e '#!/bin/bash\nPATH=/usr/bin:\$PATH exec ${env.MVN} \$@' > /usr/local/sbin/mvn
+                            chmod u+x /usr/local/sbin/mvn
+
+                            mvn apache-rat:check -Prat --fail-at-end \
+                                -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
+                                -Drat.consoleOutput=true -Drat.numUnapprovedLicenses=100
+
+                            mkdir -p /var/cache/apt/archives/partial/
+                            apt-get update -y && apt-get install python3 python3-pip python3-setuptools -y
+                            pip3 install wheel pyyaml
+
+                            mkdir -p target
+                            distribution/bin/generate-license-dependency-reports.py . target --clean-maven-artifact-transfer --parallel 2
+                            distribution/bin/check-licenses.py licenses.yaml target/license-reports
+                        """, label: "license checks"
                     }
                 }
             }
         }
+    }
+        // }
         // stage('Deep tests'){
         //     parallel{
         //         stage('Deep tests 1'){
@@ -316,7 +335,7 @@ pipeline {
         //         }
         //     }
         // }
-    }
+    // }
     //Send slack notification
     // post {
     //     regression { slackSend color: 'danger', message: "Job ${env.JOB_NAME} build ${env.BUILD_NUMBER} failed. See logs ${BUILD_URL}console" }
