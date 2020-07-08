@@ -49,14 +49,26 @@ pipeline {
             // agent { docker { image 'maven:3.6.3-jdk-8'; args '--memory=8g --memory-reservation=4g'; label 'jenkinsSpot' } }
     stages{
         stage('Install and checks'){
-            agent { docker { image 'maven:3.6.3-jdk-8'; args '--memory=8g --memory-reservation=4g'; label 'jenkinsSpot' } }
+            agent { docker { image 'maven:3.6.3-jdk-8'; args '--memory=8g --memory-reservation=4g -u root:root'; label 'jenkinsSpot' } }
             stages {
                 stage('Install') {
-                    steps{
-                        sh script: "${env.MVN_OPTS} && ${env.MVN} clean install -q -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS} -T 1C", label: "Maven install"
-                        stash allowEmpty: true, includes: '.m2/**', name: 'm2'
-                        stash allowEmpty: true, includes: 'core/**', name: 'core-druid'
-                        stash allowEmpty: true, includes: 'processing/**', name: 'processing-druid'
+                    parallel {
+                        stage('Maven install') {
+                            steps{
+                                sh script: "${env.MVN_OPTS} && ${env.MVN} clean install -q -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS} -T 1C", label: "Maven install"
+                                stash allowEmpty: true, includes: '.m2/**', name: 'm2'
+                                stash allowEmpty: true, includes: 'core/**', name: 'core-druid'
+                                stash allowEmpty: true, includes: 'processing/**', name: 'processing-druid'
+                            }
+                        }
+                        stage('Python install') {
+                            steps{
+                                sh script: """
+                                    apt-get update -y && apt-get install python3 python3-pip python3-setuptools -y
+                                    pip3 install wheel pyyaml
+                                """, label: "Python install"
+                            }
+                        }
                     }
                 }
                 stage('Checks'){
@@ -91,40 +103,58 @@ pipeline {
                                 sh script: "${env.MVN} spotbugs:check --fail-at-end -pl '!benchmarks' -T 1C", label: "spotbugs checks"
                             }
                         }
+                        stage ('license checks'){
+                            steps {
+                                sh script: """
+                                    ${env.MVN_OPTS}
+                                    mkdir -p /tmp/bin
+                                    echo -e '#!/bin/bash\nPATH=/usr/bin:\$PATH exec ${env.MVN} \$@' > /tmp/bin/mvn
+                                    chmod u+x /tmp/bin/mvn
+
+                                    export PATH=/tmp/bin:\$PATH
+                                    mvn apache-rat:check -Prat --fail-at-end \
+                                        -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
+                                        -Drat.consoleOutput=true -Drat.numUnapprovedLicenses=100
+                                    mkdir -p target
+                                    distribution/bin/generate-license-dependency-reports.py . target --clean-maven-artifact-transfer --parallel 2
+                                    distribution/bin/check-licenses.py licenses.yaml target/license-reports
+                                """, label: "license checks"
+                            }
+                        }
                     }
                 }
             }
         }
 
-        stage('Tests') {
-            parallel{
-                stage('License checks') {
-                    agent { docker { image 'maven:3.6.3-jdk-8'; args '--memory=8g --memory-reservation=4g'; label 'jenkinsSpot' } }
-                    steps {
-                        unstash 'm2'
-                        unstash 'core-druid'
-                        unstash 'processing-druid'
-                        sh script: """
-                            ${env.MVN_OPTS}
-                            echo -e '#!/bin/bash\nPATH=/usr/bin:\$PATH exec ${env.MVN} \$@' > /usr/local/sbin/mvn
-                            chmod u+x /usr/local/sbin/mvn
+        // stage('Tests') {
+        //     parallel{
+        //         stage('License checks') {
+        //             agent { docker { image 'maven:3.6.3-jdk-8'; args '--memory=8g --memory-reservation=4g'; label 'jenkinsSpot' } }
+        //             steps {
+        //                 unstash 'm2'
+        //                 unstash 'core-druid'
+        //                 unstash 'processing-druid'
+        //                 sh script: """
+        //                     ${env.MVN_OPTS}
+        //                     echo -e '#!/bin/bash\nPATH=/usr/bin:\$PATH exec ${env.MVN} \$@' > /usr/local/sbin/mvn
+        //                     chmod u+x /usr/local/sbin/mvn
 
-                            mvn apache-rat:check -Prat --fail-at-end \
-                                -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
-                                -Drat.consoleOutput=true -Drat.numUnapprovedLicenses=100
+        //                     mvn apache-rat:check -Prat --fail-at-end \
+        //                         -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
+        //                         -Drat.consoleOutput=true -Drat.numUnapprovedLicenses=100
 
-                            mkdir -p /var/cache/apt/archives/partial/
-                            apt-get update -y && apt-get install python3 python3-pip python3-setuptools -y
-                            pip3 install wheel pyyaml
+        //                     mkdir -p /var/cache/apt/archives/partial/
+        //                     apt-get update -y && apt-get install python3 python3-pip python3-setuptools -y
+        //                     pip3 install wheel pyyaml
 
-                            mkdir -p target
-                            distribution/bin/generate-license-dependency-reports.py . target --clean-maven-artifact-transfer --parallel 2
-                            distribution/bin/check-licenses.py licenses.yaml target/license-reports
-                        """, label: "license checks"
-                    }
-                }
-            }
-        }
+        //                     mkdir -p target
+        //                     distribution/bin/generate-license-dependency-reports.py . target --clean-maven-artifact-transfer --parallel 2
+        //                     distribution/bin/check-licenses.py licenses.yaml target/license-reports
+        //                 """, label: "license checks"
+        //             }
+        //         }
+        //     }
+        // }
     }
         // }
         // stage('Deep tests'){
