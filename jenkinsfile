@@ -1,4 +1,4 @@
-def spotSteps = { int timeoutMinutes=20, body ->
+def spotSteps = { body ->
     def config = [:]
     body.resolveStrategy = Closure.OWNER_FIRST
     body.delegate = config
