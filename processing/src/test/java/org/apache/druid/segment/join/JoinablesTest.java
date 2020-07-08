@@ -24,8 +24,6 @@ import com.google.common.collect.ImmutableMap;
 import org.apache.druid.java.util.common.IAE;
 import org.apache.druid.java.util.common.Intervals;
 import org.apache.druid.math.expr.ExprMacroTable;
-import org.apache.druid.query.JoinDataSource;
-import org.apache.druid.query.DataSource;
 import org.apache.druid.query.LookupDataSource;
 import org.apache.druid.query.QueryContexts;
 import org.apache.druid.query.TableDataSource;
