@@ -41,10 +41,10 @@ stage("Install and checks") {
     retryOnOffline {
         node('jenkinsSpot') {
             withCredentials([file(credentialsId: 'maven-artifactory-settings', variable: 'MVN_SETTINGS_PATH')]) {
-                writeFile file: "Dockerfile_jenkins", text: DOCKERFILE_TEMPLATE
+                writeFile file: "/tmp/${env.BUILD_TAG}_Dockerfile", text: DOCKERFILE_TEMPLATE
                 docker.build(
                     "maven:3.6.3-jdk-8-${env.BUILD_ID}",
-                    "-f Dockerfile_jenkins --build-arg JDK=jdk-8").inside(
+                    "-f /tmp/${env.BUILD_TAG}_Dockerfile --build-arg JDK=jdk-8 /tmp").inside(
                     "--memory=8g --memory-reservation=4g -v ${env.MVN_SETTINGS_PATH}:/root/.m2/settings.xml") {
                     stage('Checkout') {
                         checkout scm
