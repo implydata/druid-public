@@ -35,6 +35,10 @@ stage("Install and checks") {
         node('jenkinsSpot') {
             withCredentials([file(credentialsId: 'maven-artifactory-settings', variable: 'MVN_SETTINGS_PATH')]) {
                 docker.image('maven:3.6.3-jdk-8').inside("--memory=8g --memory-reservation=4g -u root:root -v ${env.MVN_SETTINGS_PATH}:/root/.m2/settings.xml") {
+                    stage('Checkout') {
+                        checkout scm
+                    }
+
                     stage('Install') {
                         parallel maven: {
                             sh script: "${MVN_OPTS} && ${MVN} clean install -q -ff ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS} -T 1C", label: "Maven install"
