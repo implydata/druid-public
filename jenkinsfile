@@ -1,9 +1,12 @@
+
+
 def inspectException = { body ->
     try {
         body()
     } catch(err) {
         echo "Exception: ${err}"
-        echo "Exception causes: ${err.causes*.getClass()}"
+        causeClasses = err.causes.collect {it.getClass}
+        echo "Exception causes: ${causeClasses}"
         throw err
     }
 }
@@ -15,7 +18,7 @@ def retryOnOffline = { body ->
             break
         } catch(err) {
             if (err instanceof org.jenkinsci.plugins.workflow.steps.FlowInterruptedException &&
-                err.causes*.getClass().contains(org.jenkinsci.plugins.workflow.support.steps.ExecutorStepExecution.RemovedNodeCause)) {
+                err.causes.collect {it.getClass}.contains(org.jenkinsci.plugins.workflow.support.steps.ExecutorStepExecution.RemovedNodeCause)) {
                 continue
             } else {
                 throw err
