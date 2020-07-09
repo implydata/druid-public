@@ -59,7 +59,6 @@ pipeline {
     //     stage('Basic test'){
             // agent { kubernetes { yamlFile 'jenkins-jdk8-pod.yaml'; defaultContainer 'jdk' } }
             // agent { docker { image 'maven:3.6.3-jdk-8'; args '--memory=8g --memory-reservation=4g'; label 'jenkinsSpot' } }
-
     stages{
         stage('Install and checks'){
             agent { docker { image 'maven:3.6.3-jdk-8'; args '--memory=8g --memory-reservation=4g -u root:root'; label 'jenkinsSpot' } }
