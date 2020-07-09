@@ -51,7 +51,7 @@ stage("Install and checks") {
                     }
 
                     stage('Install') {
-                        sh script: "ln -sf /root/.m2/settings.xml ~/.m2/settings.xml", label: "Maven settings"
+                        sh script: "mkdir -p ~/.m2 && ln -sf /root/.m2/settings.xml ~/.m2/settings.xml", label: "Maven settings"
                         sh script: "${MVN_OPTS} && ${MVN} clean install -q -ff ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS} -T 1C", label: "Maven install"
                         stash allowEmpty: true, includes: '.m2/**', name: 'm2'
                         stash allowEmpty: true, includes: 'core/**', name: 'core-druid'
