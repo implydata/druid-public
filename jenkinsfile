@@ -30,28 +30,32 @@ def MVN_OPTS         = "export MAVEN_OPTS=\"-Xms4g -Xmx8g -XX:MaxDirectMemorySiz
 def MAVEN_SKIP       = "-Danimal.sniffer.skip=true -Dcheckstyle.skip=true -Ddruid.console.skip=true -Denforcer.skip=true -Dforbiddenapis.skip=true -Dmaven.javadoc.skip=true -Dpmd.skip=true -Dspotbugs.skip=true"
 def MAVEN_SKIP_TESTS = "-DskipTests -Djacoco.skip=true"
 
+def DOCKERFILE_TEMPLATE = """\
+ARG JDK
+FROM maven:3.6.3-\${JDK}
+RUN apt-get update -y && apt-get install python3 python3-pip python3-setuptools -y
+RUN pip3 install wheel pyyaml
+"""
+
 stage("Install and checks") {
     retryOnOffline {
         node('jenkinsSpot') {
             withCredentials([file(credentialsId: 'maven-artifactory-settings', variable: 'MVN_SETTINGS_PATH')]) {
-                docker.image('maven:3.6.3-jdk-8').inside("--memory=8g --memory-reservation=4g -u root:root -v ${env.MVN_SETTINGS_PATH}:/root/.m2/settings.xml") {
+                writeFile file: "Dockerfile_jenkins", text: DOCKERFILE_TEMPLATE
+                docker.build(
+                    "maven:3.6.3-jdk-8-${env.BUILD_ID}",
+                    "-f Dockerfile_jenkins --build-arg JDK=jdk-8").inside(
+                    "--memory=8g --memory-reservation=4g -v ${env.MVN_SETTINGS_PATH}:/root/.m2/settings.xml") {
                     stage('Checkout') {
                         checkout scm
                     }
 
                     stage('Install') {
-                        parallel maven: {
-                            sh script: "${MVN_OPTS} && ${MVN} clean install -q -ff ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS} -T 1C", label: "Maven install"
-                            stash allowEmpty: true, includes: '.m2/**', name: 'm2'
-                            stash allowEmpty: true, includes: 'core/**', name: 'core-druid'
-                            stash allowEmpty: true, includes: 'processing/**', name: 'processing-druid'
-                        },
-                        python: {
-                            sh script: """
-                                apt-get update -y && apt-get install python3 python3-pip python3-setuptools -y
-                                pip3 install wheel pyyaml
-                            """, label: "Python install"
-                        }
+                        sh script: "ln -sf /root/.m2/settings.xml ~/.m2/settings.xml", label: "Maven settings"
+                        sh script: "${MVN_OPTS} && ${MVN} clean install -q -ff ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS} -T 1C", label: "Maven install"
+                        stash allowEmpty: true, includes: '.m2/**', name: 'm2'
+                        stash allowEmpty: true, includes: 'core/**', name: 'core-druid'
+                        stash allowEmpty: true, includes: 'processing/**', name: 'processing-druid'
                     }
 
                     stage('Checks') {
