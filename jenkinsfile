@@ -1,15 +1,12 @@
-def spotSteps = { body ->
-    while(true) {
-        try {
-            body()
-            break
-        } catch(err) {
-            if (err instanceof org.jenkinsci.plugins.workflow.steps.FlowInterruptedException) {
-                continue
-            } else {
-                throw err
-            }
-        }
+@Library('imply-qa') _
+
+def inspectException = { body ->
+    try {
+        body()
+    } catch(err) {
+        echo "Exception: ${err}"
+        echo "Exception causes: ${err.causes*.getClass()}"
+        throw err
     }
 }
 
@@ -66,60 +63,60 @@ pipeline {
         stage('Install and checks'){
             agent { docker { image 'maven:3.6.3-jdk-8'; args '--memory=8g --memory-reservation=4g -u root:root'; label 'jenkinsSpot' } }
             stages {
-                stage('Install') {
+                spotStage('Install') {
                     parallel {
                         stage('Maven install') {
-                            steps { script { spotSteps {
+                            steps {
                                 sh script: "${env.MVN_OPTS} && ${env.MVN} clean install -q -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS} -T 1C", label: "Maven install"
                                 stash allowEmpty: true, includes: '.m2/**', name: 'm2'
                                 stash allowEmpty: true, includes: 'core/**', name: 'core-druid'
                                 stash allowEmpty: true, includes: 'processing/**', name: 'processing-druid'
-                            } } }
+                            }
                         }
                         stage('Python install') {
-                            steps { script { spotSteps {
+                            steps {
                                 sh script: """
                                     apt-get update -y && apt-get install python3 python3-pip python3-setuptools -y
                                     pip3 install wheel pyyaml
                                 """, label: "Python install"
-                            } } }
+                            }
                         }
                     }
                 }
-                stage('Checks'){
+                spotStage('Checks'){
                     parallel {
                         stage ('animal sniffer checks'){
-                            steps { script { spotSteps {
+                            steps {
                                 sh script: "${env.MVN} animal-sniffer:check --fail-at-end", label: "animal sniffer"
-                            } } }
+                            }
                         }
                         stage ('checkstyle'){
-                            steps { script { spotSteps {
+                            steps {
                                 sh script: "${env.MVN} checkstyle:checkstyle --fail-at-end",label: "checkstyle"
-                            } } }
+                            }
                         }
                         stage ('enforcer checks'){
-                            steps { script { spotSteps {
+                            steps {
                                 sh script: "${env.MVN} enforcer:enforce --fail-at-end", label: "enforcer checks"
-                            } } }
+                            }
                         }
                         stage ('forbidden api checks'){
-                            steps { script { spotSteps {
+                            steps {
                                 sh script: "${env.MVN} forbiddenapis:check forbiddenapis:testCheck --fail-at-end", label: "forbidden api checks"
-                            } } }
+                            }
                         }
                         stage ('pmd checks'){
-                            steps { script { spotSteps {
+                            steps {
                                 sh script: "${env.MVN} pmd:check --fail-at-end", label: "pmd checks"
-                            } } }
+                            }
                         }
                         stage ('spotbugs checks'){
-                            steps { script { spotSteps {
+                            steps {
                                 sh script: "${env.MVN} spotbugs:check --fail-at-end -pl '!benchmarks' -T 1C", label: "spotbugs checks"
-                            } } }
+                            }
                         }
                         stage ('license checks'){
-                            steps { script { spotSteps {
+                            steps {
                                 sh script: """
                                     ${env.MVN_OPTS}
                                     mkdir -p /tmp/bin
@@ -134,21 +131,20 @@ pipeline {
                                     distribution/bin/generate-license-dependency-reports.py . target --clean-maven-artifact-transfer --parallel 2
                                     distribution/bin/check-licenses.py licenses.yaml target/license-reports
                                 """, label: "license checks"
-                            } } }
+                            }
                         }
                     }
                 }
             }
         }
 
-        stage('Tests') {
+        spotStage('Tests') {
             parallel{
                 stage('Long job test') {
                     agent { docker { image 'maven:3.6.3-jdk-8'; args '--memory=8g --memory-reservation=4g'; label 'jenkinsSpot' } }
-                    steps { script { spotSteps {
+                    steps { script { inspectException {
                         sh script: "sleep 1800"
                     } } }
-
                 }
             }
         }
