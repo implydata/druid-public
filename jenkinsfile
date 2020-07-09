@@ -45,13 +45,12 @@ stage("Install and checks") {
                 docker.build(
                     "maven:3.6.3-jdk-8-${env.BUILD_ID}",
                     "--build-arg JDK=jdk-8 @tmp").inside(
-                    "--memory=8g --memory-reservation=4g -v ${env.MVN_SETTINGS_PATH}:/root/.m2/settings.xml") {
+                    "--memory=8g --memory-reservation=4g -v ${env.MVN_SETTINGS_PATH}:/tmp/.m2/settings.xml -e HOME=/tmp") {
                     stage('Checkout') {
                         checkout scm
                     }
 
                     stage('Install') {
-                        sh script: "mkdir -p ~/.m2 && ln -sf /root/.m2/settings.xml ~/.m2/settings.xml", label: "Maven settings"
                         sh script: "${MVN_OPTS} && ${MVN} clean install -q -ff ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS} -T 1C", label: "Maven install"
                         stash allowEmpty: true, includes: '.m2/**', name: 'm2'
                         stash allowEmpty: true, includes: 'core/**', name: 'core-druid'
