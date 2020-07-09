@@ -35,35 +35,38 @@ def MAVEN_SKIP_TESTS = "-DskipTests -Djacoco.skip=true"
 stage("Install and checks") {
     retryOnOffline {
         node('jenkinsSpot') {
-            docker.image('maven:3.6.3-jdk-8').inside('--memory=8g --memory-reservation=4g -u root:root') {
-                stage('Checkout') {
-                    checkout scm
-                }
-
-                stage('Install') {
-                    parallel maven: {
-                        sh script: "${MVN_OPTS} && ${MVN} clean install -q -ff ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS} -T 1C", label: "Maven install"
-                        stash allowEmpty: true, includes: '.m2/**', name: 'm2'
-                        stash allowEmpty: true, includes: 'core/**', name: 'core-druid'
-                        stash allowEmpty: true, includes: 'processing/**', name: 'processing-druid'
-                    },
-                    python: {
-                        sh script: """
-                            apt-get update -y && apt-get install python3 python3-pip python3-setuptools -y
-                            pip3 install wheel pyyaml
-                        """, label: "Python install"
+            withCredentials([file(credentialsId: 'maven-artifactory-settings', variable: 'MVN_SETTINGS_PATH')]) {
+                docker.image('maven:3.6.3-jdk-8').inside("--memory=8g --memory-reservation=4g -u root:root -v ${env.MVN_SETTINGS_PATH}:/root/.m2/settings.xml") {
+                    stage('Checkout') {
+                        checkout scm
                     }
-                }
 
-                stage('Checks') {
-                    parallel "animal sniffer checks": {
-                        sh script: "${MVN} animal-sniffer:check --fail-at-end", label: "animal sniffer"
-                    },
-                    "checkstyle": {
-                        sh script: "${MVN} checkstyle:checkstyle --fail-at-end",label: "checkstyle"
+                    stage('Install') {
+                        parallel maven: {
+                            sh script: "${MVN_OPTS} && ${MVN} clean install -q -ff ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS} -T 1C", label: "Maven install"
+                            stash allowEmpty: true, includes: '.m2/**', name: 'm2'
+                            stash allowEmpty: true, includes: 'core/**', name: 'core-druid'
+                            stash allowEmpty: true, includes: 'processing/**', name: 'processing-druid'
+                        },
+                        python: {
+                            sh script: """
+                                apt-get update -y && apt-get install python3 python3-pip python3-setuptools -y
+                                pip3 install wheel pyyaml
+                            """, label: "Python install"
+                        }
+                    }
+
+                    stage('Checks') {
+                        parallel "animal sniffer checks": {
+                            sh script: "${MVN} animal-sniffer:check --fail-at-end", label: "animal sniffer"
+                        },
+                        "checkstyle": {
+                            sh script: "${MVN} checkstyle:checkstyle --fail-at-end",label: "checkstyle"
+                        }
                     }
                 }
             }
+
         }
     }
 }
