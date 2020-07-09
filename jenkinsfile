@@ -1,5 +1,3 @@
-
-
 def inspectException = { body ->
     try {
         body()
@@ -62,11 +60,52 @@ stage("Install and checks") {
                         },
                         "checkstyle": {
                             sh script: "${MVN} checkstyle:checkstyle --fail-at-end",label: "checkstyle"
+                        },
+                        "enforcer checks": {
+                            sh script: "${MVN} enforcer:enforce --fail-at-end", label: "enforcer checks"
+                        },
+                        "forbidden api checks": {
+                            sh script: "${MVN} forbiddenapis:check forbiddenapis:testCheck --fail-at-end", label: "forbidden api checks"
+                        },
+                        "pmd checks": {
+                            sh script: "${MVN} pmd:check --fail-at-end", label: "pmd checks"
+                        },
+                        "spotbugs checks": {
+                            sh script: "${MVN} spotbugs:check --fail-at-end -pl '!benchmarks' -T 1C", label: "spotbugs checks"
+                        },
+                        "license checks": {
+                            sh script: """
+                                ${MVN_OPTS}
+                                mkdir -p /tmp/bin
+                                /bin/echo -e "#!/bin/bash\\nPATH=/usr/bin:\\\$PATH exec ${MVN} \\\$@" | tee -a /tmp/bin/mvn
+                                chmod u+x /tmp/bin/mvn
+
+                                export PATH=/tmp/bin:\$PATH
+                                mvn apache-rat:check -Prat --fail-at-end \
+                                    -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
+                                    -Drat.consoleOutput=true -Drat.numUnapprovedLicenses=100
+                                mkdir -p target
+                                distribution/bin/generate-license-dependency-reports.py . target --clean-maven-artifact-transfer --parallel 2
+                                distribution/bin/check-licenses.py licenses.yaml target/license-reports
+                            """, label: "license checks"
                         }
                     }
                 }
             }
+        }
+    }
+}
 
+stage('Tests') {
+    parallel 'Long job test': {
+        retryOnOffline {
+            node('jenkinsSpot') {
+                docker.image('maven:3.6.3-jdk-8').inside("--memory=8g --memory-reservation=4g -u root:root") {
+                    inspectException {
+                        sh script: "sleep 600"
+                    }
+                }
+            }
         }
     }
 }
