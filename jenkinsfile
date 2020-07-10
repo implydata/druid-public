@@ -12,7 +12,9 @@ def inspectException = { body ->
 def retryOnOffline = { body ->
     while(true) {
         try {
-            body()
+            inspectException {
+                body()
+            }
             break
         } catch(err) {
             if (err instanceof org.jenkinsci.plugins.workflow.steps.FlowInterruptedException &&
@@ -24,6 +26,7 @@ def retryOnOffline = { body ->
         }
     }
 }
+
 
 def MVN              = "mvn -B -Dmaven.repo.local=.m2/repository"
 def MVN_OPTS         = "export MAVEN_OPTS=\"-Xms4g -Xmx8g -XX:MaxDirectMemorySize=2048m\""
@@ -104,9 +107,7 @@ stage('Tests') {
         retryOnOffline {
             node('jenkinsSpot') {
                 docker.image('maven:3.6.3-jdk-8').inside("--memory=8g --memory-reservation=4g -u root:root") {
-                    inspectException {
-                        sh script: "sleep 600"
-                    }
+                    sh script: "sleep 600"
                 }
             }
         }
