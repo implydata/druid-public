@@ -37,7 +37,7 @@ def mavenCheck = { stageName, body ->
                 unstash 'core/**'
                 unstash 'processing/**'
                 withCredentials([file(credentialsId: 'maven-artifactory-settings', variable: 'MVN_SETTINGS_PATH')]) {
-                    docker.image('maven:3.6.3-jdk8').inside(
+                    docker.image('maven:3.6.3-jdk-8').inside(
                         "--memory=8g --memory-reservation=4g -v ${env.MVN_SETTINGS_PATH}:/tmp/.m2/settings.xml -e HOME=/tmp") {
                         body()
                     }
@@ -64,7 +64,7 @@ stage("Maven install") {
     retryOnOffline {
         node('jenkinsSpot') {
             withCredentials([file(credentialsId: 'maven-artifactory-settings', variable: 'MVN_SETTINGS_PATH')]) {
-                docker.image('maven:3.6.3-jdk8').inside(
+                docker.image('maven:3.6.3-jdk-8').inside(
                     "--memory=8g --memory-reservation=4g -v ${env.MVN_SETTINGS_PATH}:/tmp/.m2/settings.xml -e HOME=/tmp") {
                     checkout scm
                     sh script: "${MVN_OPTS} && ${MVN} clean install -q -ff ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS} -T 1C", label: "Maven install"
