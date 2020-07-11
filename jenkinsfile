@@ -86,6 +86,7 @@ stage("Checks") {
     "checkstyle": {
         mavenCheck("checkstyle") {
             sh script: "${MVN} checkstyle:checkstyle --fail-at-end",label: "checkstyle"
+        }
     },
     "enforcer checks": {
         mavenCheck("enforcer checks") {
