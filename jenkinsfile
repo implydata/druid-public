@@ -27,9 +27,25 @@ def retryOnOffline = { body ->
     }
 }
 
-// def mavenCheck = { stageName, body ->
 
-// }
+def mavenCheck = { stageName, body ->
+    stage(stageName) {
+        retryOnOffline {
+            node('jenkinsSpot') {
+                checkout scm
+                unstash 'm2'
+                unstash 'core/**'
+                unstash 'processing/**'
+                withCredentials([file(credentialsId: 'maven-artifactory-settings', variable: 'MVN_SETTINGS_PATH')]) {
+                    docker.image('maven:3.6.3-jdk8').inside(
+                        "--memory=8g --memory-reservation=4g -v ${env.MVN_SETTINGS_PATH}:/tmp/.m2/settings.xml -e HOME=/tmp") {
+                        body()
+                    }
+                }
+            }
+        }
+    }
+}
 
 
 def MVN              = "mvn -B -Dmaven.repo.local=.m2/repository"
@@ -44,86 +60,166 @@ RUN apt-get update -y && apt-get install python3 python3-pip python3-setuptools 
 RUN pip3 install wheel pyyaml
 """
 
-stage("Install and checks") {
-    // retryOnOffline {
-        node('jenkinsSpotFleet') {
+stage("Maven install") {
+    retryOnOffline {
+        node('jenkinsSpot') {
             withCredentials([file(credentialsId: 'maven-artifactory-settings', variable: 'MVN_SETTINGS_PATH')]) {
-                writeFile file: "@tmp/Dockerfile", text: DOCKERFILE_TEMPLATE
-                docker.build(
-                    "maven:3.6.3-jdk-8-${env.BUILD_ID}",
-                    "--build-arg JDK=jdk-8 @tmp").inside(
+                docker.image('maven:3.6.3-jdk8').inside(
                     "--memory=8g --memory-reservation=4g -v ${env.MVN_SETTINGS_PATH}:/tmp/.m2/settings.xml -e HOME=/tmp") {
-                    stage('Checkout') {
+                    checkout scm
+                    sh script: "${MVN_OPTS} && ${MVN} clean install -q -ff ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS} -T 1C", label: "Maven install"
+                    stash allowEmpty: true, includes: '.m2/**', name: 'm2'
+                    stash allowEmpty: true, includes: 'core/**', name: 'core-druid'
+                    stash allowEmpty: true, includes: 'processing/**', name: 'processing-druid'
+                }
+            }
+        }
+    }
+}
+
+stage("Checks") {
+    parallel "animal sniffer checks": {
+        mavenCheck("animal sniffer checks") {
+            sh script: "${MVN} animal-sniffer:check --fail-at-end", label: "animal sniffer"
+        }
+    },
+    "checkstyle": {
+        mavenCheck("checkstyle") {
+            sh script: "${MVN} checkstyle:checkstyle --fail-at-end",label: "checkstyle"
+    },
+    "enforcer checks": {
+        mavenCheck("enforcer checks") {
+            sh script: "${MVN} enforcer:enforce --fail-at-end", label: "enforcer checks"
+        }
+    },
+    "forbidden api checks": {
+        mavenCheck("forbidden api checks") {
+            sh script: "${MVN} forbiddenapis:check forbiddenapis:testCheck --fail-at-end", label: "forbidden api checks"
+        }
+    },
+    "pmd checks": {
+        mavenCheck("pmd checks") {
+            sh script: "${MVN} pmd:check --fail-at-end", label: "pmd checks"
+        }
+    },
+    "spotbugs checks": {
+        mavenCheck("spotbugs checks") {
+            sh script: "${MVN} spotbugs:check --fail-at-end -pl '!benchmarks' -T 1C", label: "spotbugs checks"
+        }
+    },
+    "license checks": {
+        retryOnOffline {
+            node('jenkinsSpot') {
+                withCredentials([file(credentialsId: 'maven-artifactory-settings', variable: 'MVN_SETTINGS_PATH')]) {
+                    writeFile file: "@tmp/Dockerfile", text: DOCKERFILE_TEMPLATE
+                    docker.build(
+                        "maven:3.6.3-jdk-8-${env.BUILD_ID}",
+                        "--build-arg JDK=jdk-8 @tmp").inside(
+                        "--memory=8g --memory-reservation=4g -v ${env.MVN_SETTINGS_PATH}:/tmp/.m2/settings.xml -e HOME=/tmp") {
                         checkout scm
-                    }
+                        sh script: """
+                            ${MVN_OPTS}
+                            mkdir -p /tmp/bin
+                            /bin/echo -e "#!/bin/bash\\nPATH=/usr/bin:\\\$PATH exec ${MVN} \\\$@" | tee -a /tmp/bin/mvn
+                            chmod u+x /tmp/bin/mvn
 
-                    stage('Install') {
-                        sh script: "${MVN_OPTS} && ${MVN} clean install -q -ff ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS} -T 1C", label: "Maven install"
-                        stash allowEmpty: true, includes: '.m2/**', name: 'm2'
-                        stash allowEmpty: true, includes: 'core/**', name: 'core-druid'
-                        stash allowEmpty: true, includes: 'processing/**', name: 'processing-druid'
-                    }
-
-                    stage('Checks') {
-                        parallel "animal sniffer checks": {
-                            sh script: "${MVN} animal-sniffer:check --fail-at-end", label: "animal sniffer"
-                        },
-                        "checkstyle": {
-                            sh script: "${MVN} checkstyle:checkstyle --fail-at-end",label: "checkstyle"
-                        },
-                        "enforcer checks": {
-                            sh script: "${MVN} enforcer:enforce --fail-at-end", label: "enforcer checks"
-                        },
-                        "forbidden api checks": {
-                            sh script: "${MVN} forbiddenapis:check forbiddenapis:testCheck --fail-at-end", label: "forbidden api checks"
-                        },
-                        "pmd checks": {
-                            sh script: "${MVN} pmd:check --fail-at-end", label: "pmd checks"
-                        },
-                        "spotbugs checks": {
-                            sh script: "${MVN} spotbugs:check --fail-at-end -pl '!benchmarks' -T 1C", label: "spotbugs checks"
-                        },
-                        "license checks": {
-                            sh script: """
-                                ${MVN_OPTS}
-                                mkdir -p /tmp/bin
-                                /bin/echo -e "#!/bin/bash\\nPATH=/usr/bin:\\\$PATH exec ${MVN} \\\$@" | tee -a /tmp/bin/mvn
-                                chmod u+x /tmp/bin/mvn
-
-                                export PATH=/tmp/bin:\$PATH
-                                mvn apache-rat:check -Prat --fail-at-end \
-                                    -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
-                                    -Drat.consoleOutput=true -Drat.numUnapprovedLicenses=100
-                                mkdir -p target
-                                distribution/bin/generate-license-dependency-reports.py . target --clean-maven-artifact-transfer --parallel 2
-                                distribution/bin/check-licenses.py licenses.yaml target/license-reports
-                            """, label: "license checks"
-                        }
+                            export PATH=/tmp/bin:\$PATH
+                            mvn apache-rat:check -Prat --fail-at-end \
+                                -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
+                                -Drat.consoleOutput=true -Drat.numUnapprovedLicenses=100
+                            mkdir -p target
+                            distribution/bin/generate-license-dependency-reports.py . target --clean-maven-artifact-transfer --parallel 2
+                            distribution/bin/check-licenses.py licenses.yaml target/license-reports
+                        """, label: "license checks"
                     }
                 }
             }
         }
-    // }
+    }
 }
 
-stage('Tests') {
-    // retryOnOffline {
-        parallel 'Long job test': {
-            node('jenkinsSpotFleet') {
-                docker.image('maven:3.6.3-jdk-8').inside("--memory=8g --memory-reservation=4g -u root:root") {
-                    sh script: "sleep 600"
-                }
-            }
-        },
-        'Yet another parallel test': {
-            node('jenkinsSpotFleet') {
-                docker.image('maven:3.6.3-jdk-8').inside("--memory=8g --memory-reservation=4g -u root:root") {
-                    sh script: "sleep 540"
-                }
-            }
-        }
-    // }
-}
+
+
+
+
+// stage("Install and checks") {
+//     // retryOnOffline {
+//         node('jenkinsSpot') {
+//             withCredentials([file(credentialsId: 'maven-artifactory-settings', variable: 'MVN_SETTINGS_PATH')]) {
+//                 writeFile file: "@tmp/Dockerfile", text: DOCKERFILE_TEMPLATE
+//                 docker.build(
+//                     "maven:3.6.3-jdk-8-${env.BUILD_ID}",
+//                     "--build-arg JDK=jdk-8 @tmp").inside(
+//                     "--memory=8g --memory-reservation=4g -v ${env.MVN_SETTINGS_PATH}:/tmp/.m2/settings.xml -e HOME=/tmp") {
+//                     stage('Checkout') {
+//                         checkout scm
+//                     }
+
+//                     stage('Install') {
+//                         sh script: "${MVN_OPTS} && ${MVN} clean install -q -ff ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS} -T 1C", label: "Maven install"
+//                         stash allowEmpty: true, includes: '.m2/**', name: 'm2'
+//                         stash allowEmpty: true, includes: 'core/**', name: 'core-druid'
+//                         stash allowEmpty: true, includes: 'processing/**', name: 'processing-druid'
+//                     }
+
+//                     stage('Checks') {
+//                         parallel "animal sniffer checks": {
+//                             sh script: "${MVN} animal-sniffer:check --fail-at-end", label: "animal sniffer"
+//                         },
+//                         "checkstyle": {
+//                             sh script: "${MVN} checkstyle:checkstyle --fail-at-end",label: "checkstyle"
+//                         },
+//                         "enforcer checks": {
+//                             sh script: "${MVN} enforcer:enforce --fail-at-end", label: "enforcer checks"
+//                         },
+//                         "forbidden api checks": {
+//                             sh script: "${MVN} forbiddenapis:check forbiddenapis:testCheck --fail-at-end", label: "forbidden api checks"
+//                         },
+//                         "pmd checks": {
+//                             sh script: "${MVN} pmd:check --fail-at-end", label: "pmd checks"
+//                         },
+//                         "spotbugs checks": {
+//                             sh script: "${MVN} spotbugs:check --fail-at-end -pl '!benchmarks' -T 1C", label: "spotbugs checks"
+//                         },
+//                         "license checks": {
+//                             sh script: """
+//                                 ${MVN_OPTS}
+//                                 mkdir -p /tmp/bin
+//                                 /bin/echo -e "#!/bin/bash\\nPATH=/usr/bin:\\\$PATH exec ${MVN} \\\$@" | tee -a /tmp/bin/mvn
+//                                 chmod u+x /tmp/bin/mvn
+
+//                                 export PATH=/tmp/bin:\$PATH
+//                                 mvn apache-rat:check -Prat --fail-at-end \
+//                                     -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
+//                                     -Drat.consoleOutput=true -Drat.numUnapprovedLicenses=100
+//                                 mkdir -p target
+//                                 distribution/bin/generate-license-dependency-reports.py . target --clean-maven-artifact-transfer --parallel 2
+//                                 distribution/bin/check-licenses.py licenses.yaml target/license-reports
+//                             """, label: "license checks"
+//                         }
+//                     }
+//                 }
+//             }
+//         }
+//     // }
+// }
+
+// stage('Tests') {
+//         parallel 'Long job test': {
+//             node('jenkinsSpot') {
+//                 docker.image('maven:3.6.3-jdk-8').inside("--memory=8g --memory-reservation=4g -u root:root") {
+//                     sh script: "sleep 600"
+//                 }
+//             }
+//         },
+//         'Yet another parallel test': {
+//             node('jenkinsSpot') {
+//                 docker.image('maven:3.6.3-jdk-8').inside("--memory=8g --memory-reservation=4g -u root:root") {
+//                     sh script: "sleep 540"
+//                 }
+//             }
+//         }
+// }
 
 // pipeline {
 //     agent none
