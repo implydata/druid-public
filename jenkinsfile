@@ -27,6 +27,10 @@ def retryOnOffline = { body ->
     }
 }
 
+// def mavenCheck = { stageName, body ->
+
+// }
+
 
 def MVN              = "mvn -B -Dmaven.repo.local=.m2/repository"
 def MVN_OPTS         = "export MAVEN_OPTS=\"-Xms4g -Xmx8g -XX:MaxDirectMemorySize=2048m\""
@@ -41,8 +45,8 @@ RUN pip3 install wheel pyyaml
 """
 
 stage("Install and checks") {
-    retryOnOffline {
-        node('jenkinsSpot') {
+    // retryOnOffline {
+        node('jenkinsSpotFleet') {
             withCredentials([file(credentialsId: 'maven-artifactory-settings', variable: 'MVN_SETTINGS_PATH')]) {
                 writeFile file: "@tmp/Dockerfile", text: DOCKERFILE_TEMPLATE
                 docker.build(
@@ -99,19 +103,26 @@ stage("Install and checks") {
                 }
             }
         }
-    }
+    // }
 }
 
 stage('Tests') {
-    parallel 'Long job test': {
-        retryOnOffline {
-            node('jenkinsSpot') {
+    // retryOnOffline {
+        parallel 'Long job test': {
+            node('jenkinsSpotFleet') {
                 docker.image('maven:3.6.3-jdk-8').inside("--memory=8g --memory-reservation=4g -u root:root") {
                     sh script: "sleep 600"
                 }
             }
+        },
+        'Yet another parallel test': {
+            node('jenkinsSpotFleet') {
+                docker.image('maven:3.6.3-jdk-8').inside("--memory=8g --memory-reservation=4g -u root:root") {
+                    sh script: "sleep 540"
+                }
+            }
         }
-    }
+    // }
 }
 
 // pipeline {
