@@ -34,8 +34,8 @@ def mavenCheck = { stageName, body ->
             node('jenkinsSpot') {
                 checkout scm
                 unstash 'm2'
-                unstash 'core/**'
-                unstash 'processing/**'
+                unstash 'core-druid'
+                unstash 'processing'
                 withCredentials([file(credentialsId: 'maven-artifactory-settings', variable: 'MVN_SETTINGS_PATH')]) {
                     docker.image('maven:3.6.3-jdk-8').inside(
                         "--memory=8g --memory-reservation=4g -v ${env.MVN_SETTINGS_PATH}:/tmp/.m2/settings.xml -e HOME=/tmp") {
@@ -118,6 +118,9 @@ stage("Checks") {
                         "--build-arg JDK=jdk-8 @tmp").inside(
                         "--memory=8g --memory-reservation=4g -v ${env.MVN_SETTINGS_PATH}:/tmp/.m2/settings.xml -e HOME=/tmp") {
                         checkout scm
+                        unstash 'm2'
+                        unstash 'core-druid'
+                        unstash 'processing'
                         sh script: """
                             ${MVN_OPTS}
                             mkdir -p /tmp/bin
