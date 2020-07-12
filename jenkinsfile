@@ -35,7 +35,7 @@ def mavenCheck = { stageName, body ->
                 checkout scm
                 unstash 'm2'
                 unstash 'core-druid'
-                unstash 'processing'
+                unstash 'processing-druid'
                 withCredentials([file(credentialsId: 'maven-artifactory-settings', variable: 'MVN_SETTINGS_PATH')]) {
                     docker.image('maven:3.6.3-jdk-8').inside(
                         "--memory=8g --memory-reservation=4g -v ${env.MVN_SETTINGS_PATH}:/tmp/.m2/settings.xml -e HOME=/tmp") {
@@ -120,7 +120,7 @@ stage("Checks") {
                         checkout scm
                         unstash 'm2'
                         unstash 'core-druid'
-                        unstash 'processing'
+                        unstash 'processing-druid'
                         sh script: """
                             ${MVN_OPTS}
                             mkdir -p /tmp/bin
