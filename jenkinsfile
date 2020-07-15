@@ -143,7 +143,7 @@ stage("Checks") {
             lightweightNode {
                 withArtifactorySettings { settingsPath ->
                     docker.image('maven:3.6.3-jdk-8').inside(
-                        "--memory=8g --memory-reservation=4g -v ${env.MVN_SETTINGS_PATH}:/tmp/.m2/settings.xml -e HOME=/tmp") {
+                        "--memory=8g --memory-reservation=4g -v ${settingsPath}:/tmp/.m2/settings.xml -e HOME=/tmp") {
                         checkout scm
                         mavenUnstash()
                         sh script: """
@@ -160,6 +160,34 @@ stage("Checks") {
                             For more information, refer to:
                             https://maven.apache.org/plugins/maven-dependency-plugin/analyze-mojo.html
                             " && false; }
+                        """
+                    }
+                }
+            }
+        }
+    },
+    "intellij inspections": {
+        stage("intellij inspections") {
+            lightweightNode {
+                withArtifactorySettings { settingsPath ->
+                    docker.image('ccaominh/intellij-inspect:1.0.0').inside("""\
+                        -v ${settingsPath}:/home/inspect/.m2/settings.xml \
+                        -u inspect:inspect \
+                        """) {
+                        dir('/home/inspect') {
+                            unstash 'm2'
+                        }
+                        checkout scm
+                        unstash 'core-druid'
+                        unstash 'processing-druid'
+                        sh script: """
+                            java -jar /home/inspect/intellij-inspect.jar \
+                            --output /home/inspect/inspection-results \
+                            /home/inspect/intellij \
+                            pom.xml \
+                            .idea/inspectionProfiles/Druid.xml \
+                            --levels ERROR \
+                            --scope JavaInspectionsScope
                         """
                     }
                 }
