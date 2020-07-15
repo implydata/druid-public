@@ -177,12 +177,9 @@ stage("Checks") {
                         --entrypoint='' \
                         -w /home/inspect \
                         """) {
-                        dir('/home/inspect') {
-                            unstash 'm2'
-                        }
                         checkout scm
-                        unstash 'core-druid'
-                        unstash 'processing-druid'
+                        mavenUnstash()
+                        sh script: "mv .m2/repository /home/inspect/.m2/"
                         sh script: "wc -l /home/inspect/.m2/settings.xml"
                         sh script: "ls -lat /home/inspect/.m2"
                         sh script: """
