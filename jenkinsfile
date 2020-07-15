@@ -174,6 +174,8 @@ stage("Checks") {
                         -v ${settingsPath}:/home/inspect/.m2/settings.xml \
                         -v ${env.WORKSPACE}:/project \
                         -u inspect:inspect \
+                        --entrypoint='' \
+                        -w /home/inspect \
                         """) {
                         dir('/home/inspect') {
                             unstash 'm2'
@@ -184,7 +186,6 @@ stage("Checks") {
                         sh script: "wc -l /home/inspect/.m2/settings.xml"
                         sh script: "ls -lat /home/inspect/.m2"
                         sh script: """
-                            cd /home/inspect
                             java -jar intellij-inspect.jar \
                             --output /home/inspect/inspection-results \
                             /home/inspect/intellij \
@@ -201,7 +202,31 @@ stage("Checks") {
 }
 
 
+// def DOCKERFILE="""\
+// FROM maven:3.6.3-jdk-8
+// ARG DOCKER_VERSION=18.06.1-ce
+// RUN set -ex \
+//     && curl -fsSLO https://download.docker.com/linux/static/stable/x86_64/docker-\${DOCKER_VERSION}.tgz \
+//     && mv docker-\${DOCKER_VERSION}.tgz docker.tgz \
+//     && tar xzvf docker.tgz \
+//     && mv docker/docker /usr/local/bin/docker \
+//     && useradd -u 1001 docker \
+//     && chown root:docker /usr/local/bin/docker \
+//     && chmod 4750 /usr/local/bin/docker \
+//     && rm -r docker docker.tgz
+// """
 
+// stage("bla") {
+//     node('jenkinsOnDemand') {
+//         sh script: 'docker stop $(docker ps -qa); docker system prune -f --volumes'
+//         writeFile file: "@tmp/Dockerfile", text: DOCKERFILE
+//         docker.build(
+//             "maven:3.6.3-jdk-8-${env.BUILD_ID}",
+//             "--build-arg JDK=jdk-8 @tmp").inside("-v /var/run/docker.sock:/var/run/docker.sock") {
+//             sh script: "bla"
+//         }
+//     }
+// }
 
 
 // stage("Install and checks") {
