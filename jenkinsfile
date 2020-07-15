@@ -130,6 +130,7 @@ stage("Checks") {
                     buildGenerateLicenseImage(8).inside(
                         "--memory=8g --memory-reservation=4g -v ${settingsPath}:/tmp/.m2/settings.xml -e HOME=/tmp") {
                         checkout scm
+                        mavenUnstash()
                         sh script: """
                             ${MVN_OPTS}
                             mkdir -p /tmp/bin
