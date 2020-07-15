@@ -58,7 +58,7 @@ RUN pip3 install wheel pyyaml
 """
 
     return docker.build(
-        "maven:jdk-${jdkVersion}-${env.STAGE_NAME.replaceAll(~/\s/,'').toLowerCase()}${env.BUILD_ID}",
+        "maven:jdk-${jdkVersion}-${env.STAGE_NAME.replaceAll(~/[^a-z0-9]/,'')}${env.BUILD_ID}",
         "${env.WORKSPACE}@tmp")
 }
 
