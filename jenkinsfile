@@ -170,32 +170,19 @@ stage("Checks") {
         stage("intellij inspections") {
             lightweightNode {
                 withArtifactorySettings { settingsPath ->
-                    dir("${env.WORKSPACE}@dir") {
-                        unstash 'm2'
-                    }
-                    docker.image('ccaominh/intellij-inspect:1.0.0').inside("""\
+                    checkout scm
+                    mavenUnstash()
+                    sh script: """
+                        docker run --rm \
+                        -v \$(pwd):/project \
+                        -v \$(pwd)/.m2:/home/inspect/.m2 \
                         -v ${settingsPath}:/home/inspect/.m2/settings.xml \
-                        -v ${env.WORKSPACE}@tmp/.m2/repository:/home/inspect/.m2/repository \
-                        -v ${env.WORKSPACE}:/project \
-                        -u inspect:inspect \
-                        --entrypoint='' \
-                        -w /home/inspect \
-                        """) {
-                        checkout scm
-                        unstash 'core-druid'
-                        unstash 'processing-druid'
-                        sh script: "wc -l /home/inspect/.m2/settings.xml"
-                        sh script: "ls -lat /home/inspect/.m2"
-                        sh script: """
-                            java -jar intellij-inspect.jar \
-                            --output /home/inspect/inspection-results \
-                            /home/inspect/intellij \
-                            /project/pom.xml \
-                            /project/.idea/inspectionProfiles/Druid.xml \
-                            --levels ERROR \
-                            --scope JavaInspectionsScope
-                        """
-                    }
+                        ccaominh/intellij-inspect:1.0.0 \
+                        /project/pom.xml \
+                        /project/.idea/inspectionProfiles/Druid.xml \
+                        --levels ERROR \
+                        --scope JavaInspectionsScope
+                    """
                 }
             }
         }
