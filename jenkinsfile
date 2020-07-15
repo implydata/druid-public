@@ -43,12 +43,41 @@ def MVN_OPTS         = "export MAVEN_OPTS=\"-Xms4g -Xmx8g -XX:MaxDirectMemorySiz
 def MAVEN_SKIP       = "-Danimal.sniffer.skip=true -Dcheckstyle.skip=true -Ddruid.console.skip=true -Denforcer.skip=true -Dforbiddenapis.skip=true -Dmaven.javadoc.skip=true -Dpmd.skip=true -Dspotbugs.skip=true"
 def MAVEN_SKIP_TESTS = "-DskipTests -Djacoco.skip=true"
 
-def DOCKERFILE_TEMPLATE = """\
-ARG JDK
-FROM maven:3.6.3-\${JDK}
+// def GENERATE_LICENSE_DOCKERFILE = """\
+// ARG JDK
+// FROM maven:3.6.3-\${JDK}
+// RUN apt-get update -y && apt-get install python3 python3-pip python3-setuptools -y
+// RUN pip3 install wheel pyyaml
+// """
+
+def buildGenerateLicenseImage = { jdkVersion ->
+    writeFile file: "${env.WORKSPACE}@tmp/Dockerfile", text: """\
+FROM maven:3.6.3-jdk-${jdkVersion}
 RUN apt-get update -y && apt-get install python3 python3-pip python3-setuptools -y
 RUN pip3 install wheel pyyaml
 """
+
+    return docker.build(
+        "maven:jdk-${jdkVersion}-${env.STAGE_NAME.replaceAll(~/\s/,'').toLowerCase()}${env.BUILD_ID}",
+        "${env.WORKSPACE}@tmp")
+}
+
+def packagingCheck = { jdkVersion ->
+    stage("(openjdk${jdkVersion}) packaging check") {
+        lightweightNode {
+            withArtifactorySettings { settingsPath ->
+                buildGenerateLicenseImage(jdkVersion).inside(
+                    "--memory=8g --memory-reservation=4g -v ${settingsPath}:/tmp/.m2/settings.xml -e HOME=/tmp") {
+                    checkout scm
+                    sh script: """
+                        MAVEN_OPTS='-Xmx3000m' ${MVN} clean install -Prat -Pdist -Pbundle-contrib-exts --fail-at-end \
+                        -pl '!benchmarks' ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS} -Ddruid.console.skip=false -T1C
+                    """
+                }
+            }
+        }
+    }
+}
 
 stage("Maven install") {
     lightweightNode {
@@ -98,13 +127,9 @@ stage("Checks") {
         stage('license checks') {
             lightweightNode {
                 withArtifactorySettings { settingsPath ->
-                    writeFile file: "@tmp/Dockerfile", text: DOCKERFILE_TEMPLATE
-                    docker.build(
-                        "maven:3.6.3-jdk-8-${env.BUILD_ID}",
-                        "--build-arg JDK=jdk-8 @tmp").inside(
+                    buildGenerateLicenseImage(8).inside(
                         "--memory=8g --memory-reservation=4g -v ${settingsPath}:/tmp/.m2/settings.xml -e HOME=/tmp") {
                         checkout scm
-                        mavenUnstash()
                         sh script: """
                             ${MVN_OPTS}
                             mkdir -p /tmp/bin
@@ -170,12 +195,15 @@ stage("Checks") {
         stage("intellij inspections") {
             lightweightNode {
                 withArtifactorySettings { settingsPath ->
-                    checkout scm
-                    mavenUnstash()
+                    docker.image('maven:3.6.3-jdk-8').inside(
+                        "--memory=8g --memory-reservation=4g -v ${settingsPath}:/tmp/.m2/settings.xml -e HOME=/tmp") {
+                        checkout scm
+                        sh script: "${MVN_OPTS} && ${MVN} clean install -q -ff ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS} -T 1C", label: "Maven install"
+                    }
                     sh script: """
                         docker run --rm \
-                        -v \$(pwd):/project \
-                        -v \$(pwd)/.m2:/home/inspect/.m2 \
+                        -v ${env.WORKSPACE}:/project \
+                        -v ${env.WORKSPACE}/.m2/repository:/home/inspect/.m2/repository \
                         -v ${settingsPath}:/home/inspect/.m2/settings.xml \
                         ccaominh/intellij-inspect:1.0.0 \
                         /project/pom.xml \
@@ -186,6 +214,12 @@ stage("Checks") {
                 }
             }
         }
+    },
+    "(openjdk8) packaging check": {
+        packagingCheck(8)
+    },
+    "(openjdk11) packaging check": {
+        packagingCheck(11)
     }
 }
 
