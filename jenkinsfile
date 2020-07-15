@@ -184,7 +184,6 @@ stage("Checks") {
                         checkout scm
                         unstash 'core-druid'
                         unstash 'processing-druid'
-                        sh script: "mv .m2/repository /home/inspect/.m2/"
                         sh script: "wc -l /home/inspect/.m2/settings.xml"
                         sh script: "ls -lat /home/inspect/.m2"
                         sh script: """
