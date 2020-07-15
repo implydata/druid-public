@@ -1,13 +1,35 @@
+def mavenStash = {
+    stash allowEmpty: true, includes: '.m2/**', name: 'm2'
+    stash allowEmpty: true, includes: 'core/**', name: 'core-druid'
+    stash allowEmpty: true, includes: 'processing/**', name: 'processing-druid'
+}
+
+def mavenUnstash = {
+    unstash 'm2'
+    unstash 'core-druid'
+    unstash 'processing-druid'
+}
+
+def withArtifactorySettings = { body ->
+    withCredentials([file(credentialsId: 'maven-artifactory-settings', variable: 'MVN_SETTINGS_PATH')]) {
+        body(env.MVN_SETTINGS_PATH)
+    }
+}
+
+def lightweightNode = { body ->
+    node('jenkinsOnDemandMultiExec') {
+        body()
+    }
+}
+
 def mavenCheck = { stageName, body ->
     stage(stageName) {
-        node('') {
+        lightweightNode {
             checkout scm
-            unstash 'm2'
-            unstash 'core-druid'
-            unstash 'processing-druid'
-            withCredentials([file(credentialsId: 'maven-artifactory-settings', variable: 'MVN_SETTINGS_PATH')]) {
+            mavenUnstash()
+            withArtifactorySettings { settingsPath ->
                 docker.image('maven:3.6.3-jdk-8').inside(
-                    "--memory=8g --memory-reservation=4g -v ${env.MVN_SETTINGS_PATH}:/tmp/.m2/settings.xml -e HOME=/tmp") {
+                    "--memory=8g --memory-reservation=4g -v ${settingsPath}:/tmp/.m2/settings.xml -e HOME=/tmp") {
                     body()
                 }
             }
@@ -29,15 +51,13 @@ RUN pip3 install wheel pyyaml
 """
 
 stage("Maven install") {
-    node('jenkinsOnDemandMultiExec') {
-        withCredentials([file(credentialsId: 'maven-artifactory-settings', variable: 'MVN_SETTINGS_PATH')]) {
+    lightweightNode {
+        withArtifactorySettings { settingsPath ->
             docker.image('maven:3.6.3-jdk-8').inside(
-                "--memory=8g --memory-reservation=4g -v ${env.MVN_SETTINGS_PATH}:/tmp/.m2/settings.xml -e HOME=/tmp") {
+                "--memory=8g --memory-reservation=4g -v ${settingsPath}:/tmp/.m2/settings.xml -e HOME=/tmp") {
                 checkout scm
                 sh script: "${MVN_OPTS} && ${MVN} clean install -q -ff ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS} -T 1C", label: "Maven install"
-                stash allowEmpty: true, includes: '.m2/**', name: 'm2'
-                stash allowEmpty: true, includes: 'core/**', name: 'core-druid'
-                stash allowEmpty: true, includes: 'processing/**', name: 'processing-druid'
+                mavenStash()
             }
         }
     }
@@ -75,31 +95,73 @@ stage("Checks") {
         }
     },
     "license checks": {
-        node('jenkinsOnDemandMultiExec') {
-            withCredentials([file(credentialsId: 'maven-artifactory-settings', variable: 'MVN_SETTINGS_PATH')]) {
-                writeFile file: "@tmp/Dockerfile", text: DOCKERFILE_TEMPLATE
-                docker.build(
-                    "maven:3.6.3-jdk-8-${env.BUILD_ID}",
-                    "--build-arg JDK=jdk-8 @tmp").inside(
-                    "--memory=8g --memory-reservation=4g -v ${env.MVN_SETTINGS_PATH}:/tmp/.m2/settings.xml -e HOME=/tmp") {
-                    checkout scm
-                    unstash 'm2'
-                    unstash 'core-druid'
-                    unstash 'processing-druid'
-                    sh script: """
-                        ${MVN_OPTS}
-                        mkdir -p /tmp/bin
-                        /bin/echo -e "#!/bin/bash\\nPATH=/usr/bin:\\\$PATH exec ${MVN} \\\$@" | tee -a /tmp/bin/mvn
-                        chmod u+x /tmp/bin/mvn
+        stage('license checks') {
+            lightweightNode {
+                withArtifactorySettings { settingsPath ->
+                    writeFile file: "@tmp/Dockerfile", text: DOCKERFILE_TEMPLATE
+                    docker.build(
+                        "maven:3.6.3-jdk-8-${env.BUILD_ID}",
+                        "--build-arg JDK=jdk-8 @tmp").inside(
+                        "--memory=8g --memory-reservation=4g -v ${settingsPath}:/tmp/.m2/settings.xml -e HOME=/tmp") {
+                        checkout scm
+                        mavenUnstash()
+                        sh script: """
+                            ${MVN_OPTS}
+                            mkdir -p /tmp/bin
+                            /bin/echo -e "#!/bin/bash\\nPATH=/usr/bin:\\\$PATH exec ${MVN} \\\$@" | tee -a /tmp/bin/mvn
+                            chmod u+x /tmp/bin/mvn
 
-                        export PATH=/tmp/bin:\$PATH
-                        mvn apache-rat:check -Prat --fail-at-end \
-                            -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
-                            -Drat.consoleOutput=true -Drat.numUnapprovedLicenses=100
-                        mkdir -p target
-                        distribution/bin/generate-license-dependency-reports.py . target --clean-maven-artifact-transfer --parallel 2
-                        distribution/bin/check-licenses.py licenses.yaml target/license-reports
-                    """, label: "license checks"
+                            export PATH=/tmp/bin:\$PATH
+                            mvn apache-rat:check -Prat --fail-at-end \
+                                -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
+                                -Drat.consoleOutput=true -Drat.numUnapprovedLicenses=100
+                            mkdir -p target
+                            distribution/bin/generate-license-dependency-reports.py . target --clean-maven-artifact-transfer --parallel 2
+                            distribution/bin/check-licenses.py licenses.yaml target/license-reports
+                        """, label: "license checks"
+                    }
+                }
+            }
+        }
+    },
+    "(openjdk8) strict compilation": {
+        stage("(openjdk8) strict compilation") {
+            lightweightNode {
+                withArtifactorySettings { settingsPath ->
+                    docker.image('maven:3.6.3-jdk-8').inside(
+                        "--memory=8g --memory-reservation=4g -v ${settingsPath}:/tmp/.m2/settings.xml -e HOME=/tmp") {
+                        checkout scm
+                        sh script: "MAVEN_OPTS='-Xmx3000m' ${MVN} clean -Pstrict compile test-compile --fail-at-end \
+                            -pl '!benchmarks' ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS}"
+                    }
+                }
+            }
+        }
+    },
+    "analyze dependencies": {
+        stage("analyze dependencies") {
+            lightweightNode {
+                withArtifactorySettings { settingsPath ->
+                    docker.image('maven:3.6.3-jdk-8').inside(
+                        "--memory=8g --memory-reservation=4g -v ${env.MVN_SETTINGS_PATH}:/tmp/.m2/settings.xml -e HOME=/tmp") {
+                        checkout scm
+                        mavenUnstash()
+                        sh script: """
+                            MAVEN_OPTS='-Xmx3000m' ${MVN} ${MAVEN_SKIP} dependency:analyze -DoutputXML=true -DignoreNonCompile=true -DfailOnWarning=true || { echo "
+                            The dependency analysis has found a dependency that is either:
+                            1) Used and undeclared: These are available as a transitive dependency but should be explicitly
+                            added to the POM to ensure the dependency version. The XML to add the dependencies to the POM is
+                            shown above.
+                            2) Unused and declared: These are not needed and removing them from the POM will speed up the build
+                            and reduce the artifact size. The dependencies to remove are shown above.
+                            If there are false positive dependency analysis warnings, they can be suppressed:
+                            https://maven.apache.org/plugins/maven-dependency-plugin/analyze-mojo.html#usedDependencies
+                            https://maven.apache.org/plugins/maven-dependency-plugin/examples/exclude-dependencies-from-dependency-analysis.html
+                            For more information, refer to:
+                            https://maven.apache.org/plugins/maven-dependency-plugin/analyze-mojo.html
+                            " && false; }
+                        """
+                    }
                 }
             }
         }
