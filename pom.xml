@@ -1972,7 +1972,6 @@
                                 <exclude>.asf.yaml</exclude>
                                 <exclude>.m2/repository/**</exclude>
                                 <exclude>jenkinsfile</exclude>
-                                <exclude>jenkins-*.yaml</exclude>
                             </excludes>
                         </configuration>
                     </plugin>
