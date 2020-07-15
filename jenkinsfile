@@ -194,24 +194,18 @@ stage("Checks") {
     "intellij inspections": {
         stage("intellij inspections") {
             lightweightNode {
-                withArtifactorySettings { settingsPath ->
-                    docker.image('maven:3.6.3-jdk-8').inside(
-                        "--memory=8g --memory-reservation=4g -v ${settingsPath}:/tmp/.m2/settings.xml -e HOME=/tmp") {
-                        checkout scm
-                        sh script: "${MVN_OPTS} && ${MVN} clean install -q -ff ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS} -T 1C", label: "Maven install"
-                    }
-                    sh script: """
-                        docker run --rm \
-                        -v ${env.WORKSPACE}:/project \
-                        -v ${env.WORKSPACE}/.m2/repository:/home/inspect/.m2/repository \
-                        -v ${settingsPath}:/home/inspect/.m2/settings.xml \
-                        ccaominh/intellij-inspect:1.0.0 \
-                        /project/pom.xml \
-                        /project/.idea/inspectionProfiles/Druid.xml \
-                        --levels ERROR \
-                        --scope JavaInspectionsScope
-                    """
-                }
+                checkout scm
+                mavenUnstash()
+                sh script: """
+                    docker run --rm \
+                    -v ${env.WORKSPACE}:/project \
+                    -v ${env.WORKSPACE}/.m2:/home/inspect/.m2 \
+                    ccaominh/intellij-inspect:1.0.0 \
+                    /project/pom.xml \
+                    /project/.idea/inspectionProfiles/Druid.xml \
+                    --levels ERROR \
+                    --scope JavaInspectionsScope
+                """
             }
         }
     },
