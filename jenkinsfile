@@ -167,8 +167,10 @@ def packagingCheck = { jdkVersion ->
                         chmod u+x /tmp/bin/mvn
                         export PATH=/tmp/bin:\$PATH
 
-                        MAVEN_OPTS='-Xmx3000m' mvn clean install -Prat -Pdist -Pbundle-contrib-exts --fail-at-end \
-                        -pl '!benchmarks' ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS} -Ddruid.console.skip=false -T1C
+                        ls -lat /tmp/.m2/settings.xml
+
+                        MAVEN_OPTS='-Xmx3000m' mvn -e clean install -Prat -Pdist -Pbundle-contrib-exts --fail-at-end \
+                        -pl '!benchmarks' ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS} -Ddruid.console.skip=false -T1C || {cat extensions-core/protobuf-extensions/target/rat.txt && false}
                     """
                 }
             }
@@ -315,10 +317,10 @@ stage("Checks") {
         packagingCheck(11)
     },
     "(openjdk8) processing module test": {
-        testProcessingModule("(openjdk8) processing module test", 8, [MAVEN_PROJECTS:"processing", DRUID_USE_DEFAULT_VALUE_FOR_NULL:"true"])
+        testProcessingModule("(openjdk8) processing module test", 8, ["MAVEN_PROJECTS=processing", "DRUID_USE_DEFAULT_VALUE_FOR_NULL=true"])
     },
     "(openjdk11) processing module test": {
-        testProcessingModule("(openjdk8) processing module test", 11, [MAVEN_PROJECTS:"processing", DRUID_USE_DEFAULT_VALUE_FOR_NULL:"true"])
+        testProcessingModule("(openjdk8) processing module test", 11, ["MAVEN_PROJECTS=processing", "DRUID_USE_DEFAULT_VALUE_FOR_NULL=true"])
     }
 }
 
