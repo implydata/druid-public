@@ -59,7 +59,7 @@ RUN pip3 install wheel pyyaml
 def withGitCredentials = { body ->
     withCredentials([
         usernamePassword(
-            credentialsId: scm.userRemoteConfigs.getCredentialsId(),
+            credentialsId: scm.getUserRemoteConfigs()[0].getCredentialsId(),
             passwordVariable: 'GIT_PASSWORD',
             usernameVariable: 'GIT_USERNAME')
         ]) {
