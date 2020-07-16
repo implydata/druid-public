@@ -309,10 +309,10 @@ stage("Checks") {
     "(openjdk11) packaging check": {
         packagingCheck(11)
     },
-    "(openjdk8) processing module test" {
+    "(openjdk8) processing module test": {
         testProcessingModule("(openjdk8) processing module test", 8, [MAVEN_PROJECTS:"processing", DRUID_USE_DEFAULT_VALUE_FOR_NULL:"true"])
     },
-    "(openjdk11) processing module test" {
+    "(openjdk11) processing module test": {
         testProcessingModule("(openjdk8) processing module test", 11, [MAVEN_PROJECTS:"processing", DRUID_USE_DEFAULT_VALUE_FOR_NULL:"true"])
     }
 }
