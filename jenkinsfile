@@ -67,11 +67,12 @@ def withGitCredentials = { body ->
     }
 }
 
-def buildImageWithNode = { jdkVersion ->
+def buildProcessingModuleImage = { jdkVersion ->
     writeFile file: "${env.WORKSPACE}@tmp/Dockerfile", text: """\
 FROM maven:3.6.3-jdk-${jdkVersion}
 RUN curl -sL https://deb.nodesource.com/setup_lts.x | bash - && \
     apt-get install -y nodejs
+RUN chmod 4755 /bin/dmesg
 """
 
     return docker.build(
@@ -84,7 +85,7 @@ def testProcessingModule = { stageName, jdkVersion, envMap ->
     stage(stageName) {
         lightweightNode {
             withArtifactorySettings { settingsPath ->
-                buildImageWithNode(jdkVersion).inside(
+                buildProcessingModuleImage(jdkVersion).inside(
                     "--memory=8g --memory-reservation=4g -v ${settingsPath}:/tmp/.m2/settings.xml -e HOME=/tmp") {
                     checkout scm
                     mavenUnstash()
@@ -112,7 +113,7 @@ def testProcessingModule = { stageName, jdkVersion, envMap ->
                                 git remote set-branches --add origin \${BRANCH_NAME:-master} && git fetch
                                 all_files="\$(git diff --name-only origin/\${TARGET_BRANCH_NAME}...HEAD | grep "\\.java\$" || [[ \$? == 1 ]])"
 
-                                for f in \${all_files} do
+                                for f in \${all_files}; do
                                     echo \$f
                                 done
 
@@ -125,7 +126,7 @@ def testProcessingModule = { stageName, jdkVersion, envMap ->
                                   project_files="\$(echo "\${all_files}" | grep "\${regex}" || [[ \$? == 1 ]])";
                                 fi
 
-                                for f in \${project_files} do
+                                for f in \${project_files}; do
                                     echo \$f
                                 done
 
@@ -169,9 +170,10 @@ def packagingCheck = { jdkVersion ->
                         export PATH=/tmp/bin:\$PATH
 
                         ls -lat /tmp/.m2/settings.xml
+                        ls -lat ~/.m2/settings.xml
 
                         MAVEN_OPTS='-Xmx3000m' mvn -e clean install -Prat -Pdist -Pbundle-contrib-exts --fail-at-end \
-                        -pl '!benchmarks' ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS} -Ddruid.console.skip=false -T1C || {cat extensions-core/protobuf-extensions/target/rat.txt && false}
+                        -pl '!benchmarks' ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS} -Ddruid.console.skip=false -T1C || { cat extensions-core/protobuf-extensions/target/rat.txt && false }
                     """
                 }
             }
