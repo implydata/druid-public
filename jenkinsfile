@@ -80,7 +80,7 @@ RUN curl -sL https://deb.nodesource.com/setup_lts.x | bash - && \
 }
 
 
-def testProcessingModule = { stageName, jdkVersion, envMap
+def testProcessingModule = { stageName, jdkVersion, envMap ->
     stage(stageName) {
         lightweightNode {
             withArtifactorySettings { settingsPath ->
