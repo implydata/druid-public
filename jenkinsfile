@@ -173,7 +173,7 @@ def packagingCheck = { jdkVersion ->
                         ls -lat ~/.m2/settings.xml
 
                         MAVEN_OPTS='-Xmx3000m' mvn -e clean install -Prat -Pdist -Pbundle-contrib-exts --fail-at-end \
-                        -pl '!benchmarks' ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS} -Ddruid.console.skip=false -T1C || { cat extensions-core/protobuf-extensions/target/rat.txt && false }
+                        -pl '!benchmarks' ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS} -Ddruid.console.skip=false -T1C || { cat extensions-core/protobuf-extensions/target/rat.txt && false; }
                     """
                 }
             }
