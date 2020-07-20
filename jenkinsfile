@@ -1,3 +1,8 @@
+def MVN              = "mvn -B -Dmaven.repo.local=.m2/repository"
+def MVN_OPTS         = "export MAVEN_OPTS=\"-Xms4g -Xmx8g -XX:MaxDirectMemorySize=2048m\""
+def MAVEN_SKIP       = "-Danimal.sniffer.skip=true -Dcheckstyle.skip=true -Ddruid.console.skip=true -Denforcer.skip=true -Dforbiddenapis.skip=true -Dmaven.javadoc.skip=true -Dpmd.skip=true -Dspotbugs.skip=true"
+def MAVEN_SKIP_TESTS = "-DskipTests -Djacoco.skip=true"
+
 def mavenStash = {
     stash allowEmpty: true, includes: '.m2/**', name: 'm2'
     stash allowEmpty: true, includes: 'core/**', name: 'core-druid'
@@ -10,9 +15,22 @@ def mavenUnstash = {
     unstash 'processing-druid'
 }
 
+def dockerInitCleanup = {
+    sh script: "for container in \$(docker ps -q); do docker stop \$container; done"
+    sh script: "docker container prune -f"
+    sh script: "docker volume prune -f"
+    sh script: "docker network prune -f"
+}
+
 def withArtifactorySettings = { body ->
     withCredentials([file(credentialsId: 'maven-artifactory-settings', variable: 'MVN_SETTINGS_PATH')]) {
         body(env.MVN_SETTINGS_PATH)
+    }
+}
+
+def heavyNode = { body ->
+    node('jenkinsOnDemand') {
+        body()
     }
 }
 
@@ -20,6 +38,118 @@ def lightweightNode = { body ->
     node('jenkinsOnDemandMultiExec') {
         body()
     }
+}
+
+def withGitCredentials = { body ->
+    withCredentials([
+        usernamePassword(
+            credentialsId: scm.getUserRemoteConfigs()[0].getCredentialsId(),
+            passwordVariable: 'GIT_PASSWORD',
+            usernameVariable: 'GIT_USERNAME')
+        ]) {
+            body()
+    }
+}
+
+
+def buildGenerateLicenseImage = { fromImage ->
+    writeFile file: "${env.WORKSPACE}@tmp/GenerateLicenseImageDockerfile", text: """\
+FROM ${fromImage}
+RUN apt-get update -y && apt-get install python3 python3-pip python3-setuptools -y
+RUN pip3 install wheel pyyaml
+"""
+
+    def imageName = "${fromImage}-license-${env.STAGE_NAME.replaceAll(~/[^a-z0-9]/,'')}${env.BUILD_ID}"
+    docker.build(imageName, "${env.WORKSPACE}@tmp -f ${env.WORKSPACE}@tmp/GenerateLicenseImageDockerfile")
+    return imageName
+}
+
+def buildModuleTestImage = { fromImage ->
+    writeFile file: "${env.WORKSPACE}@tmp/ProcessingModuleImageDockerfile", text: """\
+FROM ${fromImage}
+RUN curl -sL https://deb.nodesource.com/setup_lts.x | bash - && \
+    apt-get install -y nodejs
+RUN chmod 4755 /bin/dmesg
+"""
+
+    def imageName = "${fromImage}-processing-${env.STAGE_NAME.replaceAll(~/[^a-z0-9]/,'')}${env.BUILD_ID}"
+    docker.build(imageName, "${env.WORKSPACE}@tmp -f ${env.WORKSPACE}@tmp/ProcessingModuleImageDockerfile")
+    return imageName
+}
+
+
+def buildDockerBinaryImage = { fromImage ->
+    writeFile file: "${env.WORKSPACE}@tmp/DockerBinaryImageDockerfile", text: """\
+FROM ${fromImage}
+ARG DOCKER_VERSION=19.03.8
+RUN set -ex \
+    && curl -fsSLO https://download.docker.com/linux/static/stable/x86_64/docker-\${DOCKER_VERSION}.tgz \
+    && mv docker-\${DOCKER_VERSION}.tgz docker.tgz \
+    && tar xzvf docker.tgz \
+    && mv docker/docker /usr/local/bin/docker \
+    && rm -r docker docker.tgz
+"""
+    def imageName = "${fromImage}-dbin-${env.STAGE_NAME.replaceAll(~/[^a-z0-9]/,'')}${env.BUILD_ID}"
+    docker.build(imageName, "${env.WORKSPACE}@tmp -f ${env.WORKSPACE}@tmp/DockerBinaryImageDockerfile")
+    return imageName
+}
+
+
+def moduleTest = {
+    sh script: """#!/bin/bash -ex
+
+        mkdir -p /tmp/bin
+        /bin/echo -e "#!/bin/sh\\ncase \"\\\$1\" in\\nUsername*) echo \"\\\$GIT_USERNAME\" ;;\\nPassword*) echo \"\\\$GIT_PASSWORD\" ;;\\nesac\\n" | tee -a /tmp/bin/askpass
+        chmod u+x /tmp/bin/askpass
+        export PATH=/tmp/bin:\$PATH
+
+        unset _JAVA_OPTIONS
+
+        MAVEN_OPTS='-Xmx800m' ${MVN} test -pl \${MAVEN_PROJECTS} \
+        ${MAVEN_SKIP} -Dremoteresources.skip=true -Ddruid.generic.useDefaultValueForNull=\${DRUID_USE_DEFAULT_VALUE_FOR_NULL}
+
+        sh -c "dmesg | egrep -i '(oom|out of memory|kill process|killed).*' -C 1 || exit 0"
+        free -m
+        ${MVN} -pl \${MAVEN_PROJECTS} jacoco:report
+
+        export TARGET_BRANCH_NAME=\${CHANGE_TARGET:-${env.BRANCH_NAME}}
+        git remote set-branches --add origin \${BRANCH_NAME:-master} && git fetch
+        all_files="\$(git diff --name-only origin/\${TARGET_BRANCH_NAME}...HEAD | grep "\\.java\$" || [[ \$? == 1 ]])"
+
+        for f in \${all_files}; do
+            echo \$f
+        done
+
+        if [[ "\${MAVEN_PROJECTS}" = \\!* ]]; then
+          regex="\${MAVEN_PROJECTS:1}";
+          regex="^\${regex//,\\!/\\\\|^}";
+          project_files="\$(echo "\${all_files}" | grep -v "\${regex}" || [[ \$? == 1 ]])";
+        else
+          regex="^\${MAVEN_PROJECTS//,/\\\\|^}";
+          project_files="\$(echo "\${all_files}" | grep "\${regex}" || [[ \$? == 1 ]])";
+        fi
+
+        for f in \${project_files}; do
+            echo \$f
+        done
+
+        if [ -n "\${project_files}" ]; then
+            { for i in 1 2 3; do npm install @connectis/diff-test-coverage@1.5.3 && break || sleep 15; done } && \
+            git diff origin/\${TARGET_BRANCH_NAME}...HEAD -- \${project_files} | \
+            node_modules/.bin/diff-test-coverage \
+              --coverage "**/target/site/jacoco/jacoco.xml" \
+              --type jacoco \
+              --line-coverage 50 \
+              --branch-coverage 50 \
+              --function-coverage 0 \
+              --log-template "coverage-lines-complete" \
+              --log-template "coverage-files-complete" \
+              --log-template "totals-complete" \
+              --log-template "errors" \
+              -- || \
+            { printf "\\n\\n****FAILED****\\nDiff code coverage check failed. To view coverage report, run 'mvn clean test jacoco:report' and open 'target/site/jacoco/index.html'\\nFor more details on how to run code coverage locally, follow instructions here - https://github.com/apache/druid/blob/master/dev/code-review/code-coverage.md#running-code-coverage-locally\\n\\n" && false; }
+        fi
+    """
 }
 
 def mavenCheck = { stageName, body ->
@@ -37,143 +167,143 @@ def mavenCheck = { stageName, body ->
     }
 }
 
-
-def MVN              = "mvn -B -Dmaven.repo.local=.m2/repository"
-def MVN_OPTS         = "export MAVEN_OPTS=\"-Xms4g -Xmx8g -XX:MaxDirectMemorySize=2048m\""
-def MAVEN_SKIP       = "-Danimal.sniffer.skip=true -Dcheckstyle.skip=true -Ddruid.console.skip=true -Denforcer.skip=true -Dforbiddenapis.skip=true -Dmaven.javadoc.skip=true -Dpmd.skip=true -Dspotbugs.skip=true"
-def MAVEN_SKIP_TESTS = "-DskipTests -Djacoco.skip=true"
-
-
-def buildGenerateLicenseImage = { jdkVersion ->
-    writeFile file: "${env.WORKSPACE}@tmp/Dockerfile", text: """\
-FROM maven:3.6.3-jdk-${jdkVersion}
-RUN apt-get update -y && apt-get install python3 python3-pip python3-setuptools -y
-RUN pip3 install wheel pyyaml
-"""
-
-    return docker.build(
-        "maven:jdk-${jdkVersion}-${env.STAGE_NAME.replaceAll(~/[^a-z0-9]/,'')}${env.BUILD_ID}",
-        "${env.WORKSPACE}@tmp")
-}
-
-def withGitCredentials = { body ->
-    withCredentials([
-        usernamePassword(
-            credentialsId: scm.getUserRemoteConfigs()[0].getCredentialsId(),
-            passwordVariable: 'GIT_PASSWORD',
-            usernameVariable: 'GIT_USERNAME')
-        ]) {
-            body()
-    }
-}
-
-def buildProcessingModuleImage = { jdkVersion ->
-    writeFile file: "${env.WORKSPACE}@tmp/Dockerfile", text: """\
-FROM maven:3.6.3-jdk-${jdkVersion}
-RUN curl -sL https://deb.nodesource.com/setup_lts.x | bash - && \
-    apt-get install -y nodejs
-RUN chmod 4755 /bin/dmesg
-"""
-
-    return docker.build(
-        "maven:jdk-${jdkVersion}-${env.STAGE_NAME.replaceAll(~/[^a-z0-9]/,'')}${env.BUILD_ID}",
-        "${env.WORKSPACE}@tmp")
-}
-
-
-def testProcessingModule = { stageName, jdkVersion, envMap ->
+def testModule = { stageName, jdkVersion, envMap ->
     stage(stageName) {
         lightweightNode {
             withArtifactorySettings { settingsPath ->
-                buildProcessingModuleImage(jdkVersion).inside(
-                    "--memory=8g --memory-reservation=4g -v ${settingsPath}:/tmp/.m2/settings.xml -e HOME=/tmp") {
+                docker.image(buildModuleTestImage("maven:3.6.3-jdk-${jdkVersion}")).inside(
+                    "--memory=8g --memory-reservation=4g --privileged -v ${settingsPath}:/tmp/.m2/settings.xml -e HOME=/tmp") {
                     checkout scm
                     mavenUnstash()
                     withGitCredentials {
                         withEnv(envMap) {
-                            sh script: """#!/bin/bash -x
-
-                                mkdir -p /tmp/bin
-                                /bin/echo -e "#!/bin/sh\\ncase \"\\\$1\" in\\nUsername*) echo \"\\\$GIT_USERNAME\" ;;\\nPassword*) echo \"\\\$GIT_PASSWORD\" ;;\\nesac\\n" | tee -a /tmp/bin/askpass
-                                chmod u+x /tmp/bin/askpass
-                                /bin/echo -e "#!/bin/sh\\n\"\\\$@\" || \"\\\$@\" || \"\\\$@\"" | tee -a /tmp/bin/retry3times
-                                chmod u+x /tmp/bin/retry3times
-                                export PATH=/tmp/bin:\$PATH
-
-                                unset _JAVA_OPTIONS
-
-                                MAVEN_OPTS='-Xmx800m' ${MVN} test -pl \${MAVEN_PROJECTS} \
-                                ${MAVEN_SKIP} -Dremoteresources.skip=true -Ddruid.generic.useDefaultValueForNull=\${DRUID_USE_DEFAULT_VALUE_FOR_NULL}
-
-                                sh -c "dmesg | egrep -i '(oom|out of memory|kill process|killed).*' -C 1 || exit 0"
-                                free -m
-                                ${MVN} -pl \${MAVEN_PROJECTS} jacoco:report
-
-                                export TARGET_BRANCH_NAME=\${CHANGE_TARGET:-${env.BRANCH_NAME}}
-                                git remote set-branches --add origin \${BRANCH_NAME:-master} && git fetch
-                                all_files="\$(git diff --name-only origin/\${TARGET_BRANCH_NAME}...HEAD | grep "\\.java\$" || [[ \$? == 1 ]])"
-
-                                for f in \${all_files}; do
-                                    echo \$f
-                                done
-
-                                if [[ "\${MAVEN_PROJECTS}" = \\!* ]]; then
-                                  regex="\${MAVEN_PROJECTS:1}";
-                                  regex="^\${regex//,\\!/\\\\|^}";
-                                  project_files="\$(echo "\${all_files}" | grep -v "\${regex}" || [[ \$? == 1 ]])";
-                                else
-                                  regex="^\${MAVEN_PROJECTS//,/\\\\|^}";
-                                  project_files="\$(echo "\${all_files}" | grep "\${regex}" || [[ \$? == 1 ]])";
-                                fi
-
-                                for f in \${project_files}; do
-                                    echo \$f
-                                done
-
-                                if [ -n "\${project_files}" ]; then
-                                    retry3times npm install @connectis/diff-test-coverage@1.5.3 && \
-                                    git diff origin/\${TARGET_BRANCH_NAME}...HEAD -- \${project_files} | \
-                                    node_modules/.bin/diff-test-coverage \
-                                      --coverage "**/target/site/jacoco/jacoco.xml" \
-                                      --type jacoco \
-                                      --line-coverage 50 \
-                                      --branch-coverage 50 \
-                                      --function-coverage 0 \
-                                      --log-template "coverage-lines-complete" \
-                                      --log-template "coverage-files-complete" \
-                                      --log-template "totals-complete" \
-                                      --log-template "errors" \
-                                      -- || \
-                                    { printf "\\n\\n****FAILED****\\nDiff code coverage check failed. To view coverage report, run 'mvn clean test jacoco:report' and open 'target/site/jacoco/index.html'\\nFor more details on how to run code coverage locally, follow instructions here - https://github.com/apache/druid/blob/master/dev/code-review/code-coverage.md#running-code-coverage-locally\\n\\n" && false; }
-                                fi
-                            """
+                            moduleTest()
                         }
                     }
-
                 }
             }
         }
     }
 }
 
+def testIndexingModule = { stageName, jdkVersion, envMap ->
+    stage(stageName) {
+        lightweightNode {
+            withArtifactorySettings { settingsPath ->
+                docker.image(buildModuleTestImage("maven:3.6.3-jdk-${jdkVersion}")).inside(
+                    "--memory=8g --memory-reservation=4g --privileged -v ${settingsPath}:/root/.m2/settings.xml -u root:root") {
+                    checkout scm
+                    mavenUnstash()
+                    withGitCredentials {
+                        withEnv(envMap) {
+                            moduleTest()
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+def testModuleWithDocker = { stageName, jdkVersion, envMap ->
+    stage(stageName) {
+        heavyNode {
+            dockerInitCleanup()
+            withArtifactorySettings { settingsPath ->
+                def moduleTestImage = buildModuleTestImage("maven:3.6.3-jdk-${jdkVersion}")
+                def dockerBinaryImage = buildDockerBinaryImage(moduleTestImage)
+
+                docker.image(dockerBinaryImage).inside("""\
+                    --memory=8g \
+                    --memory-reservation=4g \
+                    --privileged \
+                    -v ${settingsPath}:/root/.m2/settings.xml \
+                    -v /var/run/docker.sock:/var/run/docker.sock \
+                    --net host \
+                    -u root:root \
+                    """) {
+                    checkout scm
+                    mavenUnstash()
+                    withGitCredentials {
+                        withEnv(envMap) {
+                            moduleTest()
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+def integrationTests = { stageName, jdkVersion, envMap ->
+    stage(stageName) {
+        heavyNode {
+            dockerInitCleanup()
+            sh script: "sudo rm -rf /tmp/shared && mkdir -p /tmp/shared"
+            withArtifactorySettings { settingsPath ->
+                docker.image(buildDockerBinaryImage("maven:3.6.3-jdk-${jdkVersion}")).inside("""\
+                    -v ${settingsPath}:/tmp/.m2/settings.xml \
+                    -v /var/run/docker.sock:/var/run/docker.sock \
+                    -v /tmp/shared:/tmp/shared \
+                    -e HOME=/tmp \
+                    -e DOCKER_IP=127.0.0.1 \
+                    --net host \
+                    -u root:root \
+                    """) {
+                    checkout scm
+                    try {
+                        mavenUnstash()
+                    } catch(err) {
+                        echo "Exception: ${err}"
+                        throw err
+                    }
+                    withEnv(envMap) {
+                        sh script: """
+                            echo "deb http://security.debian.org/debian-security jessie/updates main" >> /etc/apt/sources.list
+                            apt-get update -y
+                            apt-get install dnsutils -y
+                            apt-get install openssl=1.0.1t-1+deb8u12 -y --allow-downgrades
+
+                            mkdir -p /tmp/bin
+                            /bin/echo -e "#!/bin/bash\\nexec /usr/bin/mvn -B -Dmaven.repo.local=${env.WORKSPACE}/.m2/repository \\\$@" | tee -a /tmp/bin/mvn
+                            chmod u+x /tmp/bin/mvn
+                        """
+                        try {
+                            sh script: """
+                                export PATH=/tmp/bin:\$PATH
+                                mvn verify -pl integration-tests -P integration-tests \${TESTNG_GROUPS} \${JVM_RUNTIME} ${MAVEN_SKIP}
+                            """
+                        } catch(err) {
+                            sh script: """#!/bin/bash -ex
+                                for v in ~/shared/logs/*.log; do
+                                    echo \$v logtail ========================
+                                    tail -100 \$v
+                                done
+                                for v in broker middlemanager overlord router coordinator historical; do
+                                    echo \$v dmesg ========================
+                                    docker exec druid-\$v sh -c 'dmesg | tail -3'
+                                done
+                            """
+                            throw err
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
 def packagingCheck = { jdkVersion ->
     stage("(openjdk${jdkVersion}) packaging check") {
         lightweightNode {
             withArtifactorySettings { settingsPath ->
-                buildGenerateLicenseImage(jdkVersion).inside(
+                docker.image(buildGenerateLicenseImage("maven:3.6.3-jdk-${jdkVersion}")).inside(
                     "--memory=8g --memory-reservation=4g -v ${settingsPath}:/tmp/.m2/settings.xml -e HOME=/tmp") {
                     checkout scm
                     sh script: """
-                        mkdir -p /tmp/bin
-                        /bin/echo -e "#!/bin/bash\\nPATH=/usr/bin:\\\$PATH exec ${MVN} \\\$@" | tee -a /tmp/bin/mvn
-                        chmod u+x /tmp/bin/mvn
-                        export PATH=/tmp/bin:\$PATH
-
-                        ls -lat /tmp/.m2/settings.xml
-                        ls -lat ~/.m2/settings.xml
-
-                        MAVEN_OPTS='-Xmx3000m' mvn -e clean install -Prat -Pdist -Pbundle-contrib-exts --fail-at-end \
-                        -pl '!benchmarks' ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS} -Ddruid.console.skip=false -T1C || { cat extensions-core/protobuf-extensions/target/rat.txt && false; }
+                        MAVEN_OPTS='-Xmx3000m' ${MVN} -e clean install -Prat -Pdist -Pbundle-contrib-exts --fail-at-end \
+                        -pl '!benchmarks' ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS} -Ddruid.console.skip=false -T1C
                     """
                 }
             }
@@ -230,17 +360,17 @@ stage("Checks") {
         stage('license checks') {
             lightweightNode {
                 withArtifactorySettings { settingsPath ->
-                    buildGenerateLicenseImage(8).inside(
+                    docker.image(buildGenerateLicenseImage("maven:3.6.3-jdk-8")).inside(
                         "--memory=8g --memory-reservation=4g -v ${settingsPath}:/tmp/.m2/settings.xml -e HOME=/tmp") {
                         checkout scm
                         mavenUnstash()
                         sh script: """
                             ${MVN_OPTS}
                             mkdir -p /tmp/bin
-                            /bin/echo -e "#!/bin/bash\\nPATH=/usr/bin:\\\$PATH exec ${MVN} \\\$@" | tee -a /tmp/bin/mvn
+                            /bin/echo -e "#!/bin/bash\\nexec /usr/bin/mvn -B -Dmaven.repo.local=${env.WORKSPACE}/.m2/repository \\\$@" | tee -a /tmp/bin/mvn
                             chmod u+x /tmp/bin/mvn
-
                             export PATH=/tmp/bin:\$PATH
+
                             mvn apache-rat:check -Prat --fail-at-end \
                                 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
                                 -Drat.consoleOutput=true -Drat.numUnapprovedLicenses=100
@@ -320,460 +450,189 @@ stage("Checks") {
         packagingCheck(11)
     },
     "(openjdk8) processing module test": {
-        testProcessingModule("(openjdk8) processing module test", 8, ["MAVEN_PROJECTS=processing", "DRUID_USE_DEFAULT_VALUE_FOR_NULL=true"])
+        testModule("(openjdk8) processing module test", 8, ["MAVEN_PROJECTS=processing", "DRUID_USE_DEFAULT_VALUE_FOR_NULL=true"])
     },
     "(openjdk11) processing module test": {
-        testProcessingModule("(openjdk8) processing module test", 11, ["MAVEN_PROJECTS=processing", "DRUID_USE_DEFAULT_VALUE_FOR_NULL=true"])
+        testModule("(openjdk8) processing module test", 11, ["MAVEN_PROJECTS=processing", "DRUID_USE_DEFAULT_VALUE_FOR_NULL=true"])
+    },
+    "(openjdk8) processing module test (SQL Compatibility)": {
+        testModule("(openjdk8) processing module test (SQL Compatibility)", 8, ["MAVEN_PROJECTS=processing", "DRUID_USE_DEFAULT_VALUE_FOR_NULL=false"])
+    },
+    "(openjdk11) processing module test (SQL Compatibility)": {
+        testModule("(openjdk8) processing module test (SQL Compatibility)", 11, ["MAVEN_PROJECTS=processing", "DRUID_USE_DEFAULT_VALUE_FOR_NULL=false"])
+    },
+    "(openjdk8) indexing modules test": {
+        testIndexingModule("(openjdk8) indexing modules test", 8, ["MAVEN_PROJECTS=indexing-hadoop,indexing-service,extensions-core/kafka-indexing-service,extensions-core/kinesis-indexing-service", "DRUID_USE_DEFAULT_VALUE_FOR_NULL=true"])
+    },
+    "(openjdk11) indexing modules test": {
+        testIndexingModule("(openjdk11) indexing modules test", 11, ["MAVEN_PROJECTS=indexing-hadoop,indexing-service,extensions-core/kafka-indexing-service,extensions-core/kinesis-indexing-service", "DRUID_USE_DEFAULT_VALUE_FOR_NULL=true"])
+    },
+    "(openjdk8) indexing modules test (SQL Compatibility)": {
+        testIndexingModule("(openjdk8) indexing modules test (SQL Compatibility)", 8, ["MAVEN_PROJECTS=indexing-hadoop,indexing-service,extensions-core/kafka-indexing-service,extensions-core/kinesis-indexing-service", "DRUID_USE_DEFAULT_VALUE_FOR_NULL=false"])
+    },
+    "(openjdk11) indexing modules test (SQL Compatibility)": {
+        testIndexingModule("(openjdk11) indexing modules test (SQL Compatibility)", 11, ["MAVEN_PROJECTS=indexing-hadoop,indexing-service,extensions-core/kafka-indexing-service,extensions-core/kinesis-indexing-service", "DRUID_USE_DEFAULT_VALUE_FOR_NULL=false"])
+    },
+    "(openjdk8) server modules test": {
+        testModule("(openjdk8) server modules test", 8, ["MAVEN_PROJECTS=server", "DRUID_USE_DEFAULT_VALUE_FOR_NULL=true"])
+    },
+    "(openjdk11) server modules test": {
+        testModule("(openjdk11) server modules test", 11, ["MAVEN_PROJECTS=server", "DRUID_USE_DEFAULT_VALUE_FOR_NULL=true"])
+    },
+    "(openjdk8) server modules test (SQL Compatibility)": {
+        testModule("(openjdk8) server modules test (SQL Compatibility)", 8, ["MAVEN_PROJECTS=server", "DRUID_USE_DEFAULT_VALUE_FOR_NULL=false"])
+    },
+    "(openjdk11) server modules test (SQL Compatibility)": {
+        testModule("(openjdk11) server modules test (SQL Compatibility)", 11, ["MAVEN_PROJECTS=server", "DRUID_USE_DEFAULT_VALUE_FOR_NULL=false"])
+    },
+    "(openjdk8) other modules test": {
+        testModuleWithDocker("(openjdk8) other modules test", 8, ["MAVEN_PROJECTS=!processing,!indexing-hadoop,!indexing-service,!extensions-core/kafka-indexing-service,!extensions-core/kinesis-indexing-service,!server,!web-console", "DRUID_USE_DEFAULT_VALUE_FOR_NULL=true"])
+    },
+    "(openjdk11) other modules test": {
+        testModuleWithDocker("(openjdk11) other modules test", 11, ["MAVEN_PROJECTS=!processing,!indexing-hadoop,!indexing-service,!extensions-core/kafka-indexing-service,!extensions-core/kinesis-indexing-service,!server,!web-console", "DRUID_USE_DEFAULT_VALUE_FOR_NULL=true"])
+    },
+    "(openjdk8) other modules test (SQL Compatibility)": {
+        testModuleWithDocker("(openjdk8) other modules test (SQL Compatibility)", 8, ["MAVEN_PROJECTS=!processing,!indexing-hadoop,!indexing-service,!extensions-core/kafka-indexing-service,!extensions-core/kinesis-indexing-service,!server,!web-console", "DRUID_USE_DEFAULT_VALUE_FOR_NULL=false"])
+    },
+    "(openjdk11) other modules test (SQL Compatibility)": {
+        testModuleWithDocker("(openjdk11) other modules test (SQL Compatibility)", 11, ["MAVEN_PROJECTS=!processing,!indexing-hadoop,!indexing-service,!extensions-core/kafka-indexing-service,!extensions-core/kinesis-indexing-service,!server,!web-console", "DRUID_USE_DEFAULT_VALUE_FOR_NULL=false"])
+    },
+    "web console": {
+        stage("web console") {
+            lightweightNode {
+                withArtifactorySettings { settingsPath ->
+                    docker.image(buildModuleTestImage("maven:3.6.3-jdk-8")).inside(
+                        "--memory=8g --memory-reservation=4g -v ${settingsPath}:/tmp/.m2/settings.xml -e HOME=/tmp") {
+                        checkout scm
+                        sh script: "${MVN} test -pl 'web-console'"
+                        sh script: """
+                            cd web-console
+                            for i in 1 2 3; do npm run codecov && break || sleep 15; done
+                        """
+                    }
+                }
+            }
+        }
+    },
+    "web console end-to-end test": {
+        stage("web console end-to-end test") {
+            lightweightNode {
+                def moduleTestImage = buildModuleTestImage("maven:3.6.3-jdk-8")
+                def generateLicenseImage = buildGenerateLicenseImage(moduleTestImage)
+
+                docker.image(generateLicenseImage).inside("--memory=8g --memory-reservation=4g -e HOME=/tmp") {
+                    checkout scm
+                    sh script: """
+                        web-console/script/druid build
+                        web-console/script/druid start &
+                        sleep 10
+                    """
+                    try {
+                        sh script: "cd web-console && npm run test-e2e"
+                    } finally {
+                        sh script: "web-console/script/druid stop"
+                    }
+                }
+            }
+        }
+    },
+    "docs": {
+        stage("docs") {
+            lightweightNode {
+                docker.image('node:10.21.0-jessie-slim').inside("--memory=8g --memory-reservation=4g -e HOME=/tmp") {
+                    checkout scm
+                    sh script: """
+                        cd website
+                        npm install
+                        (npm run lint && npm run spellcheck) || { echo "
+                        If there are spell check errors:
+                        1) Suppressing False Positives: Edit website/.spelling to add suppressions. Instructions
+                        are at the top of the file and explain how to suppress false positives either globally or
+                        within a particular file.
+                        2) Running Spell Check Locally: cd website && npm install && npm run spellcheck
+                        For more information, refer to: https://www.npmjs.com/package/markdown-spellcheck
+                        " && false; }
+                    """
+                }
+            }
+        }
+    },
+    "security vulnerabilities": {
+        stage("security vulnerabilities") {
+            lightweightNode {
+                withArtifactorySettings { settingsPath ->
+                    docker.image(buildModuleTestImage("maven:3.6.3-jdk-8")).inside(
+                        "--memory=8g --memory-reservation=4g -v ${settingsPath}:/tmp/.m2/settings.xml -e HOME=/tmp") {
+                        checkout scm
+                        sh script: """
+                            ${MVN} dependency-check:check || { echo "
+                            The OWASP dependency check has found security vulnerabilities. Please use a newer version
+                            of the dependency that does not have vulnerabilities. If the analysis has false positives,
+                            they can be suppressed by adding entries to owasp-dependency-check-suppressions.xml (for more
+                            information, see https://jeremylong.github.io/DependencyCheck/general/suppression.html).
+                            " && false; }
+                        """
+                    }
+                }
+            }
+        }
+    },
+    "(Compile=openjdk8, Run=openjdk8) batch index integration test": {
+        integrationTests("(Compile=openjdk8, Run=openjdk8) batch index integration test", 8, ['TESTNG_GROUPS=-Dgroups=batch-index','JVM_RUNTIME=-Djvm.runtime=8'])
+    },
+    "(Compile=openjdk8, Run=openjdk8) input format integration test": {
+        integrationTests("(Compile=openjdk8, Run=openjdk8) input format integration test", 8, ['TESTNG_GROUPS=-Dgroups=input-format','JVM_RUNTIME=-Djvm.runtime=8'])
+    },
+    "(Compile=openjdk8, Run=openjdk8) perfect rollup parallel batch index integration test": {
+        integrationTests("(Compile=openjdk8, Run=openjdk8) perfect rollup parallel batch index integration test", 8, ['TESTNG_GROUPS=-Dgroups=perfect-rollup-parallel-batch-index','JVM_RUNTIME=-Djvm.runtime=8'])
+    },
+    "(Compile=openjdk8, Run=openjdk8) kafka index integration test": {
+        integrationTests("(Compile=openjdk8, Run=openjdk8) kafka index integration test", 8, ['TESTNG_GROUPS=-Dgroups=kafka-index','JVM_RUNTIME=-Djvm.runtime=8'])
+    },
+    "(Compile=openjdk8, Run=openjdk8) kafka index integration test slow": {
+        integrationTests("(Compile=openjdk8, Run=openjdk8) kafka index integration test slow", 8, ['TESTNG_GROUPS=-Dgroups=kafka-index-slow','JVM_RUNTIME=-Djvm.runtime=8'])
+    },
+    "(Compile=openjdk8, Run=openjdk8) transactional kafka index integration test": {
+        integrationTests("(Compile=openjdk8, Run=openjdk8) transactional kafka index integration test", 8, ['TESTNG_GROUPS=-Dgroups=kafka-transactional-index','JVM_RUNTIME=-Djvm.runtime=8'])
+    },
+    "(Compile=openjdk8, Run=openjdk8) transactional kafka index integration test slow": {
+        integrationTests("(Compile=openjdk8, Run=openjdk8) transactional kafka index integration test slow", 8, ['TESTNG_GROUPS=-Dgroups=kafka-transactional-index-slow','JVM_RUNTIME=-Djvm.runtime=8'])
+    },
+    "(Compile=openjdk8, Run=openjdk8) Kafka index integration test with various formats": {
+        integrationTests("(Compile=openjdk8, Run=openjdk8) Kafka index integration test with various formats", 8, ['TESTNG_GROUPS=-Dgroups=kafka-data-format','JVM_RUNTIME=-Djvm.runtime=8'])
+    },
+    "(Compile=openjdk8, Run=openjdk8) query integration test": {
+        integrationTests("(Compile=openjdk8, Run=openjdk8) query integration test", 8, ['TESTNG_GROUPS=-Dgroups=query','JVM_RUNTIME=-Djvm.runtime=8'])
+    },
+    "(Compile=openjdk8, Run=openjdk8) security integration test": {
+        integrationTests("(Compile=openjdk8, Run=openjdk8) security integration test", 8, ['TESTNG_GROUPS=-Dgroups=security','JVM_RUNTIME=-Djvm.runtime=8'])
+    },
+    "(Compile=openjdk8, Run=openjdk8) realtime index integration test": {
+        integrationTests("(Compile=openjdk8, Run=openjdk8) realtime index integration test", 8, ['TESTNG_GROUPS=-Dgroups=realtime-index','JVM_RUNTIME=-Djvm.runtime=8'])
+    },
+    "(Compile=openjdk8, Run=openjdk8) other integration test": {
+        integrationTests("(Compile=openjdk8, Run=openjdk8) other integration test", 8, ['TESTNG_GROUPS=-DexcludedGroups=batch-index,input-format,perfect-rollup-parallel-batch-index,kafka-index,query,realtime-index,security,s3-deep-storage,gcs-deep-storage,azure-deep-storage,hdfs-deep-storage,s3-ingestion,kinesis-index,kinesis-data-format,kafka-transactional-index,kafka-index-slow,kafka-transactional-index-slow,kafka-data-format,hadoop-s3-to-s3-deep-storage,hadoop-s3-to-hdfs-deep-storage,hadoop-azure-to-azure-deep-storage,hadoop-azure-to-hdfs-deep-storage,hadoop-gcs-to-gcs-deep-storage,hadoop-gcs-to-hdfs-deep-storage,aliyun-oss-deep-storage','JVM_RUNTIME=-Djvm.runtime=8'])
+    },
+
+    "(Compile=openjdk8, Run=openjdk11) batch index integration test": {
+        integrationTests("(Compile=openjdk8, Run=openjdk11) batch index integration test", 8, ['TESTNG_GROUPS=-Dgroups=batch-index','JVM_RUNTIME=-Djvm.runtime=11'])
+    },
+    "(Compile=openjdk8, Run=openjdk11) input format integration test": {
+        integrationTests("(Compile=openjdk8, Run=openjdk11) input format integration test", 8, ['TESTNG_GROUPS=-Dgroups=input-format','JVM_RUNTIME=-Djvm.runtime=11'])
+    },
+    "(Compile=openjdk8, Run=openjdk11) perfect rollup parallel batch index integration test": {
+        integrationTests("(Compile=openjdk8, Run=openjdk11) perfect rollup parallel batch index integration test", 8, ['TESTNG_GROUPS=-Dgroups=perfect-rollup-parallel-batch-index','JVM_RUNTIME=-Djvm.runtime=11'])
+    },
+    "(Compile=openjdk8, Run=openjdk11) query integration test": {
+        integrationTests("(Compile=openjdk8, Run=openjdk11) query integration test", 8, ['TESTNG_GROUPS=-Dgroups=query','JVM_RUNTIME=-Djvm.runtime=11'])
+    },
+    "(Compile=openjdk8, Run=openjdk11) security integration test": {
+        integrationTests("(Compile=openjdk8, Run=openjdk11) security integration test", 8, ['TESTNG_GROUPS=-Dgroups=security','JVM_RUNTIME=-Djvm.runtime=11'])
+    },
+    "(Compile=openjdk8, Run=openjdk11) realtime index integration test": {
+        integrationTests("(Compile=openjdk8, Run=openjdk11) realtime index integration test", 8, ['TESTNG_GROUPS=-Dgroups=realtime-index','JVM_RUNTIME=-Djvm.runtime=11'])
+    },
+    "(Compile=openjdk8, Run=openjdk11 other integration test": {
+        integrationTests("(Compile=openjdk8, Run=openjdk11) other integration test", 8, ['TESTNG_GROUPS=-DexcludedGroups=batch-index,input-format,perfect-rollup-parallel-batch-index,kafka-index,query,realtime-index,security,s3-deep-storage,gcs-deep-storage,azure-deep-storage,hdfs-deep-storage,s3-ingestion,kinesis-index,kinesis-data-format,kafka-transactional-index,kafka-index-slow,kafka-transactional-index-slow,kafka-data-format,hadoop-s3-to-s3-deep-storage,hadoop-s3-to-hdfs-deep-storage,hadoop-azure-to-azure-deep-storage,hadoop-azure-to-hdfs-deep-storage,hadoop-gcs-to-gcs-deep-storage,hadoop-gcs-to-hdfs-deep-storage,aliyun-oss-deep-storage','JVM_RUNTIME=-Djvm.runtime=11'])
     }
 }
-
-
-// def DOCKERFILE="""\
-// FROM maven:3.6.3-jdk-8
-// ARG DOCKER_VERSION=18.06.1-ce
-// RUN set -ex \
-//     && curl -fsSLO https://download.docker.com/linux/static/stable/x86_64/docker-\${DOCKER_VERSION}.tgz \
-//     && mv docker-\${DOCKER_VERSION}.tgz docker.tgz \
-//     && tar xzvf docker.tgz \
-//     && mv docker/docker /usr/local/bin/docker \
-//     && useradd -u 1001 docker \
-//     && chown root:docker /usr/local/bin/docker \
-//     && chmod 4750 /usr/local/bin/docker \
-//     && rm -r docker docker.tgz
-// """
-
-// stage("bla") {
-//     node('jenkinsOnDemand') {
-//         sh script: 'docker stop $(docker ps -qa); docker system prune -f --volumes'
-//         writeFile file: "@tmp/Dockerfile", text: DOCKERFILE
-//         docker.build(
-//             "maven:3.6.3-jdk-8-${env.BUILD_ID}",
-//             "--build-arg JDK=jdk-8 @tmp").inside("-v /var/run/docker.sock:/var/run/docker.sock") {
-//             sh script: "bla"
-//         }
-//     }
-// }
-
-
-// stage("Install and checks") {
-//     // retryOnOffline {
-//         node('jenkinsSpot') {
-//             withCredentials([file(credentialsId: 'maven-artifactory-settings', variable: 'MVN_SETTINGS_PATH')]) {
-//                 writeFile file: "@tmp/Dockerfile", text: DOCKERFILE_TEMPLATE
-//                 docker.build(
-//                     "maven:3.6.3-jdk-8-${env.BUILD_ID}",
-//                     "--build-arg JDK=jdk-8 @tmp").inside(
-//                     "--memory=8g --memory-reservation=4g -v ${env.MVN_SETTINGS_PATH}:/tmp/.m2/settings.xml -e HOME=/tmp") {
-//                     stage('Checkout') {
-//                         checkout scm
-//                     }
-
-//                     stage('Install') {
-//                         sh script: "${MVN_OPTS} && ${MVN} clean install -q -ff ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS} -T 1C", label: "Maven install"
-//                         stash allowEmpty: true, includes: '.m2/**', name: 'm2'
-//                         stash allowEmpty: true, includes: 'core/**', name: 'core-druid'
-//                         stash allowEmpty: true, includes: 'processing/**', name: 'processing-druid'
-//                     }
-
-//                     stage('Checks') {
-//                         parallel "animal sniffer checks": {
-//                             sh script: "${MVN} animal-sniffer:check --fail-at-end", label: "animal sniffer"
-//                         },
-//                         "checkstyle": {
-//                             sh script: "${MVN} checkstyle:checkstyle --fail-at-end",label: "checkstyle"
-//                         },
-//                         "enforcer checks": {
-//                             sh script: "${MVN} enforcer:enforce --fail-at-end", label: "enforcer checks"
-//                         },
-//                         "forbidden api checks": {
-//                             sh script: "${MVN} forbiddenapis:check forbiddenapis:testCheck --fail-at-end", label: "forbidden api checks"
-//                         },
-//                         "pmd checks": {
-//                             sh script: "${MVN} pmd:check --fail-at-end", label: "pmd checks"
-//                         },
-//                         "spotbugs checks": {
-//                             sh script: "${MVN} spotbugs:check --fail-at-end -pl '!benchmarks' -T 1C", label: "spotbugs checks"
-//                         },
-//                         "license checks": {
-//                             sh script: """
-//                                 ${MVN_OPTS}
-//                                 mkdir -p /tmp/bin
-//                                 /bin/echo -e "#!/bin/bash\\nPATH=/usr/bin:\\\$PATH exec ${MVN} \\\$@" | tee -a /tmp/bin/mvn
-//                                 chmod u+x /tmp/bin/mvn
-
-//                                 export PATH=/tmp/bin:\$PATH
-//                                 mvn apache-rat:check -Prat --fail-at-end \
-//                                     -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
-//                                     -Drat.consoleOutput=true -Drat.numUnapprovedLicenses=100
-//                                 mkdir -p target
-//                                 distribution/bin/generate-license-dependency-reports.py . target --clean-maven-artifact-transfer --parallel 2
-//                                 distribution/bin/check-licenses.py licenses.yaml target/license-reports
-//                             """, label: "license checks"
-//                         }
-//                     }
-//                 }
-//             }
-//         }
-//     // }
-// }
-
-// stage('Tests') {
-//         parallel 'Long job test': {
-//             node('jenkinsSpot') {
-//                 docker.image('maven:3.6.3-jdk-8').inside("--memory=8g --memory-reservation=4g -u root:root") {
-//                     sh script: "sleep 600"
-//                 }
-//             }
-//         },
-//         'Yet another parallel test': {
-//             node('jenkinsSpot') {
-//                 docker.image('maven:3.6.3-jdk-8').inside("--memory=8g --memory-reservation=4g -u root:root") {
-//                     sh script: "sleep 540"
-//                 }
-//             }
-//         }
-// }
-
-// pipeline {
-//     agent none
-//     // agent {
-//     //     kubernetes {
-//     //         yamlFile 'jenkins-pod.yaml'
-//     //     }
-//     // }
-
-//     options {
-//         timeout(time: 1, unit: 'HOURS')
-//     }
-
-//     //Set global env
-//     environment {
-//         MVN              = "mvn -B -Dmaven.repo.local=.m2/repository"
-//         MVN_OPTS         = "export MAVEN_OPTS=\"-Xms4g -Xmx8g -XX:MaxDirectMemorySize=2048m\""
-//         // Various options to make execution of maven goals faster (e.g., mvn install)
-//         MAVEN_SKIP       = "-Danimal.sniffer.skip=true -Dcheckstyle.skip=true -Ddruid.console.skip=true -Denforcer.skip=true -Dforbiddenapis.skip=true -Dmaven.javadoc.skip=true -Dpmd.skip=true -Dspotbugs.skip=true"
-//         MAVEN_SKIP_TESTS = "-DskipTests -Djacoco.skip=true"
-//     }
-
-//     // stages {
-//     //     stage('Basic test') {
-//     //         agent { kubernetes { yamlFile 'jenkins-jdk8-pod.yaml'; defaultContainer 'jdk' } }
-//     //         stages{
-//     //             stage('Git checkout'){
-//     //                 steps {
-//     //                     sh script: 'echo $HOME'
-//     //                     sh script: 'echo testtesttest > output.txt'
-//     //                     sh script: 'exit 1'
-//     //                     stash allowEmpty: true, includes: 'output.txt', name: 'test'
-//     //                 }
-//     //             }
-//     //         }
-
-//     //         // steps {
-//     //         //     container('shell') {
-//     //         //         sh 'sleep 120'
-//     //         //         sh 'hostname'
-//     //         //         sh 'sleep 120'
-//     //         //     }
-//     //         // }
-//     //     }
-//     // }
-
-//     // stages {
-//     //     stage('Basic test'){
-//             // agent { kubernetes { yamlFile 'jenkins-jdk8-pod.yaml'; defaultContainer 'jdk' } }
-//             // agent { docker { image 'maven:3.6.3-jdk-8'; args '--memory=8g --memory-reservation=4g'; label 'jenkinsSpot' } }
-//     stages{
-//         stage('Install and checks'){
-//             agent { docker { image 'maven:3.6.3-jdk-8'; args '--memory=8g --memory-reservation=4g -u root:root'; label 'jenkinsSpot' } }
-//             stages {
-//                 spotStage('Install') {
-//                     parallel {
-//                         stage('Maven install') {
-//                             steps {
-//                                 sh script: "${env.MVN_OPTS} && ${env.MVN} clean install -q -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS} -T 1C", label: "Maven install"
-//                                 stash allowEmpty: true, includes: '.m2/**', name: 'm2'
-//                                 stash allowEmpty: true, includes: 'core/**', name: 'core-druid'
-//                                 stash allowEmpty: true, includes: 'processing/**', name: 'processing-druid'
-//                             }
-//                         }
-//                         stage('Python install') {
-//                             steps {
-//                                 sh script: """
-//                                     apt-get update -y && apt-get install python3 python3-pip python3-setuptools -y
-//                                     pip3 install wheel pyyaml
-//                                 """, label: "Python install"
-//                             }
-//                         }
-//                     }
-//                 }
-//                 spotStage('Checks'){
-//                     parallel {
-//                         stage ('animal sniffer checks'){
-//                             steps {
-//                                 sh script: "${env.MVN} animal-sniffer:check --fail-at-end", label: "animal sniffer"
-//                             }
-//                         }
-//                         stage ('checkstyle'){
-//                             steps {
-//                                 sh script: "${env.MVN} checkstyle:checkstyle --fail-at-end",label: "checkstyle"
-//                             }
-//                         }
-//                         stage ('enforcer checks'){
-//                             steps {
-//                                 sh script: "${env.MVN} enforcer:enforce --fail-at-end", label: "enforcer checks"
-//                             }
-//                         }
-//                         stage ('forbidden api checks'){
-//                             steps {
-//                                 sh script: "${env.MVN} forbiddenapis:check forbiddenapis:testCheck --fail-at-end", label: "forbidden api checks"
-//                             }
-//                         }
-//                         stage ('pmd checks'){
-//                             steps {
-//                                 sh script: "${env.MVN} pmd:check --fail-at-end", label: "pmd checks"
-//                             }
-//                         }
-//                         stage ('spotbugs checks'){
-//                             steps {
-//                                 sh script: "${env.MVN} spotbugs:check --fail-at-end -pl '!benchmarks' -T 1C", label: "spotbugs checks"
-//                             }
-//                         }
-//                         stage ('license checks'){
-//                             steps {
-//                                 sh script: """
-//                                     ${env.MVN_OPTS}
-//                                     mkdir -p /tmp/bin
-//                                     /bin/echo -e "#!/bin/bash\\nPATH=/usr/bin:\\\$PATH exec ${env.MVN} \\\$@" | tee -a /tmp/bin/mvn
-//                                     chmod u+x /tmp/bin/mvn
-
-//                                     export PATH=/tmp/bin:\$PATH
-//                                     mvn apache-rat:check -Prat --fail-at-end \
-//                                         -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
-//                                         -Drat.consoleOutput=true -Drat.numUnapprovedLicenses=100
-//                                     mkdir -p target
-//                                     distribution/bin/generate-license-dependency-reports.py . target --clean-maven-artifact-transfer --parallel 2
-//                                     distribution/bin/check-licenses.py licenses.yaml target/license-reports
-//                                 """, label: "license checks"
-//                             }
-//                         }
-//                     }
-//                 }
-//             }
-//         }
-
-//         spotStage('Tests') {
-//             parallel{
-//                 stage('Long job test') {
-//                     agent { docker { image 'maven:3.6.3-jdk-8'; args '--memory=8g --memory-reservation=4g'; label 'jenkinsSpot' } }
-//                     steps { script { inspectException {
-//                         sh script: "sleep 1800"
-//                     } } }
-//                 }
-//             }
-//         }
-//     }
-//         // }
-//         // stage('Deep tests'){
-//         //     parallel{
-//         //         stage('Deep tests 1'){
-//         //             agent {
-//         //                 kubernetes {
-//         //                     yamlFile 'jenkins-pod.yaml'
-//         //                 }
-//         //             }
-//         //             tools {
-//         //                 maven 'apache-maven'
-//         //             }
-//         //             stages{
-//         //                 stage('Git checkout') {
-//         //                     steps{
-//         //                         checkout scm
-//         //                     }
-//         //                 }
-
-//         //                 stage('Install'){
-//         //                     steps{
-//         //                         container('jnlp'){
-//         //                             unstash 'm2'
-//         //                             unstash 'core-druid'
-//         //                             unstash 'processing-druid'
-//         //                             //sh script: "export ${env.MVN_OPTS} && ${env.MVN} clean install -q -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS} -T1C", label: "Maven install"
-//         //                             sh script: """
-//         //                                 mkdir -p /var/cache/apt/archives/partial/
-//         //                                 apt-get update && apt-get install python3 python3-pip python3-setuptools -y
-//         //                                 pip3 install wheel
-//         //                                 pip3 install pyyaml
-//         //                             """, label: "Install prerequsite"
-//         //                         }
-//         //                     }
-//         //                 }
-//         //                 stage ('license checks'){
-//         //                     steps {
-//         //                         container('jnlp'){
-//         //                             sh script: """
-//         //                             export ${env.MVN_OPTS}
-//         //                             ${env.MVN} apache-rat:check -Prat --fail-at-end -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn -Drat.consoleOutput=true -Drat.numUnapprovedLicenses=100
-//         //                             mkdir -p target
-//         //                             distribution/bin/generate-license-dependency-reports.py . target --clean-maven-artifact-transfer --parallel 2
-//         //                             distribution/bin/check-licenses.py licenses.yaml target/license-reports
-//         //                             """, label: "license checks"
-//         //                         }
-//         //                     }
-//         //                 }
-//         //                 stage ('compile_strict_jdk8'){
-//         //                     steps {
-//         //                         container('jnlp'){
-//         //                             sh script: "export ${env.MVN_OPTS} && ${env.MVN} clean -Pstrict compile test-compile --fail-at-end -pl '!benchmarks' ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS}",label: "compile_strict"
-//         //                         }
-//         //                     }
-//         //                 }
-//         //             }
-//         //         }
-
-//         //         stage('Deep Tests 2') {
-//         //             agent {
-//         //                 kubernetes {
-//         //                     yamlFile 'jenkins-pod.yaml'
-//         //                 }
-//         //             }
-//         //             tools {
-//         //                 maven 'apache-maven'
-//         //             }
-//         //             stages{
-//         //                 stage('Git checkout') {
-//         //                     steps{
-//         //                         checkout scm
-//         //                     }
-//         //                 }
-
-//         //                 stage('Install'){
-//         //                     steps{
-//         //                         container('jnlp'){
-//         //                             unstash 'm2'
-//         //                             unstash 'core-druid'
-//         //                             unstash 'processing-druid'
-//         //                             //sh script: "export ${env.MVN_OPTS} && ${env.MVN} clean install -q -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS} -T1C", label: "Maven install"
-//         //                             sh script: """
-//         //                                 mkdir -p /var/cache/apt/archives/partial/
-//         //                                 apt-get update && apt-get install python3 python3-pip python3-setuptools -y
-//         //                                 pip3 install wheel
-//         //                                 pip3 install pyyaml
-//         //                             """, label: "Install prerequsite"
-//         //                         }
-//         //                     }
-//         //                 }
-//         //                 stage ('analyze dependencies'){
-//         //                     steps {
-//         //                         container('jnlp'){
-//         //                             sh script: "export ${env.MVN_OPTS} && ${MVN} ${MAVEN_SKIP} dependency:analyze -DoutputXML=true -DignoreNonCompile=true -DfailOnWarning=true", label: "analyze dependencies"
-//         //                         }
-//         //                     }
-//         //                     post {
-//         //                         failure{
-//         //                             echo """
-//         //                             FAILURE EXPLANATION:
-//         //                                 The dependency analysis has found a dependency that is either:
-//         //                                 1) Used and undeclared: These are available as a transitive dependency but should be explicitly
-//         //                                 added to the POM to ensure the dependency version. The XML to add the dependencies to the POM is
-//         //                                 shown above.
-//         //                                 2) Unused and declared: These are not needed and removing them from the POM will speed up the build
-//         //                                 and reduce the artifact size. The dependencies to remove are shown above.
-//         //                                 If there are false positive dependency analysis warnings, they can be suppressed:
-//         //                                 https://maven.apache.org/plugins/maven-dependency-plugin/analyze-mojo.html#usedDependencies
-//         //                                 https://maven.apache.org/plugins/maven-dependency-plugin/examples/exclude-dependencies-from-dependency-analysis.html
-//         //                                 For more information, refer to:
-//         //                                 https://maven.apache.org/plugins/maven-dependency-plugin/analyze-mojo.html
-//         //                             """
-//         //                         }
-//         //                     }
-//         //                 }
-//         //                 stage ('test_processing_module_jdk8'){
-//         //                     steps {
-//         //                         container('jnlp'){
-//         //                             sh script: """
-//         //                             unset _JAVA_OPTIONS
-//         //                             export ${env.MVN_OPTS}
-//         //                             ${env.MVN} test -pl processing ${MAVEN_SKIP} -Dremoteresources.skip=true
-//         //                             """, label: "test_processing_module"
-//         //                         }
-//         //                     }
-//         //                     post {
-//         //                         success {
-//         //                             sh script: "${MVN} -pl processing jacoco:report", label: "create jacoco report"
-//         //                         }
-//         //                     }
-//         //                 }
-//         //             }
-//         //         }
-
-//         //         stage('Deep Tests 3') {
-//         //             agent {
-//         //                 kubernetes {
-//         //                     yamlFile 'jenkins-pod.yaml'
-//         //                 }
-//         //             }
-//         //             tools {
-//         //                 maven 'apache-maven'
-//         //             }
-//         //             stages{
-//         //                 stage('Git checkout') {
-//         //                     steps{
-//         //                         checkout scm
-//         //                     }
-//         //                 }
-
-//         //                 stage('Install'){
-//         //                     steps{
-//         //                         container('jnlp'){
-//         //                             unstash 'm2'
-//         //                             unstash 'core-druid'
-//         //                             unstash 'processing-druid'
-//         //                             //sh script: "export ${env.MVN_OPTS} && ${env.MVN} clean install -q -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS} -T1C", label: "Maven install"
-//         //                             sh script: """
-//         //                                 mkdir -p /var/cache/apt/archives/partial/
-//         //                                 apt-get update && apt-get install python3 python3-pip python3-setuptools -y
-//         //                                 pip3 install wheel
-//         //                                 pip3 install pyyaml
-//         //                             """, label: "Install prerequsite"
-//         //                         }
-//         //                     }
-//         //                 }
-//         //                 stage ('package_check_jdk8'){
-//         //                     steps {
-//         //                         container('jnlp'){
-//         //                             sh script: """
-//         //                             export ${env.MVN_OPTS}
-//         //                             ${env.MVN} clean install -Pdist -Pbundle-contrib-exts --fail-at-end -pl '!benchmarks' ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS} -Ddruid.console.skip=false -T1C
-//         //                             """, label: "package check"
-//         //                         }
-//         //                     }
-//         //                 }
-//         //                 stage ('security vulnerabilities'){
-//         //                     steps {
-//         //                         container('jnlp'){
-//         //                             sh script: "export ${env.MVN_OPTS} && ${env.MVN} dependency-check:check --fail-at-end", label: "security vulnerabilities"
-//         //                         }
-//         //                     }
-//         //                     post {
-//         //                         failure{
-//         //                             echo """
-//         //                             FAILURE EXPLANATION:
-//         //                                 The OWASP dependency check has found security vulnerabilities. Please use a newer version
-//         //                                 of the dependency that does not have vulenerabilities. If the analysis has false positives,
-//         //                                 they can be suppressed by adding entries to owasp-dependency-check-suppressions.xml (for more
-//         //                                 information, see https://jeremylong.github.io/DependencyCheck/general/suppression.html).
-//         //                             """
-//         //                         }
-//         //                     }
-//         //                 }
-//         //             }
-//         //         }
-//         //     }
-//         // }
-//     // }
-//     //Send slack notification
-//     // post {
-//     //     regression { slackSend color: 'danger', message: "Job ${env.JOB_NAME} build ${env.BUILD_NUMBER} failed. See logs ${BUILD_URL}console" }
-//     // }
-// }
