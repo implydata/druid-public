@@ -1934,6 +1934,7 @@
                                 <exclude>examples/conf/**</exclude>
                                 <exclude>.asf.yaml</exclude>
                                 <exclude>**/dependency-reduced-pom.xml</exclude>
+                                <exclude>jenkinsfile</exclude>
                             </excludes>
                         </configuration>
                     </plugin>
