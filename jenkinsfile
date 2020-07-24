@@ -208,7 +208,7 @@ def mavenCheck = { stageName, body ->
             withM2Cache { cacheDir ->
                 docker.image('maven:3.6.3-jdk-8').inside(
                     "--memory=8g --memory-reservation=4g -e HOME=/tmp -e _JAVA_OPTIONS=-Duser.home=/tmp -v ${cacheDir}/.m2:/tmp/.m2") {
-                    withGitCredentials {
+                    withArtifactorySettings {
                         body()
                     }
                 }
