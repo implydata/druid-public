@@ -12,7 +12,7 @@ The pipeline definition consists of consequent stages: `Maven install` and `Chec
 
 `Maven install` stage performs building artifacts and uploading them to docker registry as docker images
 
-Two images are used:
+Two cache images are used:
 
 * druid-m2-cache - contains .m2/repository files
 * druid-build-cache - contains local artifacts built from `mvn install` command
@@ -26,6 +26,16 @@ Almost every job does the following:
 * build/launch docker container (based on maven:3.6.3-jdk-8/maven:3.6.3-jdk-11) mounting druid-m2-cache download to `~/.m2`
 * run test commands inside created container
 
+## When it works
+
+Build gets triggered in the following cases:
+
+* automatically for every commit of opened PR - jenkins _locally_ merge branch of PR into target and then proceed with merging commit
+* automatically for every commit in release branches with the naming format: `d.dd.d-iap` / `d.d.d-iap` (for example 0.19.0-iap or 0.1.0-iap)
+* on demand: in every branch
+
+In all these cases jenkinsfile should be exists.
+
 
 ## Job types
 
@@ -38,7 +48,7 @@ All jobs can be divided into five types:
 * other jobs
 
 
-Each type excluding the last one has its own clojure define in jenkinsfile:
+Each type excluding the last one is defined by its own clojure.
 
 For example maven check is defined by the following closure:
 
@@ -84,6 +94,51 @@ stage("Checks") {
 }
 ```
 
+## Node types
+
+There two types of nodes mentioned in this jenkinsfile: `lightweightNode` and `heavyNode`
+
+The essential difference between them is number of executor per node: `lightweightNode` has 3 executors which means it can run three jobs simultaneosly - so that type is used for simple jobs that don't use docker runtime (e.g maven check, license check, etc); `heavyNode` has only one executor - so the only one job can be launched on such node - this usefull for expensive jobs and/or jobs that uses docker runtime (integration tests)
+
+In this jenkinsfile there are closures referenced for both types:
+
+```groovy
+def heavyNode = { body ->
+    node('jenkinsOnDemand') {
+        body()
+    }
+}
+
+def lightweightNode = { body ->
+    node('jenkinsOnDemandMultiExec') {
+        body()
+    }
+}
+```
+
+So they can used in `Checks` stage:
+
+```groovy
+stage('Checks') {
+	parallel "job1": {
+		stage('Simple check') {
+			heavyNode {
+				docker.image('maven:3.6.3-jdk-8').inside {'./build'}
+			}
+		}
+	},
+	"job2": {
+		stage('Integration test') {
+			lightweightNode {
+				def i = docker.build()
+				i.inside{'./build'}
+			}
+		}
+	}
+// ...
+}
+```
+
 
 ## Jenkinsfile structure
 
@@ -92,6 +147,45 @@ stage("Checks") {
 
 * definitions of variables/closures
 * stages
+
+
+```groovy
+// definitions:
+
+def VARIABLE1 = "..."
+def VARIABLE2 = "..."
+// ...
+def CLOSURE1 = { /* place pipeline code */}
+def CLOSURE2 = { arg, body -> /* other closure can be passed as well as regular arguments */}
+
+// pipeline code
+
+stage('Maven install') {
+	\\ performs mvn clean install
+}
+
+stage('Checks') {
+	parallel "job1": {
+		// scripted pipeline code can be placed directly, for example:
+		// node('jenkinsOnDemand') {
+		//	 docker.image('maven:3.6.3-jdk-8').inside {
+		//		sh script: "./build"
+		//   }
+		// }
+	},
+	"job2": {
+		// .. as well as pre-defined closure:
+		// CLOSURE2("arg")
+	},
+	// ...
+	"jobN": {
+
+	}
+}
+
+
+
+```
 
 
 The first part is variables/closures are defined - so they can be referenced in second part following DRY principle (don't repeat yourself)
@@ -103,16 +197,14 @@ The second part consists, as mentioned earlier, consists of two stages: `Maven i
 ## How to add parallel job
 
 
-Job can added as parrallel stage in `Check` global stage. It can be added directly (see `license checks` for example) or using closure for convenience (e.g to add en masse, see integration tests)
+Job can added as parrallel stage in `Check` global stage. It can be added directly (see `license checks` for example) or using closure.
 
 
 ## Links
 
-
 Jenkinsfile in general: https://www.jenkins.io/doc/book/pipeline/jenkinsfile/
+
 Pipeline syntax: https://www.jenkins.io/doc/book/pipeline/syntax/
+
 Using Docker with Pipeline: https://www.jenkins.io/doc/book/pipeline/docker/
-
-
-
 
