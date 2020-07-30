@@ -26,15 +26,36 @@ def withArtifactorySettings = { body ->
     }
 }
 
+def testArtifacts = { body ->
+    try {
+        body()
+    } finally {
+        sh script: "sudo mkdir -p /root/shared"
+        docker.image('maven:3.6.3-jdk-8').inside('-u root:root -v /root/shared:/root/shared') {
+            sh script: "[ -d \"/root/shared/logs\" ] && cp -R /root/shared/logs ./ || true"
+            sh script: "[ -d \"/root/shared/tasklogs\" ] && cp -R /root/shared/tasklogs ./ || true"
+            archiveArtifacts artifacts: 'logs/*.log', allowEmptyArchive: true
+            archiveArtifacts artifacts: 'tasklogs/*.log', allowEmptyArchive: true
+            archiveArtifacts artifacts: '**/target/surefire-reports/*.xml', allowEmptyArchive: true
+            archiveArtifacts artifacts: '**/target/failsafe-reports/*.xml', allowEmptyArchive: true
+            archiveArtifacts artifacts: '**/target/**.exec', allowEmptyArchive: true
+        }
+    }
+}
+
 def heavyNode = { body ->
     node('jenkinsOnDemand') {
-        body()
+        testArtifacts {
+            body()
+        }
     }
 }
 
 def lightweightNode = { body ->
     node('jenkinsOnDemandMultiExec') {
-        body()
+        testArtifacts {
+            body()
+        }
     }
 }
 
@@ -361,6 +382,7 @@ stage('Maven install') {
             def dockerfileName = "BuildCacheDockerfile"
 
             sh script: """
+                rm -rf ${contextPath}
                 mkdir -p ${contextPath}
                 git status --ignored --porcelain | egrep '^\\!\\!' | grep -v web-console | sed 's|/\$||' | awk -F'\\!\\! ' '{print \$2}'  | tee -a ${contextPath}/artifacts.txt
                 for aname in \$(cat ${contextPath}/artifacts.txt | grep -F '/'); do mkdir -p \$(dirname -- "${contextPath}/root/\${aname}"); done
