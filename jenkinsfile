@@ -26,15 +26,30 @@ def withArtifactorySettings = { body ->
     }
 }
 
+def testArtifacts = { body ->
+    try {
+        body()
+    } finally {
+        docker.image('maven:3.6.3-jdk-8').inside('-u root:root') {
+            sh script: "find . -name '*coverage*'"
+            sh script: "find . -name '*.xml' | grep -v -F 'pom.xml'"
+        }
+    }
+}
+
 def heavyNode = { body ->
     node('jenkinsOnDemand') {
-        body()
+        testArtifacts {
+            body()
+        }
     }
 }
 
 def lightweightNode = { body ->
     node('jenkinsOnDemandMultiExec') {
-        body()
+        testArtifacts {
+            body()
+        }
     }
 }
 
