@@ -122,14 +122,14 @@ So they can used in `Checks` stage:
 stage('Checks') {
 	parallel "job1": {
 		stage('Simple check') {
-			heavyNode {
+			lightweightNode {
 				docker.image('maven:3.6.3-jdk-8').inside {'./build'}
 			}
 		}
 	},
 	"job2": {
 		stage('Integration test') {
-			lightweightNode {
+			heavyNode {
 				def i = docker.build()
 				i.inside{'./build'}
 			}
