@@ -1964,6 +1964,7 @@
                                 <exclude>LABELS</exclude>
                                 <exclude>.github/ISSUE_TEMPLATE/*.md</exclude>
                                 <exclude>.github/pull_request_template.md</exclude>
+                                <exclude>JENKINS.md</exclude>
                                 <exclude>git.version</exclude>
                                 <exclude>node_modules/**</exclude>
                                 <exclude>coordinator-console/**</exclude>
