@@ -1,5 +1,17 @@
 # CI Jenkins pipeline
 
+## Sections
+
+-   <a href="#overview">Overview</a>
+-   <a href="#how-it-works">How it works</a>
+-   <a href="#when-it-works">When it works</a>
+-   <a href="#job-types">Job types</a>
+-   <a href="#node-types">Node types</a>
+-   <a href="#node-config-management">Node config management</a>
+-   <a href="#jenkinsfile-structure">Jenkinsfile structure</a>
+-   <a href="#how-to-add-parallel-job">How to add parallel job</a>
+-   <a href="#links">Links</a>
+
 ## Overview
 
 `jenkinsfile` contains definition of CI pipeline running on QA-jenkins
@@ -98,9 +110,15 @@ stage("Checks") {
 
 There two types of nodes mentioned in this jenkinsfile: `lightweightNode` and `heavyNode`
 
-The essential difference between them is number of executor per node: `lightweightNode` has 3 executors which means it can run three jobs simultaneosly - so that type is used for simple jobs that don't use docker runtime (e.g maven check, license check, etc); `heavyNode` has only one executor - so the only one job can be launched on such node - this usefull for expensive jobs and/or jobs that uses docker runtime (integration tests)
+The essential difference between them is number of executor per node: `lightweightNode` is one of 3 executors which means there can be 3 such jobs running in the single instance - so that type is used for simple jobs that don't use docker runtime (e.g maven check, license check, etc); `heavyNode` is single executor on an instance - so no more than one job can be running at any moment - this is usefull for expensive jobs and/or jobs that directly uses docker runtime (integration tests)
 
-In this jenkinsfile there are closures referenced for both types:
+`lightweightNode` represents a one of multiple executors on node under label `jenkinsOnDemandMultiExec`, node config are stored as helm chart values in `qa-infrastructure` repository: https://github.com/implydata/qa-infrastructure/blob/8e1cbe772c664070fc94640f07b6393141b8c1b8/modules/cicd/jenkins/values.yml#L1438-L1471
+
+`heavyNode` represents single executor on node under label `jenkinsOnDemand`, node config: https://github.com/implydata/qa-infrastructure/blob/8e1cbe772c664070fc94640f07b6393141b8c1b8/modules/cicd/jenkins/values.yml#L1363-L1397
+
+These configs can be changed [using terraform](#node-config-management)
+
+In the jenkinsfile there are closures referenced for both types of nodes:
 
 ```groovy
 def heavyNode = { body ->
@@ -137,6 +155,23 @@ stage('Checks') {
 	}
 // ...
 }
+```
+
+
+## Node config management
+
+Jenkins master is running on k8s cluster and its config is defined by helm chart. The helm chart is managed by terraform
+
+For example, to change number of executors for node with `jenkinsOnDemandMultiExec` label:
+
+1. Clone `qa-infrastructure` repo
+1. Change helm chart value at this place: https://github.com/implydata/qa-infrastructure/blob/8e1cbe772c664070fc94640f07b6393141b8c1b8/modules/cicd/jenkins/values.yml#L1462
+1. Apply changes by terraform command:
+
+```
+cd imply
+terraform init
+terraform apply -target module.jenkins.helm_release.jenkins
 ```
 
 
