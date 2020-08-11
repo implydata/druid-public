@@ -26,26 +26,41 @@ def withArtifactorySettings = { body ->
     }
 }
 
-def testArtifacts = { body ->
+def stageNameNormalized = {
+    return "stage_${env.STAGE_NAME.replaceAll(~/[^A-Za-z0-9_-]/,'_')}"
+}
+
+def moveFilesByPattern = { filesPattern, destDir ->
+    sh script: """#!/bin/bash -x
+        shopt -s globstar
+        if  ls ${filesPattern}; then
+            for fname in ${filesPattern}; do
+                mkdir -p \$(dirname -- "${destDir}/\${fname}")
+                cp \$fname ${destDir}/\${fname}
+            done
+        fi
+    """
+}
+
+def artifactsWrapper = { body ->
     try {
         body()
     } finally {
+        def stageArtifactsDirPath = stageNameNormalized()
         sh script: "sudo mkdir -p /root/shared"
-        docker.image('maven:3.6.3-jdk-8').inside('-u root:root -v /root/shared:/root/shared') {
-            sh script: "[ -d \"/root/shared/logs\" ] && cp -R /root/shared/logs ./ || true"
-            sh script: "[ -d \"/root/shared/tasklogs\" ] && cp -R /root/shared/tasklogs ./ || true"
-            archiveArtifacts artifacts: 'logs/*.log', allowEmptyArchive: true
-            archiveArtifacts artifacts: 'tasklogs/*.log', allowEmptyArchive: true
-            archiveArtifacts artifacts: '**/target/surefire-reports/*.xml', allowEmptyArchive: true
-            archiveArtifacts artifacts: '**/target/failsafe-reports/*.xml', allowEmptyArchive: true
-            archiveArtifacts artifacts: '**/target/**.exec', allowEmptyArchive: true
-        }
+        sh script: "mkdir -p ${stageArtifactsDirPath}"
+        sh script: "sudo bash -c '[ -d \"/root/shared/logs\" ] && cp -R /root/shared/logs ${stageArtifactsDirPath}/ || true'"
+        sh script: "sudo bash -c '[ -d \"/root/shared/tasklogs\" ] && cp -R /root/shared/tasklogs ${stageArtifactsDirPath}/ || true'"
+        moveFilesByPattern("**/target/surefire-reports/*.xml", stageArtifactsDirPath)
+        moveFilesByPattern("**/target/failsafe-reports/*.xml", stageArtifactsDirPath)
+        moveFilesByPattern("**/target/**.exec", stageArtifactsDirPath)
+        archiveArtifacts artifacts: "${stageArtifactsDirPath}/**", allowEmptyArchive: true
     }
 }
 
 def heavyNode = { body ->
     node('jenkinsOnDemand') {
-        testArtifacts {
+        artifactsWrapper {
             body()
         }
     }
@@ -53,7 +68,7 @@ def heavyNode = { body ->
 
 def lightweightNode = { body ->
     node('jenkinsOnDemandMultiExec') {
-        testArtifacts {
+        artifactsWrapper {
             body()
         }
     }
@@ -366,12 +381,14 @@ def packagingCheck = { jdkVersion ->
 stage('Maven install') {
     heavyNode {
         withM2Cache { cacheDir ->
+            docker.image('maven:3.6.3-jdk-8').inside { checkout scm }
+            docker.image('maven:3.6.3-jdk-8').inside('-u root:root') {
+                sh script: "git clean -fdx"
+            }
             docker.image('maven:3.6.3-jdk-8').inside("""\
                 --memory=8g --memory-reservation=4g \
                 -e HOME=/tmp -e _JAVA_OPTIONS=-Duser.home=/tmp -v ${cacheDir}/.m2:/tmp/.m2 \
                 """ ) {
-                checkout scm
-                sh script: "git clean -fdx"
                 withArtifactorySettings {
                     sh script: "${MVN_OPTS} && ${MVN} clean install -q -ff ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS} -T 1C", label: "Maven install"
                 }
