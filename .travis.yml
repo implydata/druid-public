@@ -53,6 +53,14 @@ stages:
   - name: cron
     if: type = cron
 
+branches:
+  only:
+  - master
+  - nightly
+  - nightly-test
+  - latest
+  - /.*-iap.*$/
+
 jobs:
   include:
     - name: "animal sniffer checks"
