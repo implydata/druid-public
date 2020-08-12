@@ -33,6 +33,15 @@ cache:
   directories:
     - $HOME/.m2
 
+# Only build release branches
+branches:
+  only:
+  - master
+  - nightly
+  - nightly-test
+  - latest
+  - /.*-iap.*$/
+
 matrix:
   include:
       # license checks
