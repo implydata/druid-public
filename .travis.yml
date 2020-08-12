@@ -47,6 +47,15 @@ env:
 # output.  To compensate, use travis_wait to extend the timeout.
 install: MAVEN_OPTS='-Xmx3000m' travis_wait 15 ${MVN} clean install -q -ff ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS} -T1C
 
+# Only build release branches
+branches:
+  only:
+  - master
+  - nightly
+  - nightly-test
+  - latest
+  - /.*-iap.*$/
+
 jobs:
   include:
     - name: "animal sniffer checks"
