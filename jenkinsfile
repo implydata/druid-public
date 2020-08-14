@@ -31,8 +31,11 @@ def copyFilesByPattern = { filesPattern, destDir ->
         shopt -s globstar
         if  ls ${filesPattern}; then
             for fname in ${filesPattern}; do
-                mkdir -p \$(dirname -- "${destDir}/\${fname}")
-                cp \$fname ${destDir}/\${fname}
+                fname_root = \$(echo \${fname} | cut -d "/" -f1)
+                if ! [[ "\$fname_root" = "${destDir}" ]]; then
+                    mkdir -p \$(dirname -- "${destDir}/\${fname}")
+                    cp \$fname ${destDir}/\${fname}
+                fi
             done
         fi
     """
