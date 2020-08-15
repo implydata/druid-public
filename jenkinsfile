@@ -14,6 +14,9 @@ def dockerInitCleanup = {
     sh script: "docker network prune -f"
 }
 
+def workspaceCleanup = {
+    sh script: "sudo git clean -fdx", label: "Remove everything but files from git"
+}
 
 def withArtifactorySettings = { body ->
     withCredentials([file(credentialsId: 'maven-artifactory-settings', variable: 'MVN_SETTINGS_PATH')]) {
@@ -297,6 +300,7 @@ def mavenCheck = { stageName, body ->
     stage(stageName) {
         lightweightNode {
             checkout scm
+            workspaceCleanup()
             downloadBuildCache()
             withM2Cache { cacheDir ->
                 docker.image('maven:3.6.3-jdk-8').inside(
@@ -314,6 +318,7 @@ def testModule = { stageName, jdkVersion, envMap ->
     stage(stageName) {
         lightweightNode {
             checkout scm
+            workspaceCleanup()
             downloadBuildCache()
             withM2Cache { cacheDir ->
                 docker.image(buildModuleTestImage("maven:3.6.3-jdk-${jdkVersion}")).inside(
@@ -340,6 +345,7 @@ def testModuleWithDocker = { stageName, jdkVersion, envMap ->
                 def moduleTestImage = buildModuleTestImage("maven:3.6.3-jdk-${jdkVersion}")
                 def dockerBinaryImage = buildDockerBinaryImage(moduleTestImage)
                 checkout scm
+                workspaceCleanup()
                 downloadBuildCache()
                 docker.image(dockerBinaryImage).inside("""\
                     --memory=8g \
@@ -350,7 +356,6 @@ def testModuleWithDocker = { stageName, jdkVersion, envMap ->
                     --net host \
                     -u root:root \
                     """) {
-                    checkout scm
                     withArtifactorySettings {
                         withGitCredentials {
                             withEnv(envMap) {
@@ -372,6 +377,7 @@ def integrationTests = { stageName, jdkVersion, envMap ->
             sh script: "sudo mkdir -p /root/shared"
             withM2Cache { cacheDir ->
                 checkout scm
+                workspaceCleanup()
                 downloadBuildCache()
                 docker.image(buildDockerBinaryImage("maven:3.6.3-jdk-${jdkVersion}")).inside("""\
                     -v ${cacheDir}/.m2:/root/.m2 \
@@ -425,9 +431,10 @@ def packagingCheck = { jdkVersion ->
     stage("(openjdk${jdkVersion}) packaging check") {
         lightweightNode {
             withM2Cache { cacheDir ->
+                checkout scm
+                workspaceCleanup()
                 docker.image(buildGenerateLicenseImage("maven:3.6.3-jdk-${jdkVersion}")).inside(
                     "--memory=8g --memory-reservation=4g -v ${cacheDir}/.m2:/root/.m2 -u root:root") {
-                    checkout scm
                     withArtifactorySettings {
                         sh script: """
                             MAVEN_OPTS='-Xmx3000m' ${MVN} -e clean install -Prat -Pdist -Pbundle-contrib-exts --fail-at-end \
@@ -443,10 +450,8 @@ def packagingCheck = { jdkVersion ->
 stage('Maven install') {
     heavyNode {
         withM2Cache { cacheDir ->
-            docker.image('maven:3.6.3-jdk-8').inside { checkout scm }
-            docker.image('maven:3.6.3-jdk-8').inside('-u root:root') {
-                sh script: "git clean -fdx"
-            }
+            checkout scm
+            workspaceCleanup()
             docker.image('maven:3.6.3-jdk-8').inside("""\
                 --memory=8g --memory-reservation=4g \
                 -e HOME=/tmp -e _JAVA_OPTIONS=-Duser.home=/tmp -v ${cacheDir}/.m2:/tmp/.m2 \
