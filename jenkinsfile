@@ -73,6 +73,18 @@ def retryOnTimeout = { body ->
     }
 }
 
+def getDiffBranchName = {
+    if (env.CHANGE_ID && env.CHANGE_TARGET && env.CHANGE_BRANCH){
+        if (env.BRANCH_NAME == "PR-${env.CHANGE_ID}-merge"){
+            return env.CHANGE_TARGET
+        } else {
+            return env.CHANGE_BRANCH
+        }
+    else {
+        return env.BRANCH_NAME
+    }
+}
+
 def artifactsWrapper = { body ->
     try {
         body()
@@ -237,6 +249,7 @@ RUN curl -s -L \
 
 
 def moduleTest = {
+    def diffBranchName = getDiffBranchName()
     sh script: """#!/bin/bash -ex
 
         /bin/echo -e "#!/bin/sh\\ncase \"\\\$1\" in\\nUsername*) echo \"\\\$GIT_USERNAME\" ;;\\nPassword*) echo \"\\\$GIT_PASSWORD\" ;;\\nesac\\n" | tee -a /bin/askpass
@@ -254,9 +267,9 @@ def moduleTest = {
         free -m
         ${MVN} -pl \${MAVEN_PROJECTS} jacoco:report
 
-        export TARGET_BRANCH_NAME=\${CHANGE_TARGET:-${env.BRANCH_NAME}}
-        git remote set-branches --add origin \${BRANCH_NAME:-master} && git fetch
-        all_files="\$(git diff --name-only origin/\${TARGET_BRANCH_NAME}...HEAD | grep "\\.java\$" || [[ \$? == 1 ]])"
+        export DIFF_BRANCH_NAME=${diffBranchName}
+        git remote set-branches --add origin \${DIFF_BRANCH_NAME} && git fetch
+        all_files="\$(git diff --name-only origin/\${DIFF_BRANCH_NAME}...HEAD | grep "\\.java\$" || [[ \$? == 1 ]])"
 
         for f in \${all_files}; do
             echo \$f
@@ -277,7 +290,7 @@ def moduleTest = {
 
         if [ -n "\${project_files}" ]; then
             { for i in 1 2 3; do npm install @connectis/diff-test-coverage@1.5.3 && break || sleep 15; done } && \
-            git diff origin/\${TARGET_BRANCH_NAME}...HEAD -- \${project_files} | \
+            git diff origin/\${DIFF_BRANCH_NAME}...HEAD -- \${project_files} | \
             node_modules/.bin/diff-test-coverage \
               --coverage "**/target/site/jacoco/jacoco.xml" \
               --type jacoco \
