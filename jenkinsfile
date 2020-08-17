@@ -80,6 +80,7 @@ def getDiffBranchName = {
         } else {
             return env.CHANGE_BRANCH
         }
+    }
     else {
         return env.BRANCH_NAME
     }
