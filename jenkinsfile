@@ -14,6 +14,9 @@ def dockerInitCleanup = {
     sh script: "docker network prune -f"
 }
 
+def workspaceCleanup = {
+    sh script: "sudo git clean -fdx", label: "Remove everything but files from git"
+}
 
 def withArtifactorySettings = { body ->
     withCredentials([file(credentialsId: 'maven-artifactory-settings', variable: 'MVN_SETTINGS_PATH')]) {
@@ -26,15 +29,104 @@ def withArtifactorySettings = { body ->
     }
 }
 
-def heavyNode = { body ->
-    node('jenkinsOnDemand') {
+def copyFilesByPattern = { filesPattern, destDir ->
+    sh script: """#!/bin/bash -x
+        shopt -s globstar
+        if  ls ${filesPattern}; then
+            for fname in ${filesPattern}; do
+                fname_root=\$(echo \${fname} | cut -d "/" -f1)
+                if ! [[ "\$fname_root" = "${destDir}" ]]; then
+                    mkdir -p \$(dirname -- "${destDir}/\${fname}")
+                    cp \$fname ${destDir}/\${fname}
+                fi
+            done
+        fi
+    """
+}
+
+def inspectException = { body ->
+    try {
         body()
+    } catch(err) {
+        echo "Exception: ${err}"
+        def causeClasses = err.causes.collect {it.getClass()}
+        echo "Exception causes: ${causeClasses}"
+        throw err
+    }
+}
+
+def retryOnTimeout = { body ->
+    while(true) {
+        try {
+            inspectException {
+                body()
+            }
+            break
+        } catch(err) {
+            if (err instanceof org.jenkinsci.plugins.workflow.steps.FlowInterruptedException &&
+                err.causes.collect {it.getClass()}.contains(org.jenkinsci.plugins.workflow.steps.TimeoutStepExecution.ExceededTimeout)) {
+                continue
+            } else {
+                throw err
+            }
+        }
+    }
+}
+
+def getDiffBranchName = {
+    if (env.CHANGE_ID && env.CHANGE_TARGET && env.CHANGE_BRANCH){
+        return env.CHANGE_TARGET
+    }
+    else {
+        return env.BRANCH_NAME
+    }
+}
+
+def artifactsWrapper = { body ->
+    try {
+        body()
+    } finally {
+        def stageArtifactsDirPath = "stage_${env.STAGE_NAME.replaceAll(~/[^A-Za-z0-9_-]/,'_')}"
+        sh script: "sudo mkdir -p /root/shared"
+        sh script: "mkdir -p ${stageArtifactsDirPath}"
+        // copy logs
+        sh script: "sudo bash -c '[ -d \"/root/shared/logs\" ] && cp -R /root/shared/logs ${stageArtifactsDirPath}/ || true'"
+        sh script: "sudo bash -c '[ -d \"/root/shared/tasklogs\" ] && cp -R /root/shared/tasklogs ${stageArtifactsDirPath}/ || true'"
+        // copy test reports
+        copyFilesByPattern("**/target/surefire-reports/*.xml", stageArtifactsDirPath)
+        copyFilesByPattern("**/target/failsafe-reports/*.xml", stageArtifactsDirPath)
+        // copy top-level jacoco reports
+        copyFilesByPattern("**/target/*.exec", stageArtifactsDirPath)
+        copyFilesByPattern("**/jacoco/*.html", stageArtifactsDirPath)
+        copyFilesByPattern("**/jacoco/*.xml", stageArtifactsDirPath)
+        copyFilesByPattern("**/jacoco/*.csv", stageArtifactsDirPath)
+        copyFilesByPattern("**/jacoco/jacoco-resources/*", stageArtifactsDirPath)
+        // copy detailed jacoco reports
+        copyFilesByPattern("**/jacoco/**/*.html", stageArtifactsDirPath)
+        copyFilesByPattern("**/jacoco/**/*.xml", stageArtifactsDirPath)
+        copyFilesByPattern("**/jacoco/**/*.csv", stageArtifactsDirPath)
+        // fixate artifacts
+        archiveArtifacts artifacts: "${stageArtifactsDirPath}/**", allowEmptyArchive: true
+    }
+}
+
+def heavyNode = { body ->
+    retryOnTimeout {
+        node('jenkinsOnDemand') {
+            artifactsWrapper {
+                body()
+            }
+        }
     }
 }
 
 def lightweightNode = { body ->
-    node('jenkinsOnDemandMultiExec') {
-        body()
+    retryOnTimeout {
+        node('jenkinsOnDemandMultiExec') {
+            artifactsWrapper {
+                body()
+            }
+        }
     }
 }
 
@@ -62,20 +154,24 @@ def ecrLogin = { imageURL ->
 }
 
 def withM2Cache = { body ->
-    def destination = "${env.WORKSPACE}@tmp/.m2cache"
+    def destination = "${env.WORKSPACE}@tmp/.m2Cache"
+    def buildContext = "${env.WORKSPACE}@tmp/.m2CacheBuildContext"
     ecrLogin(M2_CACHE_IMAGE)
-    sh script: """
-        docker pull ${M2_CACHE_IMAGE}:latest && \
-        echo "FROM ${M2_CACHE_IMAGE}:latest" | \
-        DOCKER_BUILDKIT=1 docker build --output type=local,dest=${destination} - || \
-        { echo "Probably ${M2_CACHE_IMAGE}:latest doesn't exist yet, so using empty dir instead" && mkdir -p ${destination}/.m2; }
-        sudo chmod a+w ${destination}/.m2
-    """
+    timeout(time: 15, unit: 'MINUTES') {
+        sh script: """
+            docker pull ${M2_CACHE_IMAGE}:latest && \
+            rm -rf ${buildContext} && mkdir -p ${buildContext} && \
+            echo "FROM ${M2_CACHE_IMAGE}:latest" > ${buildContext}/Dockerfile && \
+            DOCKER_BUILDKIT=1 docker build --output type=local,dest=${destination} ${buildContext} || \
+            { echo "Probably ${M2_CACHE_IMAGE}:latest doesn't exist yet, so using empty dir instead" && mkdir -p ${destination}/.m2; }
+            sudo chmod a+w ${destination}/.m2
+        """
+    }
     body(destination)
 }
 
 def uploadM2Cache = { cacheDirPath ->
-    def dockerfilePath = "${cacheDirPath}/M2CacheDockerfile"
+    def dockerfilePath = "${cacheDirPath}/m2CacheDockerfile"
     ecrLogin(M2_CACHE_IMAGE)
     sh script: """
         cd ${cacheDirPath}
@@ -89,11 +185,16 @@ def uploadM2Cache = { cacheDirPath ->
 }
 
 def downloadBuildCache = {
+    def buildContext = "${env.WORKSPACE}@tmp/.cacheBuildContext"
     ecrLogin(BUILD_CACHE_IMAGE)
-    sh script: """
-        echo "FROM ${BUILD_CACHE_IMAGE}:${BUILD_CACHE_TAG}" | \
-        DOCKER_BUILDKIT=1 docker build --output type=local,dest=. -
-    """
+    timeout(time: 15, unit: 'MINUTES') {
+        sh script: """
+            rm -rf ${buildContext}
+            mkdir -p ${buildContext}
+            echo "FROM ${BUILD_CACHE_IMAGE}:${BUILD_CACHE_TAG}" > ${buildContext}/Dockerfile
+            DOCKER_BUILDKIT=1 docker build --output type=local,dest=\$(pwd) ${buildContext}
+        """
+    }
 }
 
 
@@ -145,6 +246,7 @@ RUN curl -s -L \
 
 
 def moduleTest = {
+    def diffBranchName = getDiffBranchName()
     sh script: """#!/bin/bash -ex
 
         /bin/echo -e "#!/bin/sh\\ncase \"\\\$1\" in\\nUsername*) echo \"\\\$GIT_USERNAME\" ;;\\nPassword*) echo \"\\\$GIT_PASSWORD\" ;;\\nesac\\n" | tee -a /bin/askpass
@@ -152,17 +254,19 @@ def moduleTest = {
         export GIT_ASKPASS=/bin/askpass
 
         unset _JAVA_OPTIONS
+        export BUILD_STATUS=0
 
         MAVEN_OPTS='-Xmx800m' ${MVN} test -pl \${MAVEN_PROJECTS} \
-        ${MAVEN_SKIP} -Dremoteresources.skip=true -Ddruid.generic.useDefaultValueForNull=\${DRUID_USE_DEFAULT_VALUE_FOR_NULL}
+        ${MAVEN_SKIP} -Dremoteresources.skip=true -Ddruid.generic.useDefaultValueForNull=\${DRUID_USE_DEFAULT_VALUE_FOR_NULL} || \
+        export BUILD_STATUS=1
 
         sh -c "dmesg | egrep -i '(oom|out of memory|kill process|killed).*' -C 1 || exit 0"
         free -m
         ${MVN} -pl \${MAVEN_PROJECTS} jacoco:report
 
-        export TARGET_BRANCH_NAME=\${CHANGE_TARGET:-${env.BRANCH_NAME}}
-        git remote set-branches --add origin \${BRANCH_NAME:-master} && git fetch
-        all_files="\$(git diff --name-only origin/\${TARGET_BRANCH_NAME}...HEAD | grep "\\.java\$" || [[ \$? == 1 ]])"
+        export DIFF_BRANCH_NAME=${diffBranchName}
+        git remote set-branches --add origin \${DIFF_BRANCH_NAME} && git fetch
+        all_files="\$(git diff --name-only origin/\${DIFF_BRANCH_NAME}...HEAD | grep "\\.java\$" || [[ \$? == 1 ]])"
 
         for f in \${all_files}; do
             echo \$f
@@ -183,7 +287,7 @@ def moduleTest = {
 
         if [ -n "\${project_files}" ]; then
             { for i in 1 2 3; do npm install @connectis/diff-test-coverage@1.5.3 && break || sleep 15; done } && \
-            git diff origin/\${TARGET_BRANCH_NAME}...HEAD -- \${project_files} | \
+            git diff origin/\${DIFF_BRANCH_NAME}...HEAD -- \${project_files} | \
             node_modules/.bin/diff-test-coverage \
               --coverage "**/target/site/jacoco/jacoco.xml" \
               --type jacoco \
@@ -197,6 +301,8 @@ def moduleTest = {
               -- || \
             { printf "\\n\\n****FAILED****\\nDiff code coverage check failed. To view coverage report, run 'mvn clean test jacoco:report' and open 'target/site/jacoco/index.html'\\nFor more details on how to run code coverage locally, follow instructions here - https://github.com/apache/druid/blob/master/dev/code-review/code-coverage.md#running-code-coverage-locally\\n\\n" && false; }
         fi
+
+        exit \$BUILD_STATUS
     """
 }
 
@@ -204,6 +310,7 @@ def mavenCheck = { stageName, body ->
     stage(stageName) {
         lightweightNode {
             checkout scm
+            workspaceCleanup()
             downloadBuildCache()
             withM2Cache { cacheDir ->
                 docker.image('maven:3.6.3-jdk-8').inside(
@@ -221,6 +328,7 @@ def testModule = { stageName, jdkVersion, envMap ->
     stage(stageName) {
         lightweightNode {
             checkout scm
+            workspaceCleanup()
             downloadBuildCache()
             withM2Cache { cacheDir ->
                 docker.image(buildModuleTestImage("maven:3.6.3-jdk-${jdkVersion}")).inside(
@@ -247,6 +355,7 @@ def testModuleWithDocker = { stageName, jdkVersion, envMap ->
                 def moduleTestImage = buildModuleTestImage("maven:3.6.3-jdk-${jdkVersion}")
                 def dockerBinaryImage = buildDockerBinaryImage(moduleTestImage)
                 checkout scm
+                workspaceCleanup()
                 downloadBuildCache()
                 docker.image(dockerBinaryImage).inside("""\
                     --memory=8g \
@@ -257,7 +366,6 @@ def testModuleWithDocker = { stageName, jdkVersion, envMap ->
                     --net host \
                     -u root:root \
                     """) {
-                    checkout scm
                     withArtifactorySettings {
                         withGitCredentials {
                             withEnv(envMap) {
@@ -279,6 +387,7 @@ def integrationTests = { stageName, jdkVersion, envMap ->
             sh script: "sudo mkdir -p /root/shared"
             withM2Cache { cacheDir ->
                 checkout scm
+                workspaceCleanup()
                 downloadBuildCache()
                 docker.image(buildDockerBinaryImage("maven:3.6.3-jdk-${jdkVersion}")).inside("""\
                     -v ${cacheDir}/.m2:/root/.m2 \
@@ -298,21 +407,26 @@ def integrationTests = { stageName, jdkVersion, envMap ->
                             """
                             try {
                                 sh script: """
-                                    ${MVN} verify -pl integration-tests -P integration-tests \${TESTNG_GROUPS} \${JVM_RUNTIME} ${MAVEN_SKIP}
+                                    export BUILD_STATUS=0
+                                    ${MVN} verify -pl integration-tests -P integration-tests \${TESTNG_GROUPS} \${JVM_RUNTIME} ${MAVEN_SKIP} || \
+                                    export BUILD_STATUS=1
+                                    ${MVN} -pl integration-tests jacoco:report
+                                    exit \$BUILD_STATUS
                                 """
-                            } catch(err) {
+                            } finally {
                                 sh script: """#!/bin/bash -ex
-                                    for v in ~/shared/logs/*.log; do
-                                        echo \$v logtail ========================
-                                        tail -100 \$v
-                                    done
+                                    if  ls ~/shared/logs/*.log; then
+                                        for v in ~/shared/logs/*.log; do
+                                            echo \$v logtail ========================
+                                            tail -100 \$v
+                                        done
+                                    fi
                                     docker ps -a
                                     for v in broker middlemanager overlord router coordinator historical; do
                                         echo \$v dmesg ========================
-                                        docker exec druid-\$v sh -c 'dmesg | tail -3'
+                                        docker ps --format {{.Names}} | grep -q druid-\$v && docker exec druid-\$v sh -c 'dmesg | tail -3' || true
                                     done
                                 """
-                                throw err
                             }
                         }
                     }
@@ -327,9 +441,10 @@ def packagingCheck = { jdkVersion ->
     stage("(openjdk${jdkVersion}) packaging check") {
         lightweightNode {
             withM2Cache { cacheDir ->
+                checkout scm
+                workspaceCleanup()
                 docker.image(buildGenerateLicenseImage("maven:3.6.3-jdk-${jdkVersion}")).inside(
                     "--memory=8g --memory-reservation=4g -v ${cacheDir}/.m2:/root/.m2 -u root:root") {
-                    checkout scm
                     withArtifactorySettings {
                         sh script: """
                             MAVEN_OPTS='-Xmx3000m' ${MVN} -e clean install -Prat -Pdist -Pbundle-contrib-exts --fail-at-end \
@@ -345,12 +460,12 @@ def packagingCheck = { jdkVersion ->
 stage('Maven install') {
     heavyNode {
         withM2Cache { cacheDir ->
+            checkout scm
+            workspaceCleanup()
             docker.image('maven:3.6.3-jdk-8').inside("""\
                 --memory=8g --memory-reservation=4g \
                 -e HOME=/tmp -e _JAVA_OPTIONS=-Duser.home=/tmp -v ${cacheDir}/.m2:/tmp/.m2 \
                 """ ) {
-                checkout scm
-                sh script: "git clean -fdx"
                 withArtifactorySettings {
                     sh script: "${MVN_OPTS} && ${MVN} clean install -q -ff ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS} -T 1C", label: "Maven install"
                 }
@@ -361,6 +476,7 @@ stage('Maven install') {
             def dockerfileName = "BuildCacheDockerfile"
 
             sh script: """
+                rm -rf ${contextPath}
                 mkdir -p ${contextPath}
                 git status --ignored --porcelain | egrep '^\\!\\!' | grep -v web-console | sed 's|/\$||' | awk -F'\\!\\! ' '{print \$2}'  | tee -a ${contextPath}/artifacts.txt
                 for aname in \$(cat ${contextPath}/artifacts.txt | grep -F '/'); do mkdir -p \$(dirname -- "${contextPath}/root/\${aname}"); done
