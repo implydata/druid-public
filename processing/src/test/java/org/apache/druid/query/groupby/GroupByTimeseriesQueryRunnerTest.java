@@ -215,6 +215,45 @@ public class GroupByTimeseriesQueryRunnerTest extends TimeseriesQueryRunnerTest
     Assert.assertEquals(result.toString(), 59.021022, value.getDoubleMetric("minIndex"), 59.021022 * 1e-6);
   }
 
+  // GroupBy handles timestamps differently when granularity is ALL
+  @Override
+  @Test
+  public void testFullOnTimeseriesMinMaxAggregators()
+  {
+    TimeseriesQuery query = Druids.newTimeseriesQueryBuilder()
+                                  .dataSource(QueryRunnerTestHelper.DATA_SOURCE)
+                                  .granularity(Granularities.ALL)
+                                  .intervals(QueryRunnerTestHelper.FULL_ON_INTERVAL_SPEC)
+                                  .aggregators(
+                                      QueryRunnerTestHelper.INDEX_LONG_MIN,
+                                      QueryRunnerTestHelper.INDEX_LONG_MAX,
+                                      QueryRunnerTestHelper.INDEX_DOUBLE_MIN,
+                                      QueryRunnerTestHelper.INDEX_DOUBLE_MAX,
+                                      QueryRunnerTestHelper.INDEX_FLOAT_MIN,
+                                      QueryRunnerTestHelper.INDEX_FLOAT_MAX
+                                  )
+                                  .descending(descending)
+                                  .build();
+
+    DateTime expectedEarliest = DateTimes.of("1970-01-01");
+    DateTime expectedLast = DateTimes.of("2011-04-15");
+
+
+    Iterable<Result<TimeseriesResultValue>> results = runner.run(QueryPlus.wrap(query)).toList();
+    Result<TimeseriesResultValue> result = results.iterator().next();
+
+    Assert.assertEquals(expectedEarliest, result.getTimestamp());
+    Assert.assertFalse(
+        StringUtils.format("Timestamp[%s] > expectedLast[%s]", result.getTimestamp(), expectedLast),
+        result.getTimestamp().isAfter(expectedLast)
+    );
+    Assert.assertEquals(59L, (long) result.getValue().getLongMetric(QueryRunnerTestHelper.LONG_MIN_INDEX_METRIC));
+    Assert.assertEquals(1870, (long) result.getValue().getLongMetric(QueryRunnerTestHelper.LONG_MAX_INDEX_METRIC));
+    Assert.assertEquals(59.021022D, result.getValue().getDoubleMetric(QueryRunnerTestHelper.DOUBLE_MIN_INDEX_METRIC), 0);
+    Assert.assertEquals(1870.061029D, result.getValue().getDoubleMetric(QueryRunnerTestHelper.DOUBLE_MAX_INDEX_METRIC), 0);
+    Assert.assertEquals(59.021023F, result.getValue().getFloatMetric(QueryRunnerTestHelper.FLOAT_MIN_INDEX_METRIC), 0);
+    Assert.assertEquals(1870.061F, result.getValue().getFloatMetric(QueryRunnerTestHelper.FLOAT_MAX_INDEX_METRIC), 0);
+  }
 
   @Override
   public void testEmptyTimeseries()
