@@ -476,7 +476,7 @@ def s3DeepStorageTests = { stageName, jdkVersion, envMap ->
                     ${MVN_OPTS}
                     ${MVN} verify -P integration-tests -pl integration-tests \
                     -Dgroups=s3-deep-storage -Doverride.config.path=${WORKSPACE}/jenkins/s3-config \${JVM_RUNTIME} -Ddruid.test.config.cloudBucket=druid-qa -Ddruid.test.config.cloudPath=${cloudpath}/ -Dstart.hadoop.docker=true \
-                    -ff ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS}
+                    -ff ${MAVEN_SKIP} -Djacoco.skip=true
                 """, label: "s3-deep-storage with ${env.JVM_RUNTIME}"
             }
             finally {
@@ -495,7 +495,7 @@ def kinesisDeepStorageTests = { stageName, jdkVersion, envMap ->
                     ${MVN_OPTS}
                     ${MVN} verify -P integration-tests -pl integration-tests \
                     -Dgroups=kinesis-index -Doverride.config.path=${WORKSPACE}/jenkins/kinesis-config \${JVM_RUNTIME} -Ddruid.test.config.streamEndpoint=kinesis.us-east-1.amazonaws.com -Dstart.hadoop.docker=true \
-                    -ff ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS}
+                    -ff ${MAVEN_SKIP} -Djacoco.skip=true
                 """, label: "kinesis-deep-storage with ${env.JVM_RUNTIME}"
             }
         }
@@ -523,7 +523,7 @@ def azureDeepStorageTests = { stageName, jdkVersion, envMap ->
                     ${MVN_OPTS}
                     ${MVN} verify -P integration-tests -pl integration-tests \
                     -Dgroups=azure-deep-storage -Doverride.config.path=${WORKSPACE}/jenkins/azure-config \${JVM_RUNTIME} -Ddruid.test.config.cloudBucket=${containerName} -Ddruid.test.config.cloudPath= -Dstart.hadoop.docker=true \
-                    -ff ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS}
+                    -ff ${MAVEN_SKIP} -Djacoco.skip=true
                 """, label: "azure-deep-storage with ${env.JVM_RUNTIME}"
             }
             finally {
@@ -547,7 +547,7 @@ def hdfsDeepStorageTests = { stageName, jdkVersion, envMap ->
             ${MVN_OPTS}
             ${MVN} verify -P integration-tests -pl integration-tests \
             -Dgroups=hdfs-deep-storage -Dstart.hadoop.docker=true \${JVM_RUNTIME} -Doverride.config.path=${WORKSPACE}/jenkins/hdfs-config -Dextra.datasource.name.suffix='' -Dit.test=ITHdfsToHdfsParallelIndexTest \
-            -ff ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS}
+            -ff ${MAVEN_SKIP} -Djacoco.skip=true
         """, label: "azure-deep-storage with ${env.JVM_RUNTIME}"
     }
 }
