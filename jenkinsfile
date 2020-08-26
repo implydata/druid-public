@@ -252,13 +252,11 @@ RUN curl -s -L \
     -o /usr/local/bin/docker-compose \
     && chmod +x /usr/local/bin/docker-compose
 RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash
-RUN pushd /tmp \
-    && curl -s "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
+RUN curl -s "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
     && unzip awscliv2.zip \
     && ./aws/install \
     && rm awscliv2.zip \
-    && rm -rf aws \
-    && popd
+    && rm -rf aws
 """
     def imageName = "${fromImage}-dbin-${env.STAGE_NAME.replaceAll(~/[^a-z0-9]/,'')}${env.BUILD_ID}"
     docker.build(imageName, "${env.WORKSPACE}@tmp -f ${env.WORKSPACE}@tmp/DockerBinaryImageDockerfile")
@@ -400,96 +398,6 @@ def testModuleWithDocker = { stageName, jdkVersion, envMap ->
     }
 }
 
-def integrationTests = { stageName, jdkVersion, envMap ->
-    integrationTestsWrapper(stageName, jdkVersion, envMap) {
-        sh script: """
-            export BUILD_STATUS=0
-            ${MVN} verify -pl integration-tests -P integration-tests \${TESTNG_GROUPS} \${JVM_RUNTIME} ${MAVEN_SKIP} || \
-            export BUILD_STATUS=1
-            ${MVN} -pl integration-tests jacoco:report
-            exit \$BUILD_STATUS
-        """
-    }
-}
-
-def s3DeepStorageTests = { stageName, jdkVersion, envMap ->
-    integrationTestsWrapper(stageName, jdkVersion, envMap) {
-        withAWSCredentials {
-            def cloudpath = UUID.randomUUID().toString()
-            sh script: """
-                aws s3 sync ${WORKSPACE}/integration-tests/src/test/resources/data/batch_index/json/ s3://druid-qa/${cloudpath} --exclude "*" --include "wikipedia_index_data*.json"
-            """
-            writeFile file: "jenkins/s3-config", text: "druid_storage_type=s3\ndruid_storage_bucket=druid-qa\ndruid_storage_baseKey=${cloudpath}\ndruid_s3_accessKey=${AWS_ACCESS_KEY_ID}\ndruid_s3_secretKey=${AWS_SECRET_ACCESS_KEY}\nAWS_REGION=us-east-1\ndruid_extensions_loadList=[\"druid-s3-extensions\",\"druid-hdfs-storage\"]"
-            try {
-                sh script: """
-                    ${MVN_OPTS} && ${MVN} verify -P integration-tests -pl integration-tests -Dgroups=s3-deep-storage -Doverride.config.path=${WORKSPACE}/jenkins/s3-config \${JVM_RUNTIME} -Ddruid.test.config.cloudBucket=druid-qa -Ddruid.test.config.cloudPath=${cloudpath}/ -Dstart.hadoop.docker=true -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS}
-                """, label: "s3-deep-storage with ${env.JVM_RUNTIME}"
-            }
-            finally {
-                sh script: "aws s3 rm s3://druid-qa/${cloudpath}  --recursive"
-            }
-        }
-    }
-}
-
-def kinesisDeepStorageTests = { stageName, jdkVersion, envMap ->
-    integrationTestsWrapper(stageName, jdkVersion, envMap) {
-        lock('awsResource') {
-            withAWSCredentials {
-                writeFile file: "jenkins/kinesis-config", text: "druid_kinesis_accessKey=${AWS_ACCESS_KEY_ID}\ndruid_kinesis_secretKey=${AWS_SECRET_ACCESS_KEY}\nAWS_REGION=us-east-1\ndruid_extensions_loadList=[\"druid-kinesis-indexing-service\"]"
-                sh script: """
-                    ${MVN_OPTS}
-                    ${MVN} verify -P integration-tests -pl integration-tests \
-                    -Dgroups=kinesis-index -Doverride.config.path=${WORKSPACE}/jenkins/kinesis-config \${JVM_RUNTIME} -Ddruid.test.config.streamEndpoint=kinesis.us-east-1.amazonaws.com -Dstart.hadoop.docker=true \
-                    -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS}
-                """, label: "kinesis-deep-storage with ${env.JVM_RUNTIME}"
-            }
-        }
-    }
-}
-
-def azureDeepStorageTests = { stageName, jdkVersion, envMap ->
-    integrationTestsWrapper(stageName, jdkVersion, envMap) {
-        withAzureCredentials {
-            def containerName = UUID.randomUUID().toString()
-            sh script: """
-                az storage container create -n ${containerName} --public-access blob --account-name ${AZURE_ACCOUNT} --account-key ${AZURE_KEY}
-                az storage blob upload-batch --account-name ${AZURE_ACCOUNT} --account-key ${AZURE_KEY} -d ${containerName} -s ${WORKSPACE}/integration-tests/src/test/resources/data/batch_index/json/ --pattern "wikipedia_index_data*.json"
-            """
-            writeFile file: "jenkins/azure-config", text: "druid_storage_type=azure\ndruid_azure_account=$AZURE_ACCOUNT\ndruid_azure_key=$AZURE_KEY\ndruid_azure_container=${containerName}\ndruid_extensions_loadList=[\"druid-azure-extensions\",\"druid-hdfs-storage\"]"
-            try {
-                sh script: """
-                    ${MVN_OPTS}
-                    ${MVN} verify -P integration-tests -pl integration-tests \
-                    -Dgroups=azure-deep-storage -Doverride.config.path=${WORKSPACE}/jenkins/azure-config \${JVM_RUNTIME} -Ddruid.test.config.cloudBucket=${containerName} -Ddruid.test.config.cloudPath= -Dstart.hadoop.docker=true \
-                    -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS}
-                """, label: "azure-deep-storage with ${env.JVM_RUNTIME}"
-            }
-            finally {
-                sh script: """
-                     az storage container delete -n ${containerName} --account-name ${AZURE_ACCOUNT} --account-key ${AZURE_KEY}
-                """
-            }
-        }
-    }
-}
-
-def hdfsDeepStorageTests = { stageName, jdkVersion, envMap ->
-    integrationTestsWrapper(stageName, jdkVersion, envMap) {
-        writeFile file: "${WORKSPACE}/jenkins/hdfs-config", text: "druid_storage_type=hdfs\n" +
-            "druid_storage_storageDirectory=/druid/segments\n" +
-            "druid_extensions_loadList=[\"druid-hdfs-storage\", , \"druid-parquet-extensions\", \"druid-orc-extensions\"]\n" +
-            "druid_indexer_logs_type=hdfs\n" +
-            "druid_indexer_logs_directory=/druid/indexing-logs"
-        sh script: """
-            ${MVN_OPTS}
-            ${MVN} verify -P integration-tests -pl integration-tests \
-            -Dgroups=hdfs-deep-storage -Dstart.hadoop.docker=true \${JVM_RUNTIME} -Doverride.config.path=${WORKSPACE}/jenkins/hdfs-config -Dextra.datasource.name.suffix='' -Dit.test=ITHdfsToHdfsParallelIndexTest \
-            -ff ${env.MAVEN_SKIP} ${env.MAVEN_SKIP_TESTS}
-        """, label: "azure-deep-storage with ${env.JVM_RUNTIME}"
-    }
-}
-
 def integrationTestsWrapper = { stageName, jdkVersion, envMap, body ->
     stage(stageName) {
         heavyNode {
@@ -541,6 +449,108 @@ def integrationTestsWrapper = { stageName, jdkVersion, envMap, body ->
     }
 }
 
+def integrationTests = { stageName, jdkVersion, envMap ->
+    integrationTestsWrapper(stageName, jdkVersion, envMap) {
+        sh script: """
+            export BUILD_STATUS=0
+            ${MVN} verify -pl integration-tests -P integration-tests \${TESTNG_GROUPS} \${JVM_RUNTIME} ${MAVEN_SKIP} || \
+            export BUILD_STATUS=1
+            ${MVN} -pl integration-tests jacoco:report
+            exit \$BUILD_STATUS
+        """
+    }
+}
+
+def s3DeepStorageTests = { stageName, jdkVersion, envMap ->
+    integrationTestsWrapper(stageName, jdkVersion, envMap) {
+        withAWSCredentials {
+            def cloudpath = UUID.randomUUID().toString()
+            sh script: """
+                aws s3 sync \
+                ${WORKSPACE}/integration-tests/src/test/resources/data/batch_index/ s3://druid-qa/${cloudpath} \
+                --exclude "*" --include "wikipedia_index_data*.json"
+            """
+            writeFile file: "jenkins/s3-config", text: "druid_storage_type=s3\ndruid_storage_bucket=druid-qa\ndruid_storage_baseKey=${cloudpath}\ndruid_s3_accessKey=${AWS_ACCESS_KEY_ID}\ndruid_s3_secretKey=${AWS_SECRET_ACCESS_KEY}\nAWS_REGION=us-east-1\ndruid_extensions_loadList=[\"druid-s3-extensions\",\"druid-hdfs-storage\"]"
+            try {
+                sh script: """
+                    ${MVN_OPTS}
+                    ${MVN} verify -P integration-tests -pl integration-tests \
+                    -Dgroups=s3-deep-storage -Doverride.config.path=${WORKSPACE}/jenkins/s3-config \${JVM_RUNTIME} -Ddruid.test.config.cloudBucket=druid-qa -Ddruid.test.config.cloudPath=${cloudpath}/ -Dstart.hadoop.docker=true \
+                    -ff ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS}
+                """, label: "s3-deep-storage with ${env.JVM_RUNTIME}"
+            }
+            finally {
+                sh script: "aws s3 rm s3://druid-qa/${cloudpath}  --recursive"
+            }
+        }
+    }
+}
+
+def kinesisDeepStorageTests = { stageName, jdkVersion, envMap ->
+    integrationTestsWrapper(stageName, jdkVersion, envMap) {
+        lock('awsResource') {
+            withAWSCredentials {
+                writeFile file: "jenkins/kinesis-config", text: "druid_kinesis_accessKey=${AWS_ACCESS_KEY_ID}\ndruid_kinesis_secretKey=${AWS_SECRET_ACCESS_KEY}\nAWS_REGION=us-east-1\ndruid_extensions_loadList=[\"druid-kinesis-indexing-service\"]"
+                sh script: """
+                    ${MVN_OPTS}
+                    ${MVN} verify -P integration-tests -pl integration-tests \
+                    -Dgroups=kinesis-index -Doverride.config.path=${WORKSPACE}/jenkins/kinesis-config \${JVM_RUNTIME} -Ddruid.test.config.streamEndpoint=kinesis.us-east-1.amazonaws.com -Dstart.hadoop.docker=true \
+                    -ff ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS}
+                """, label: "kinesis-deep-storage with ${env.JVM_RUNTIME}"
+            }
+        }
+    }
+}
+
+def azureDeepStorageTests = { stageName, jdkVersion, envMap ->
+    integrationTestsWrapper(stageName, jdkVersion, envMap) {
+        withAzureCredentials {
+            def containerName = UUID.randomUUID().toString()
+            sh script: """
+                az storage container create -n ${containerName} \
+                --public-access blob \
+                --account-name ${AZURE_ACCOUNT} --account-key ${AZURE_KEY}
+            """
+            writeFile file: "jenkins/azure-config", text: "druid_storage_type=azure\ndruid_azure_account=$AZURE_ACCOUNT\ndruid_azure_key=$AZURE_KEY\ndruid_azure_container=${containerName}\ndruid_extensions_loadList=[\"druid-azure-extensions\",\"druid-hdfs-storage\"]"
+            try {
+                sh script: """
+                    az storage blob upload-batch \
+                    --account-name ${AZURE_ACCOUNT} --account-key ${AZURE_KEY} \
+                    -d ${containerName} \
+                    --source ${WORKSPACE}/integration-tests/src/test/resources/data/batch_index/ --pattern "wikipedia_index_data*.json"
+                """
+                sh script: """
+                    ${MVN_OPTS}
+                    ${MVN} verify -P integration-tests -pl integration-tests \
+                    -Dgroups=azure-deep-storage -Doverride.config.path=${WORKSPACE}/jenkins/azure-config \${JVM_RUNTIME} -Ddruid.test.config.cloudBucket=${containerName} -Ddruid.test.config.cloudPath= -Dstart.hadoop.docker=true \
+                    -ff ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS}
+                """, label: "azure-deep-storage with ${env.JVM_RUNTIME}"
+            }
+            finally {
+                sh script: """
+                     az storage container delete -n ${containerName}\
+                     --account-name ${AZURE_ACCOUNT} --account-key ${AZURE_KEY}
+                """
+            }
+        }
+    }
+}
+
+def hdfsDeepStorageTests = { stageName, jdkVersion, envMap ->
+    integrationTestsWrapper(stageName, jdkVersion, envMap) {
+        writeFile file: "${WORKSPACE}/jenkins/hdfs-config", text: "druid_storage_type=hdfs\n" +
+            "druid_storage_storageDirectory=/druid/segments\n" +
+            "druid_extensions_loadList=[\"druid-hdfs-storage\", , \"druid-parquet-extensions\", \"druid-orc-extensions\"]\n" +
+            "druid_indexer_logs_type=hdfs\n" +
+            "druid_indexer_logs_directory=/druid/indexing-logs"
+        sh script: """
+            ${MVN_OPTS}
+            ${MVN} verify -P integration-tests -pl integration-tests \
+            -Dgroups=hdfs-deep-storage -Dstart.hadoop.docker=true \${JVM_RUNTIME} -Doverride.config.path=${WORKSPACE}/jenkins/hdfs-config -Dextra.datasource.name.suffix='' -Dit.test=ITHdfsToHdfsParallelIndexTest \
+            -ff ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS}
+        """, label: "azure-deep-storage with ${env.JVM_RUNTIME}"
+    }
+}
 
 def packagingCheck = { jdkVersion ->
     stage("(openjdk${jdkVersion}) packaging check") {
