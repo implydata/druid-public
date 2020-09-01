@@ -207,6 +207,13 @@ Grouping by a multi-value expression will observe the native Druid multi-value a
 the `UNNEST` functionality available in some other SQL dialects. Refer to the documentation on
 [multi-value string dimensions](multi-value-dimensions.html) for additional details.
 
+> Because multi-value dimensions are treated by the SQL planner as `VARCHAR`, there are some inconsistencies between how
+> they are handled in Druid SQL and in native queries. For example, expressions involving multi-value dimensions may be
+> incorrectly optimized by the Druid SQL planner: `multi_val_dim = 'a' AND multi_val_dim = 'b'` will be optimized to
+> `false`, even though it is possible for a single row to have both "a" and "b" as values for `multi_val_dim`. The
+> SQL behavior of multi-value dimensions will change in a future release to more closely align with their behavior
+> in native queries.
+
 ### NULL values
 
 The `druid.generic.useDefaultValueForNull` [runtime property](../configuration/index.html#sql-compatible-null-handling)
@@ -231,6 +238,13 @@ Aggregation functions can appear in the SELECT clause of any query. Any aggregat
 possible for two aggregators in the same SQL query to have different filters.
 
 Only the COUNT aggregation can accept DISTINCT.
+
+> The order of aggregation operations across segments is not deterministic. This means that non-commutative aggregation
+> functions can produce inconsistent results across the same query. 
+>
+> Functions that operate on an input type of "float" or "double" may also see these differences in aggregation
+> results across multiple query runs because of this. If precisely the same value is desired across multiple query runs,
+> consider using the `ROUND` function to smooth out the inconsistencies between queries.  
 
 |Function|Notes|
 |--------|-----|
@@ -720,10 +734,13 @@ Druid does not support all SQL features. In particular, the following features a
 Additionally, some Druid native query features are not supported by the SQL language. Some unsupported Druid features
 include:
 
-- [Union datasources](datasource.html#union)
-- [Inline datasources](datasource.html#inline)
+- [Union datasources](datasource.html#union).
+- [Inline datasources](datasource.html#inline).
 - [Spatial filters](../development/geo.html).
 - [Query cancellation](querying.html#query-cancellation).
+- [Multi-value dimensions](#multi-value-strings) are only partially implemented in Druid SQL. There are known
+inconsistencies between their behavior in SQL queries and in native queries due to how they are currently treated by
+the SQL planner.
 
 ## Client APIs
 
@@ -829,9 +846,7 @@ delivered due to an error.
 
 ### JDBC
 
-You can make Druid SQL queries using the [Avatica JDBC driver](https://calcite.apache.org/avatica/downloads/). Once
-you've downloaded the Avatica client jar, add it to your classpath and use the connect string
-`jdbc:avatica:remote:url=http://BROKER:8082/druid/v2/sql/avatica/`.
+You can make Druid SQL queries using the [Avatica JDBC driver](https://calcite.apache.org/avatica/downloads/). We recommend using Avatica JDBC driver version 1.17.0 or later. Note that as of the time of this writing, Avatica 1.17.0, the latest version, does not support passing connection string parameters from the URL to Druid, so you must pass them using a `Properties` object. Once you've downloaded the Avatica client jar, add it to your classpath and use the connect string `jdbc:avatica:remote:url=http://BROKER:8082/druid/v2/sql/avatica/`.
 
 Example code:
 
@@ -849,7 +864,7 @@ try (Connection connection = DriverManager.getConnection(url, connectionProperti
       final ResultSet resultSet = statement.executeQuery(query)
   ) {
     while (resultSet.next()) {
-      // Do something
+      // process result set
     }
   }
 }
@@ -884,6 +899,19 @@ final ResultSet resultSet = statement.executeQuery();
 Druid SQL supports setting connection parameters on the client. The parameters in the table below affect SQL planning.
 All other context parameters you provide will be attached to Druid queries and can affect how they run. See
 [Query context](query-context.html) for details on the possible options.
+
+```java
+String url = "jdbc:avatica:remote:url=http://localhost:8082/druid/v2/sql/avatica/";
+
+// Set any query context parameters you need here.
+Properties connectionProperties = new Properties();
+connectionProperties.setProperty("sqlTimeZone", "America/Los_Angeles");
+connectionProperties.setProperty("useCache", "false");
+
+try (Connection connection = DriverManager.getConnection(url, connectionProperties)) {
+  // create and execute statements, process result sets, etc
+}
+```
 
 Note that to specify an unique identifier for SQL query, use `sqlQueryId` instead of `queryId`. Setting `queryId` for a SQL
 request has no effect, all native queries underlying SQL will use auto-generated queryId.
