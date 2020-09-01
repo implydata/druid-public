@@ -168,6 +168,33 @@
     <cve>CVE-2018-14721</cve>  <!-- cvss of 10.0 -->
     <cvssBelow>10</cvssBelow>  <!-- suppress all CVEs for jackson-databind:2.4.0 since it is via htrace-core4 -->
   </suppress>
+  <!--
+   ~ TODO: Figure out fix
+  -->
+  <suppress>
+    <notes><![CDATA[
+   file name: htrace-core-3.1.0-incubating.jar (shaded: com.fasterxml.jackson.core:*:2.4.0)
+   ]]></notes>
+    <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/.*@2.4.0$</packageUrl>
+    <cve>CVE-2020-24616</cve>  <!-- cvss of 10.0 -->
+    <cvssBelow>10</cvssBelow>
+  </suppress>
+  <suppress>
+    <notes><![CDATA[
+   file name: parquet-jackson-1.11.0.jar (shaded: com.fasterxml.jackson.core:*:2.9.10)
+   ]]></notes>
+    <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/.*@2.9.10$</packageUrl>
+    <cve>CVE-2020-24616</cve>  <!-- cvss of 10.0 -->
+    <cvssBelow>10</cvssBelow>
+  </suppress>
+  <suppress>
+    <notes><![CDATA[
+   file name: snakeyaml-1.6.jar (snakeyaml)
+   ]]></notes>
+    <packageUrl regex="true">^pkg:maven/org.yaml/snakeyaml@1.6$</packageUrl>
+    <cve>CVE-2017-18640</cve>  <!-- cvss of 10.0 -->
+    <cvssBelow>10</cvssBelow>
+  </suppress>
   <suppress>
     <!--
       ~ TODO: Fix by updating parquet version in extensions-core/parquet-extensions.
