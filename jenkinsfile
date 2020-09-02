@@ -7,6 +7,12 @@ def BUILD_CACHE_IMAGE = "018895040333.dkr.ecr.us-east-1.amazonaws.com/druid-buil
 def AWS_CREDS_ID      = "aws_s3_access"
 def BUILD_CACHE_TAG   = env.BUILD_TAG.toLowerCase().replaceAll(~/[^a-z0-9-]/,'')
 
+properties([
+    pipelineTriggers([
+        issueCommentTrigger('.*test this please.*')
+    ])
+])
+
 def dockerInitCleanup = {
     sh script: "for container in \$(docker ps -q); do docker stop \$container; done"
     sh script: "docker container prune -f"
