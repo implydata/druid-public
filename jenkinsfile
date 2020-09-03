@@ -540,7 +540,7 @@ def hdfsDeepStorageTests = { stageName, jdkVersion, envMap ->
     integrationTestsWrapper(stageName, jdkVersion, envMap) {
         writeFile file: "${WORKSPACE}/jenkins/hdfs-config", text: "druid_storage_type=hdfs\n" +
             "druid_storage_storageDirectory=/druid/segments\n" +
-            "druid_extensions_loadList=[\"druid-hdfs-storage\",\"druid-orc-extensions\"]\n" +
+            "druid_extensions_loadList=[\"druid-hdfs-storage\"]\n" +
             "druid_indexer_logs_type=hdfs\n" +
             "druid_indexer_logs_directory=/druid/indexing-logs"
         sh script: """
