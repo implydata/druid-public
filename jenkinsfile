@@ -543,12 +543,11 @@ def hdfsDeepStorageTests = { stageName, jdkVersion, envMap ->
             "druid_extensions_loadList=[\"druid-hdfs-storage\"]\n" +
             "druid_indexer_logs_type=hdfs\n" +
             "druid_indexer_logs_directory=/druid/indexing-logs"
-        sh script: """
-            ${MVN_OPTS}
-            ${MVN} verify -P integration-tests -pl integration-tests \
-            -Dgroups=hdfs-deep-storage -Dstart.hadoop.docker=true \${JVM_RUNTIME} -Doverride.config.path=${WORKSPACE}/jenkins/hdfs-config -Dextra.datasource.name.suffix='' -Dit.test=ITHdfsToHdfsParallelIndexTest \
-            -ff ${MAVEN_SKIP} -Djacoco.skip=true
-        """, label: "hdfs-deep-storage with ${env.JVM_RUNTIME}"
+        sh script: MVN_OPTS + "\n" + MVN +
+            ' verify -P integration-tests -pl integration-tests' +
+            " -Doverride.config.path=${WORKSPACE}/jenkins/hdfs-config" +
+            ' -Dgroups=hdfs-deep-storage -Dstart.hadoop.docker=true ${JVM_RUNTIME} -Dextra.datasource.name.suffix="" -Dit.test=ITHdfsToHdfsParallelIndexTest' +
+            "-ff ${MAVEN_SKIP} -Djacoco.skip=true", label: "hdfs-deep-storage with ${env.JVM_RUNTIME}"
     }
 }
 
