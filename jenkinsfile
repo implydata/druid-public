@@ -6,6 +6,7 @@ def M2_CACHE_IMAGE    = "018895040333.dkr.ecr.us-east-1.amazonaws.com/druid-m2-c
 def BUILD_CACHE_IMAGE = "018895040333.dkr.ecr.us-east-1.amazonaws.com/druid-build-cache"
 def AWS_CREDS_ID      = "aws_s3_access"
 def AZURE_CREDS_ID    = "azure_credentials"
+def GCS_CREDS_ID      = "gcs-bucket-qa"
 def BUILD_CACHE_TAG   = env.BUILD_TAG.toLowerCase().replaceAll(~/[^a-z0-9-]/,'')
 
 def dockerInitCleanup = {
@@ -31,13 +32,19 @@ def withArtifactorySettings = { body ->
 }
 
 def withAWSCredentials = { body ->
-    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: 'aws_s3_access', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
+    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: AWS_CREDS_ID, secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
         body()
     }
 }
 
 def withAzureCredentials = { body ->
     withCredentials([usernamePassword(credentialsId: AZURE_CREDS_ID, usernameVariable: 'AZURE_ACCOUNT', passwordVariable: 'AZURE_KEY')]) {
+        body()
+    }
+}
+
+def withGCSCredentials = { body ->
+    withCredentials([file(credentialsId: GCS_CREDS_ID, variable: 'GC_KEY')]) {
         body()
     }
 }
@@ -536,6 +543,25 @@ def azureDeepStorageTests = { stageName, jdkVersion, envMap ->
     }
 }
 
+def gcsDeepStorageTests = { stageName, jdkVersion, envMap ->
+    integrationTestsWrapper(stageName, jdkVersion, envMap) {
+        withGCSCredentials {
+            writeFile file: "${WORKSPACE}/jenkins/gcs-config", text: "druid_storage_type=google\ndruid_google_bucket=imply-qa-testing\ndruid_google_prefix=gcs-test\ndruid_extensions_loadList=[\"druid-google-extensions\",\"druid-hdfs-storage\"]\nGOOGLE_APPLICATION_CREDENTIALS=/shared/docker/credentials/creds.json"
+            sh script: """
+                mkdir -p ${WORKSPACE}/jenkins/gcs
+                cp ${env.GC_KEY} ${WORKSPACE}/jenkins/gcs/creds.json
+                chmod 764 ${WORKSPACE}/jenkins/gcs/creds.json
+                """, label: "copy gcs creds"
+            sh script: """
+                ${MVN_OPTS}
+                ${MVN} verify -P integration-tests -pl integration-tests \
+                -Dgroups=gcs-deep-storage -Doverride.config.path=${WORKSPACE}/jenkins/gcs-config \${JVM_RUNTIME} -Dresource.file.dir.path=${WORKSPACE}/jenkins/gcs/ -Dresource.file.dir.path=${WORKSPACE}/jenkins/gcs/ -Ddruid.test.config.cloudBucket=imply-qa-testing -Ddruid.test.config.cloudPath=gcs-test -Dstart.hadoop.docker=true \
+                -ff ${MAVEN_SKIP} -Djacoco.skip=true
+            """, label: "gcs-deep-storage with ${env.JVM_RUNTIME}"
+        }
+    }
+}
+
 def hdfsDeepStorageTests = { stageName, jdkVersion, envMap ->
     integrationTestsWrapper(stageName, jdkVersion, envMap) {
         writeFile file: "${WORKSPACE}/jenkins/hdfs-config", text: "druid_storage_type=hdfs\n" +
@@ -936,6 +962,9 @@ stage("Checks") {
     "(Compile=openjdk8, Run=openjdk8) hdfs deep storage test": {
         hdfsDeepStorageTests("(Compile=openjdk8, Run=openjdk8) hdfs deep storage test", 8, ['JVM_RUNTIME=-Djvm.runtime=8'])
     },
+    "(Compile=openjdk8, Run=openjdk8) gcs deep storage test": {
+        gcsDeepStorageTests("(Compile=openjdk8, Run=openjdk8) gcs deep storage test", 8, ['JVM_RUNTIME=-Djvm.runtime=8'])
+    },
 
     "(Compile=openjdk8, Run=openjdk11) s3 deep storage test": {
         s3DeepStorageTests("(Compile=openjdk8, Run=openjdk11) s3 deep storage test", 8, ['JVM_RUNTIME=-Djvm.runtime=11'])
@@ -945,5 +974,8 @@ stage("Checks") {
     },
     "(Compile=openjdk8, Run=openjdk11) hdfs deep storage test": {
         hdfsDeepStorageTests("(Compile=openjdk8, Run=openjdk11) hdfs deep storage test", 8, ['JVM_RUNTIME=-Djvm.runtime=11'])
+    },
+    "(Compile=openjdk8, Run=openjdk11) gcs deep storage test": {
+        gcsDeepStorageTests("(Compile=openjdk8, Run=openjdk8) gcs deep storage test", 8, ['JVM_RUNTIME=-Djvm.runtime=11'])
     }
 }
