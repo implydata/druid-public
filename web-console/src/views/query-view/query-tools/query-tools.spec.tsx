@@ -16,12 +16,18 @@
  * limitations under the License.
  */
 
-export * from './general';
-export * from './druid-query';
-export * from './druid-lookup';
-export * from './query-state';
-export * from './query-manager';
-export * from './query-cursor';
-export * from './local-storage-keys';
-export * from './column-metadata';
-export * from './inline';
+import { render } from '@testing-library/react';
+import React from 'react';
+
+import { QueryTools } from './query-tools';
+
+describe('query tools', () => {
+  it('matches snapshot', () => {
+    const queryTools = (
+      <QueryTools query={undefined} onQueryChange={() => {}} columnMetadata={[]} />
+    );
+
+    const { container } = render(queryTools);
+    expect(container.firstChild).toMatchSnapshot();
+  });
+});

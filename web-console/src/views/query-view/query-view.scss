@@ -46,12 +46,36 @@ $nav-width: 250px;
       top: 0;
       bottom: 10px;
 
+      .query-tools {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 60px;
+        bottom: 30px + $standard-padding;
+      }
+
+      &.with-tools .query-input {
+        left: 60px;
+      }
+
       .query-input {
         position: absolute;
         top: 0;
         left: 0;
         right: 0;
         bottom: 30px + $standard-padding;
+      }
+
+      .placeholder-control {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 280px;
+        bottom: 30px + $standard-padding;
+      }
+
+      &.with-placeholder-control .query-input {
+        right: 280px + $standard-padding;
       }
 
       .control-bar {

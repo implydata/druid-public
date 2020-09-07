@@ -16,12 +16,26 @@
  * limitations under the License.
  */
 
-export * from './general';
-export * from './druid-query';
-export * from './druid-lookup';
-export * from './query-state';
-export * from './query-manager';
-export * from './query-cursor';
-export * from './local-storage-keys';
-export * from './column-metadata';
-export * from './inline';
+import { render } from '@testing-library/react';
+import { SqlQuery, SqlRef } from 'druid-query-toolkit';
+import React from 'react';
+
+import { EqualDecompose } from '../equal-decompose/equal-decompose';
+
+import { EqualControl } from './equal-control';
+
+describe('equal control', () => {
+  it('matches snapshot', () => {
+    const equalControl = (
+      <EqualControl
+        baseQuery={SqlQuery.create(SqlRef.table('wikipedia'))}
+        filterDecompose={new EqualDecompose({})}
+        changeFilterDecompose={() => {}}
+        columnMetadata={[]}
+      />
+    );
+
+    const { container } = render(equalControl);
+    expect(container.firstChild).toMatchSnapshot();
+  });
+});

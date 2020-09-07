@@ -16,12 +16,20 @@
  * limitations under the License.
  */
 
-export * from './general';
-export * from './druid-query';
-export * from './druid-lookup';
-export * from './query-state';
-export * from './query-manager';
-export * from './query-cursor';
-export * from './local-storage-keys';
-export * from './column-metadata';
-export * from './inline';
+import { SqlExpression, SqlQuery } from 'druid-query-toolkit';
+
+import { inlineReplacements } from './inline';
+
+describe('inlineReplacements', () => {
+  expect(
+    String(
+      inlineReplacements(
+        SqlQuery.parse(`SELECT EXPR('channelLol'), MEASURe( 'cp1' ) as woop FROM wikipedia`),
+        {
+          EXPR: { channelLol: SqlExpression.parse(`channel || 'lol'`) },
+          MEASURE: { cp1: SqlExpression.parse('COUNT(*) + 1') },
+        },
+      ),
+    ),
+  ).toEqual(`SELECT channel || 'lol' AS "channelLol", COUNT(*) + 1 as woop FROM wikipedia`);
+});

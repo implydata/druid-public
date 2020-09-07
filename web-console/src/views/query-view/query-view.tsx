@@ -16,10 +16,18 @@
  * limitations under the License.
  */
 
-import { Intent, Switch, Tooltip } from '@blueprintjs/core';
+import { Button, Intent, Menu, MenuItem, Popover, Switch, Tooltip } from '@blueprintjs/core';
+import { IconNames } from '@blueprintjs/icons';
 import axios from 'axios';
 import classNames from 'classnames';
-import { QueryResult, QueryRunner, SqlQuery } from 'druid-query-toolkit';
+import {
+  QueryParameter,
+  QueryResult,
+  QueryRunner,
+  SqlExpression,
+  SqlPlaceholder,
+  SqlQuery,
+} from 'druid-query-toolkit';
 import Hjson from 'hjson';
 import memoizeOne from 'memoize-one';
 import React, { RefObject } from 'react';
@@ -36,6 +44,7 @@ import {
   DruidError,
   findEmptyLiteralPosition,
   getDruidErrorMessage,
+  inlineReplacements,
   localStorageGet,
   localStorageGetJson,
   LocalStorageKeys,
@@ -58,13 +67,28 @@ import {
   LiveQueryMode,
   LiveQueryModeSelector,
 } from './live-query-mode-selector/live-query-mode-selector';
+import { PlaceholderControl } from './placeholder-control/placeholder-control';
 import { QueryError } from './query-error/query-error';
 import { QueryExtraInfo } from './query-extra-info/query-extra-info';
 import { QueryInput } from './query-input/query-input';
 import { QueryOutput } from './query-output/query-output';
+import { QueryTools } from './query-tools/query-tools';
 import { RunButton } from './run-button/run-button';
 
 import './query-view.scss';
+
+const EXPERIMENTAL = true;
+
+function isMultiline(str: string): boolean {
+  return str.trim().includes('\n');
+}
+
+function indentBy(str: string, indent = '  '): string {
+  return str
+    .split('\n')
+    .map(line => (line ? indent + line : line))
+    .join('\n');
+}
 
 const parser = memoizeOne((sql: string): SqlQuery | undefined => {
   try {
@@ -74,9 +98,13 @@ const parser = memoizeOne((sql: string): SqlQuery | undefined => {
   }
 });
 
+const EXPR = { channelLol: SqlExpression.parse(`channel || 'lol'`) };
+const MEASURE = { cp1: SqlExpression.parse('COUNT(*) + 1') };
+
 interface QueryWithContext {
   queryString: string;
   queryContext: QueryContext;
+  queryParameters: QueryParameter[];
   wrapQueryLimit: number | undefined;
 }
 
@@ -89,7 +117,9 @@ export interface QueryViewProps {
 export interface QueryViewState {
   queryString: string;
   parsedQuery?: SqlQuery;
+  lastParsedQuery?: SqlQuery;
   queryContext: QueryContext;
+  queryParameters: QueryParameter[];
   wrapQueryLimit: number | undefined;
   liveQueryMode: LiveQueryMode;
 
@@ -178,6 +208,8 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
     const queryContext =
       localStorageGetJson(LocalStorageKeys.QUERY_CONTEXT) || props.defaultQueryContext || {};
 
+    const queryParameters = localStorageGetJson(LocalStorageKeys.QUERY_PARAMETERS) || [];
+
     const possibleQueryHistory = localStorageGetJson(LocalStorageKeys.QUERY_HISTORY);
     const queryHistory = Array.isArray(possibleQueryHistory) ? possibleQueryHistory : [];
 
@@ -189,7 +221,9 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
     this.state = {
       queryString,
       parsedQuery,
+      lastParsedQuery: parsedQuery,
       queryContext,
+      queryParameters,
       wrapQueryLimit: 100,
       liveQueryMode,
 
@@ -233,9 +267,14 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
         queryWithContext: QueryWithContext,
         cancelToken,
       ): Promise<QueryResult> => {
-        const { queryString, queryContext, wrapQueryLimit } = queryWithContext;
+        const { queryString, queryContext, queryParameters, wrapQueryLimit } = queryWithContext;
+        const parsedQuery = parser(queryString);
 
-        const query = QueryView.isJsonLike(queryString) ? Hjson.parse(queryString) : queryString;
+        const query = QueryView.isJsonLike(queryString)
+          ? Hjson.parse(queryString)
+          : parsedQuery
+          ? inlineReplacements(parsedQuery, { EXPR, MEASURE })
+          : queryString;
 
         let context: Record<string, any> | undefined;
         if (!isEmptyContext(queryContext) || wrapQueryLimit || mandatoryQueryContext) {
@@ -249,6 +288,7 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
           return await queryRunner.runQuery({
             query,
             extraQueryContext: context,
+            queryParameters,
             cancelToken,
           });
         } catch (e) {
@@ -264,7 +304,7 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
 
     this.explainQueryManager = new QueryManager({
       processQuery: async (queryWithContext: QueryWithContext) => {
-        const { queryString, queryContext, wrapQueryLimit } = queryWithContext;
+        const { queryString, queryContext, queryParameters, wrapQueryLimit } = queryWithContext;
 
         let context: Record<string, any> | undefined;
         if (!isEmptyContext(queryContext) || wrapQueryLimit || mandatoryQueryContext) {
@@ -279,6 +319,7 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
           result = await queryRunner.runQuery({
             query: QueryView.wrapInExplainIfNeeded(queryString),
             extraQueryContext: context,
+            queryParameters,
           });
         } catch (e) {
           throw new Error(getDruidErrorMessage(e));
@@ -433,8 +474,49 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
     );
   }
 
+  renderNinjaMenu() {
+    const { queryString } = this.state;
+    return (
+      <Menu>
+        <MenuItem
+          text={`Wrap as FROM`}
+          onClick={() => {
+            const indentedQueryString = isMultiline(queryString)
+              ? `\n${indentBy(queryString)}\n`
+              : queryString;
+
+            this.handleQueryStringChange(
+              `SELECT\n  COUNT(*) AS "Count"\nFROM (${indentedQueryString}) AS t\nGROUP BY ()`,
+              true,
+            );
+          }}
+        />
+        <MenuItem
+          text={`Wrap as WITH`}
+          onClick={() => {
+            const indentedQueryString = isMultiline(queryString)
+              ? `\n${indentBy(queryString)}\n`
+              : queryString;
+
+            this.handleQueryStringChange(
+              `WITH t AS (${indentedQueryString})\nSELECT\n  COUNT(*) AS "Count"\nFROM t\nGROUP BY ()`,
+              true,
+            );
+          }}
+        />
+      </Menu>
+    );
+  }
+
   renderMainArea() {
-    const { queryString, queryContext, queryResultState, columnMetadataState } = this.state;
+    const {
+      queryString,
+      queryContext,
+      lastParsedQuery,
+      queryResultState,
+      columnMetadataState,
+      queryParameters,
+    } = this.state;
     const emptyQuery = QueryView.isEmptyQuery(queryString);
     const queryResult = queryResultState.data;
 
@@ -458,6 +540,8 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
     }
 
     const runeMode = QueryView.isJsonLike(queryString);
+    const hasPlaceholders =
+      lastParsedQuery && lastParsedQuery.some(x => x instanceof SqlPlaceholder);
     return (
       <SplitterLayout
         vertical
@@ -469,7 +553,19 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
         secondaryMinSize={30}
         onSecondaryPaneSizeChange={this.handleSecondaryPaneSizeChange}
       >
-        <div className="control-pane">
+        <div
+          className={classNames('control-pane', {
+            'with-tools': EXPERIMENTAL,
+            'with-placeholder-control': EXPERIMENTAL && hasPlaceholders,
+          })}
+        >
+          {EXPERIMENTAL && (
+            <QueryTools
+              query={lastParsedQuery}
+              onQueryChange={this.handleQueryChange}
+              columnMetadata={columnMetadataState.data}
+            />
+          )}
           <QueryInput
             ref={this.queryInputRef}
             currentSchema={currentSchema ? currentSchema : 'druid'}
@@ -479,6 +575,18 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
             runeMode={runeMode}
             columnMetadata={columnMetadataState.data}
           />
+          {EXPERIMENTAL && hasPlaceholders && lastParsedQuery && (
+            <PlaceholderControl
+              query={lastParsedQuery}
+              parameters={queryParameters}
+              onChangeParameters={(queryParameters, preferablyRun?: boolean) => {
+                this.setState(
+                  { queryParameters },
+                  preferablyRun ? this.handleRunIfLive : undefined,
+                );
+              }}
+            />
+          )}
           <div className="control-bar">
             <RunButton
               onEditContext={() => this.setState({ editContextDialogOpen: true })}
@@ -491,6 +599,11 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
               onPrettier={() => this.prettyPrintJson()}
               loading={queryResultState.loading}
             />
+            {EXPERIMENTAL && (
+              <Popover content={this.renderNinjaMenu()}>
+                <Button icon={IconNames.NINJA} />
+              </Popover>
+            )}
             {this.renderWrapQueryLimitSelector()}
             {this.renderLiveQueryModeSelector()}
             {queryResult && (
@@ -549,6 +662,7 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
   private handleQueryStringChange = (queryString: string, preferablyRun?: boolean): void => {
     const parsedQuery = parser(queryString);
     const newSate = { queryString, parsedQuery };
+    if (parsedQuery) (newSate as any).lastParsedQuery = parsedQuery;
     this.setState(newSate, preferablyRun ? this.handleRunIfLive : undefined);
   };
 
@@ -566,7 +680,7 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
   };
 
   private handleRun = () => {
-    const { queryString, queryContext, wrapQueryLimit, queryHistory } = this.state;
+    const { queryString, queryContext, queryParameters, wrapQueryLimit, queryHistory } = this.state;
     if (QueryView.isJsonLike(queryString) && !QueryView.validRune(queryString)) return;
 
     const newQueryHistory = QueryRecordUtil.addQueryToHistory(
@@ -578,9 +692,10 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
     localStorageSetJson(LocalStorageKeys.QUERY_HISTORY, newQueryHistory);
     localStorageSet(LocalStorageKeys.QUERY_KEY, queryString);
     localStorageSetJson(LocalStorageKeys.QUERY_CONTEXT, queryContext);
+    localStorageSetJson(LocalStorageKeys.QUERY_PARAMETERS, queryParameters);
 
     this.setState({ queryHistory: newQueryHistory });
-    this.queryManager.runQuery({ queryString, queryContext, wrapQueryLimit });
+    this.queryManager.runQuery({ queryString, queryContext, queryParameters, wrapQueryLimit });
   };
 
   private autoLiveQueryModeShouldRun() {
@@ -600,12 +715,13 @@ export class QueryView extends React.PureComponent<QueryViewProps, QueryViewStat
   };
 
   private handleExplain = () => {
-    const { queryString, queryContext, wrapQueryLimit } = this.state;
+    const { queryString, queryContext, queryParameters, wrapQueryLimit } = this.state;
 
     this.setState({ explainDialogOpen: true });
     this.explainQueryManager.runQuery({
       queryString,
       queryContext,
+      queryParameters,
       wrapQueryLimit,
     });
   };

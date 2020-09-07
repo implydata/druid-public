@@ -1,0 +1,78 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`placeholder control matches snapshot 1`] = `
+<div
+  className="placeholder-control"
+>
+  <Component>
+    Parameter values
+  </Component>
+  <Blueprint3.FormGroup
+    key="0"
+    label={
+      <HighlightText
+        find="\\"__dummy__\\""
+        replace="?"
+        text="\\"__dummy__\\""
+      />
+    }
+  >
+    <Blueprint3.ControlGroup
+      fill={true}
+    >
+      <Blueprint3.Popover
+        boundary="scrollParent"
+        captureDismiss={false}
+        content={
+          <Blueprint3.Menu>
+            <Blueprint3.MenuItem
+              disabled={false}
+              icon="font"
+              multiline={false}
+              onClick={[Function]}
+              popoverProps={Object {}}
+              shouldDismissPopover={true}
+              text="VARCHAR"
+            />
+            <Blueprint3.MenuItem
+              disabled={false}
+              icon="numerical"
+              multiline={false}
+              onClick={[Function]}
+              popoverProps={Object {}}
+              shouldDismissPopover={true}
+              text="FLOAT"
+            />
+          </Blueprint3.Menu>
+        }
+        defaultIsOpen={false}
+        disabled={false}
+        fill={false}
+        hasBackdrop={false}
+        hoverCloseDelay={300}
+        hoverOpenDelay={150}
+        inheritDarkTheme={true}
+        interactionKind="click"
+        minimal={false}
+        modifiers={Object {}}
+        openOnTargetFocus={true}
+        position="auto"
+        targetTagName="span"
+        transitionDuration={300}
+        usePortal={true}
+        wrapperTagName="span"
+      >
+        <Blueprint3.Button
+          icon="font"
+        />
+      </Blueprint3.Popover>
+      <Blueprint3.InputGroup
+        fill={true}
+        onChange={[Function]}
+        placeholder="?"
+        value=""
+      />
+    </Blueprint3.ControlGroup>
+  </Blueprint3.FormGroup>
+</div>
+`;

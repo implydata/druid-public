@@ -1,0 +1,23 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`custom control matches snapshot 1`] = `
+<div
+  class="bp3-form-group custom-control"
+>
+  <div
+    class="bp3-form-content"
+  >
+    <div
+      class="bp3-input-group bp3-fill"
+    >
+      <input
+        class="bp3-input"
+        placeholder="SQL"
+        style="padding-right: 10px;"
+        type="text"
+        value=""
+      />
+    </div>
+  </div>
+</div>
+`;

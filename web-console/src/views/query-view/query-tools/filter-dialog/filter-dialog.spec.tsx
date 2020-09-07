@@ -16,12 +16,25 @@
  * limitations under the License.
  */
 
-export * from './general';
-export * from './druid-query';
-export * from './druid-lookup';
-export * from './query-state';
-export * from './query-manager';
-export * from './query-cursor';
-export * from './local-storage-keys';
-export * from './column-metadata';
-export * from './inline';
+import { render } from '@testing-library/react';
+import { SqlExpression, SqlQuery, SqlRef } from 'druid-query-toolkit';
+import React from 'react';
+
+import { FilterDialog } from './filter-dialog';
+
+describe('filter dialog', () => {
+  it('matches snapshot', () => {
+    const filterDialog = (
+      <FilterDialog
+        baseQuery={SqlQuery.create(SqlRef.table('wikipedia'))}
+        initFilter={SqlExpression.parse(`animal = 'koala'`)}
+        columnMetadata={[]}
+        onChange={() => {}}
+        onClose={() => {}}
+      />
+    );
+
+    const { container } = render(filterDialog);
+    expect(container.firstChild).toMatchSnapshot();
+  });
+});

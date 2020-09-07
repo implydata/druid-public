@@ -16,12 +16,15 @@
  * limitations under the License.
  */
 
-export * from './general';
-export * from './druid-query';
-export * from './druid-lookup';
-export * from './query-state';
-export * from './query-manager';
-export * from './query-cursor';
-export * from './local-storage-keys';
-export * from './column-metadata';
-export * from './inline';
+.query-tools {
+  background: #27313b;
+
+  .bp3-button-group {
+    width: 100%;
+
+    button {
+      width: 100%;
+      height: 60px;
+    }
+  }
+}

@@ -16,12 +16,22 @@
  * limitations under the License.
  */
 
-export * from './general';
-export * from './druid-query';
-export * from './druid-lookup';
-export * from './query-state';
-export * from './query-manager';
-export * from './query-cursor';
-export * from './local-storage-keys';
-export * from './column-metadata';
-export * from './inline';
+import { SqlQuery, SqlRef } from 'druid-query-toolkit';
+import { shallow } from 'enzyme';
+import React from 'react';
+
+import { PlaceholderControl } from './placeholder-control';
+
+describe('placeholder control', () => {
+  it('matches snapshot', () => {
+    const placeholderControl = shallow(
+      <PlaceholderControl
+        query={SqlQuery.create(SqlRef.table('wikipedia'))}
+        parameters={[]}
+        onChangeParameters={() => {}}
+      />,
+    );
+
+    expect(placeholderControl).toMatchSnapshot();
+  });
+});

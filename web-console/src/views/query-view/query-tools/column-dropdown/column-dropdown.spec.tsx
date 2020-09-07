@@ -16,12 +16,17 @@
  * limitations under the License.
  */
 
-export * from './general';
-export * from './druid-query';
-export * from './druid-lookup';
-export * from './query-state';
-export * from './query-manager';
-export * from './query-cursor';
-export * from './local-storage-keys';
-export * from './column-metadata';
-export * from './inline';
+import { shallow } from 'enzyme';
+import React from 'react';
+
+import { ColumnDropdown } from './column-dropdown';
+
+describe('column dropdown', () => {
+  it('matches snapshot', () => {
+    const columnDropdown = shallow(
+      <ColumnDropdown columnMetadata={[]} columnName={undefined} onChangeColumnName={() => {}} />,
+    );
+
+    expect(columnDropdown).toMatchSnapshot();
+  });
+});
