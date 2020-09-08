@@ -187,7 +187,7 @@ public class StringFirstAggregatorFactory extends AggregatorFactory
   @Override
   public Object combine(Object lhs, Object rhs)
   {
-    return TIME_COMPARATOR.compare(lhs, rhs) > 0 ? lhs : rhs;
+    return TIME_COMPARATOR.compare(lhs, rhs) <= 0 ? lhs : rhs;
   }
 
   @Override
